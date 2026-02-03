@@ -10,7 +10,8 @@ export default function Login() {
 
   const handleLogin = async () => {
     try {
-      await login(email, password);
+      const data = await login(email, password);
+      localStorage.setItem("token", data.access_token);
       router.push("/dashboard");
     } catch {
       alert("Invalid credentials");

@@ -5,7 +5,7 @@ export const getSessions = async () => {
   return res.data;
 };
 
-export const runAI = async (sessionId) => {
+export const runAI = async (sessionId: string | number) => {
   const res = await api.post(`/ai/run/${sessionId}`);
   return res.data;
 };
