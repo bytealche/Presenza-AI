@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: presenza_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./presenza.db}
+      - SECRET_KEY=${SECRET_KEY:-supersecretkey}
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/embeddings:/app/embeddings
+      - ./backend/presenza.db:/app/presenza.db
+
+  frontend:
+    build: ./frontend
+    container_name: presenza_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - backend

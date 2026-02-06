@@ -16,9 +16,18 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == data.email).first()
 
     if not user:
+        print(f"DEBUG: Login failed - User not found for email: {data.email}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if not verify_password(data.password, user.password_hash):
+    print(f"DEBUG: Found user {user.email}, verifying password...")
+    try:
+        is_valid = verify_password(data.password, user.password_hash)
+        print(f"DEBUG: Password verification result: {is_valid}")
+    except Exception as e:
+        print(f"DEBUG: Password verification error: {e}")
+        is_valid = False
+
+    if not is_valid:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token(

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from app.core.auth_dependencies import get_current_user
 from sqlalchemy.orm import Session
 
 from app.database.dependencies import get_db
@@ -36,3 +37,25 @@ def create_session(
     db.commit()
     db.refresh(new_session)
     return new_session
+
+@router.get("/", response_model=list[SessionResponse])
+def list_sessions(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Admin: All sessions for org
+    if current_user.role_id == 1:
+        return db.query(SessionModel).filter(SessionModel.org_id == current_user.org_id).all()
+    
+    # Teacher: Sessions created by me
+    if current_user.role_id == 2:
+        return db.query(SessionModel).filter(SessionModel.created_by == current_user.user_id).all()
+        
+    # Student: Sessions I am enrolled in? Or just return empty/error?
+    # For now, let's return all sessions for the org so they can see schedule
+    # Or strict: db.query(SessionModel).join(Enrollment).filter(Enrollment.user_id == current_user.user_id).all()
+    if current_user.role_id == 3:
+        # Simple: All sessions in org (Public Schedule)
+         return db.query(SessionModel).filter(SessionModel.org_id == current_user.org_id).all()
+    
+    return []

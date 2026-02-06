@@ -9,4 +9,6 @@ class CameraDevice(Base):
 
     camera_type = Column(String(50))   # browser / ip / external
     location = Column(String(255))
+    connection_url = Column(String(500)) # RTSP or HTTP URL
+    description = Column(String(255))
     status = Column(String(20), default="active")

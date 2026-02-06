@@ -7,8 +7,8 @@ class Session(Base):
     __tablename__ = "sessions"
 
     session_id = Column(Integer, primary_key=True, index=True)
-    org_id = Column(Integer, ForeignKey("organizations.org_id"))
-    created_by = Column(Integer, ForeignKey("users.user_id"))
+    org_id = Column(Integer, ForeignKey("organizations.org_id"), index=True)
+    created_by = Column(Integer, ForeignKey("users.user_id"), index=True)
     camera_id = Column(Integer, ForeignKey("camera_devices.camera_id"))
 
     session_name = Column(String(255), nullable=False)

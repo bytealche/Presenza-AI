@@ -11,11 +11,13 @@ from app.database.database import engine, SessionLocal
 from app.database.base import Base
 from app.models import *
 from app.database.seed_roles import seed_roles
+from app.database.seed_organizations import seed_organizations
 
 def init_db():
     Base.metadata.create_all(bind=engine)
 
     db = SessionLocal()
+    seed_organizations(db)
     seed_roles(db)
     db.close()
 

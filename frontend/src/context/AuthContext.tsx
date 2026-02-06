@@ -5,10 +5,13 @@ import { decodeToken } from "@/utils/token";
 interface UserPayload {
   user_id: number;
   role_id: number;
+  full_name: string;
+  email: string;
 }
 
 interface AuthContextType {
   user: UserPayload | null;
+  login: (token: string) => void;
   logout: () => void;
 }
 
@@ -22,13 +25,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (token) setUser(decodeToken(token));
   }, []);
 
+  const login = (token: string) => {
+    localStorage.setItem("token", token);
+    setUser(decodeToken(token));
+  };
+
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, logout }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

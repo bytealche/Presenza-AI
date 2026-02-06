@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from typing import List
 from sqlalchemy.orm import Session
 
 from app.database.dependencies import get_db
@@ -23,3 +24,7 @@ def create_organization(
     db.commit()
     db.refresh(new_org)
     return new_org
+
+@router.get("/", response_model=list[OrganizationResponse])
+def list_organizations(db: Session = Depends(get_db)):
+    return db.query(Organization).all()

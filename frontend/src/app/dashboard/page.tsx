@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export default function DashboardRedirect() {
-  const { user } = useAuth();
+  const auth = useAuth();
+  const user = auth?.user;
   const router = useRouter();
 
   useEffect(() => {

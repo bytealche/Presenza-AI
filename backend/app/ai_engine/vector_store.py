@@ -2,7 +2,7 @@ import faiss
 import numpy as np
 import os
 
-DIM = 128
+DIM = 4096
 index = faiss.IndexFlatL2(DIM)
 user_map = {}
 

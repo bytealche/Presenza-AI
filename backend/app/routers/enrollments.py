@@ -6,6 +6,7 @@ from app.database.dependencies import get_db
 from app.models.enrollment import Enrollment
 from app.schemas.enrollment_schema import EnrollmentCreate, EnrollmentResponse
 from app.core.role_dependencies import require_roles
+from app.core.auth_dependencies import get_current_user
 
 router = APIRouter(
     prefix="/enrollments",
@@ -51,3 +52,15 @@ def get_enrolled_students(
         .all()
     )
     return enrollments
+
+@router.get(
+    "/my",
+    response_model=list[EnrollmentResponse],
+    dependencies=[Depends(require_roles([3]))] # student
+)
+def get_my_enrollments(
+    db: Session = Depends(get_db),
+    current_user: list = Depends(get_current_user) # type hint hack or import User? User is better
+):
+    # Return all enrollments for this student
+    return db.query(Enrollment).filter(Enrollment.user_id == current_user.user_id).all()

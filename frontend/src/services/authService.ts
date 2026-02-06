@@ -14,3 +14,12 @@ export const login = async (
   });
   return res.data;
 };
+
+export const registerWithFace = async (formData: FormData): Promise<any> => {
+  const res = await api.post("/users/register-with-face", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return res.data;
+};
