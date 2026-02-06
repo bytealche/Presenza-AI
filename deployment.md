@@ -65,14 +65,18 @@ Recommended for real-world usage to allow access from anywhere.
 
 ---
 
-## 3. SSL/HTTPS (Critical for Camera Access)
-Browsers often **block camera access** on non-localhost HTTP sites. You **MUST** use HTTPS for remote access.
-- **Option A (Nginx Proxy)**: Set up Nginx with Certbot (Let's Encrypt) to reverse proxy port 3000 and 8000.
-- **Option B (Ngrok)**: For quick testing without a domain.
-  ```bash
-  ngrok http 3000
-  ```
+## 4. GitHub Repository Setup
+Since your code is already committed locally, follow these steps to push it to GitHub:
 
-## 4. Troubleshooting
+1.  **Create a New Repo**: Go to [GitHub.com/new](https://github.com/new) and name it `Presenza-AI`.
+2.  **Push Code**:
+    ```bash
+    git remote add origin https://github.com/<YOUR_USERNAME>/Presenza-AI.git
+    git branch -M main
+    git push -u origin main
+    ```
+    *(If prompted, use your GitHub username and Personal Access Token/Password).*
+
+## 5. Troubleshooting
 - **Camera Black Screen**: Check if your browser is blocking "insecure" camera access. Use HTTPS or `localhost`.
 - **WebSocket Fail**: Ensure your Firewall/Nginx allows WebSocket upgrades (`Connection: Upgrade`).
