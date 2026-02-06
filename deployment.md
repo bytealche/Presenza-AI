@@ -65,7 +65,7 @@ Recommended for real-world usage to allow access from anywhere.
 
 ---
 
-## 4. GitHub Repository Setup
+## 4. GitHub Repository Setup & Pages Deployment
 Since your code is already committed locally, follow these steps to push it to GitHub:
 
 1.  **Create a New Repo**: Go to [GitHub.com/new](https://github.com/new) and name it `Presenza-AI`.
@@ -75,7 +75,10 @@ Since your code is already committed locally, follow these steps to push it to G
     git branch -M main
     git push -u origin main
     ```
-    *(If prompted, use your GitHub username and Personal Access Token/Password).*
+3.  **Deploy to GitHub Pages**:
+    - Runs `npm run deploy` (which triggers `gh-pages -d build`).
+    - **IMPORTANT**: GitHub Pages handles **Static Frontend Only**. 
+    - The Python Backend **will not run on GitHub**. The deployed site will look good but won't connect to the API unless you deploy the backend elsewhere (AWS, Render) and update `NEXT_PUBLIC_API_URL`.
 
 ## 5. Troubleshooting
 - **Camera Black Screen**: Check if your browser is blocking "insecure" camera access. Use HTTPS or `localhost`.
