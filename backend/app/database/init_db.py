@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.camera import CameraDevice
 from app.models.session import Session
 from app.models.face_profile import FaceProfile
+from app.models.verification_code import VerificationCode  # Added this
 from app.database.database import engine, SessionLocal
 from app.database.base import Base
 from app.models import *
@@ -20,4 +21,3 @@ def init_db():
     seed_organizations(db)
     seed_roles(db)
     db.close()
-

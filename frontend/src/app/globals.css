@@ -1,16 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  /* Obsidian/Violet Theme */
+  /* Obsidian/Green Theme */
   --background: #050505;
   /* 60% Base */
-  --secondary: #1e293b;
-  /* 30% Slate/Midnight (slate-800) */
-  --accent: #7c3aed;
-  /* 10% Electric Violet (violet-600) */
+  --secondary: #0f172a;
+  /* Slate-900 (Cool dark) */
+  --accent: #10b981;
+  /* Emerald-500 */
 
   --foreground: #ededed;
   --muted: #94a3b8;
+  /* Slate-400 */
 }
 
 @theme inline {
@@ -39,4 +40,61 @@ body {
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Glassmorphism Utilities */
+/* Glassmorphism Utilities */
+.glass {
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.glass-card {
+  background-color: rgba(15, 23, 42, 0.3);
+  /* secondary/30 where secondary is #0f172a */
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0.75rem;
+  /* rounded-xl */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  /* shadow-lg */
+  transition: all 500ms ease-out;
+}
+
+.glass-card:hover {
+  background-color: rgba(15, 23, 42, 0.4);
+  /* secondary/40 */
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 15px rgba(16, 185, 129, 0.1);
+  /* shadow-2xl + emerald glow */
+  transform: translateY(-4px);
+}
+
+/* Page Transition Wrapper */
+.page-transition {
+  opacity: 0;
+  transform: translateY(1rem);
+  transition: all 700ms ease-out;
+}
+
+.page-entered {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Ambient Background Mesh */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.15), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(20, 184, 166, 0.15), transparent 25%);
+  pointer-events: none;
 }

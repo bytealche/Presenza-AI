@@ -1,9 +1,10 @@
 "use client";
 import React, { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { getToken } from "@/utils/token";
 import Sidebar from "@/components/Sidebar";
 import { useAuth } from "@/context/AuthContext";
+import { AnimatePresence, motion } from "framer-motion";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -16,8 +17,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     if (!getToken()) router.push("/login");
   }, [user]); // Add user dependency
 
+  // Get pathname for transition key
+  const pathname = usePathname();
+
   return (
-    <div className="flex h-screen bg-background text-foreground overflow-hidden selection:bg-accent selection:text-white">
+    <div className="flex h-screen bg-transparent text-foreground overflow-hidden selection:bg-accent selection:text-white">
       {/* Sidebar Wrapper with Gradient Border/Glow if desired, simple for now */}
       <Sidebar />
 
@@ -32,7 +36,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* content area */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 scrollbar-thin scrollbar-thumb-accent/20 scrollbar-track-transparent">
-          {children}
+          {/* Page Transition */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, y: -20, filter: "blur(10px)" }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="h-full"
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>

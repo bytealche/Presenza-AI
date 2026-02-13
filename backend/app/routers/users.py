@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 import cv2
@@ -63,6 +63,12 @@ async def register_with_face(
     db: Session = Depends(get_db)
 ):
     print(f"DEBUG: REGISTER FACE - Email: {repr(email)}, Password: {repr(password)}")
+    
+    if len(password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
+    if len(password) > 64:
+        raise HTTPException(status_code=400, detail="Password cannot exceed 64 characters")
+
     # 1. Read and Decode Image
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
@@ -124,7 +130,13 @@ async def register_with_face(
     # 4. Create New User
     try:
         print(f"DEBUG: Password received: '{password}' (len: {len(password)})")
+        
+        # Double check byte length before hashing to be safe
+        if len(password.encode('utf-8')) > 72:
+             raise HTTPException(status_code=400, detail="Password too long (bytes)")
+
         hashed_password = hash_password(password)
+        
         new_user = User(
             full_name=full_name,
             email=email,
@@ -145,24 +157,61 @@ async def register_with_face(
         print(f"DEBUG: SUCCESS - Created user {new_user.user_id} with email {repr(new_user.email)}")
         return new_user
 
+    except ValueError as e:
+        # Catch errors from hash_password or other value errors
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+        
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="Integrity error during registration")
+        
     except Exception as e:
         import traceback
         traceback.print_exc()
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-        raise HTTPException(status_code=500, detail=str(e))
-
 @router.get("/", response_model=list[UserResponse])
 def list_users(
+    role_id: int = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user) # Assuming imported
 ):
     # Only Admin
     if current_user.role_id != 1:
         raise HTTPException(status_code=403, detail="Not authorized")
+    
+    query = db.query(User).filter(User.org_id == current_user.org_id)
+    if role_id:
+        query = query.filter(User.role_id == role_id)
         
-    return db.query(User).filter(User.org_id == current_user.org_id).all()
+    return query.all()
+
+@router.put("/{user_id}/status")
+def update_user_status(
+    user_id: int,
+    status: str = Body(..., embed=True), # Expects JSON { "status": "active" }
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # 1. Admin Only
+    if current_user.role_id != 1:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    # 2. Get User
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    # 3. Security: Can only update users in SAME Org
+    if user.org_id != current_user.org_id:
+        raise HTTPException(status_code=403, detail="Cannot update user from another organization")
+        
+    # 4. Update
+    if status not in ["active", "suspended", "pending"]:
+         raise HTTPException(status_code=400, detail="Invalid status")
+         
+    user.status = status
+    db.commit()
+    return {"message": f"User status updated to {status}"}

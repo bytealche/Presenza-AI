@@ -5,6 +5,7 @@ import { decodeToken } from "@/utils/token";
 interface UserPayload {
   user_id: number;
   role_id: number;
+  org_id: number;
   full_name: string;
   email: string;
 }

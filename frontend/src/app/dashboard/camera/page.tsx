@@ -17,6 +17,7 @@ export default function CameraPage() {
 
     useEffect(() => {
         if (typeof window !== "undefined") {
+            // Default to window.location.origin but users likely need to change it from 'localhost'
             setHostUrl(window.location.origin);
         }
         loadCameras();
@@ -44,11 +45,16 @@ export default function CameraPage() {
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            if (!user?.org_id) {
+                alert("Organization ID missing. Please relogin.");
+                return;
+            }
+
             // For mobile, we generate a dummy URL initially, or just use ID
             const isMobile = newCam.camera_type === "mobile";
 
             await addCamera({
-                org_id: 1,
+                org_id: user.org_id,
                 camera_type: newCam.camera_type,
                 location: newCam.location,
                 connection_url: isMobile ? "Generated on Save" : newCam.connection_url,
@@ -57,8 +63,10 @@ export default function CameraPage() {
             setShowModal(false);
             setNewCam({ location: "", connection_url: "", description: "", camera_type: "mobile" });
             loadCameras();
-        } catch (error) {
-            alert("Failed to add camera");
+        } catch (error: any) {
+            console.error("Failed to add camera", error);
+            const msg = error.response?.data?.detail || "Failed to add camera";
+            alert(msg);
         }
     };
 
@@ -94,6 +102,21 @@ export default function CameraPage() {
                             <div className="p-4">
                                 {cam.camera_type === 'mobile' ? (
                                     <div className="flex flex-col items-center space-y-4">
+                                        {/* IP Configuration (for this specific car or global?) - Actually global makes more sense for "Server IP" */}
+                                        <div className="w-full text-center space-y-2 pb-2 border-b border-white/10">
+                                            <label className="text-sm text-gray-200 font-medium block">Server IP Address (for Mobile Connection)</label>
+                                            <input
+                                                className="bg-black/20 border border-white/10 rounded px-2 py-1 text-xs text-center text-white w-32 focus:border-accent outline-none"
+                                                value={hostUrl}
+                                                onChange={(e) => setHostUrl(e.target.value)}
+                                                placeholder="192.168.x.x:3000"
+                                            />
+                                            <p className="text-xs text-gray-300 mt-1">
+                                                Enter your PC's Local IP (run `ipconfig` or check settings).
+                                                <br />Ensure port (e.g. :3000) is included if needed.
+                                            </p>
+                                        </div>
+
                                         {/* Viewer */}
                                         <div className="w-full aspect-video bg-black rounded relative overflow-hidden ring-1 ring-white/10">
                                             <StreamViewer cameraId={cam.camera_id.toString()} />
@@ -101,18 +124,18 @@ export default function CameraPage() {
 
                                         {/* QR Code Section */}
                                         <div className="text-center space-y-2">
-                                            <p className="text-xs text-muted">Scan to Stream from Phone</p>
+                                            <p className="text-sm text-gray-200 font-medium">Scan to Stream from Phone</p>
 
                                             <div className="bg-white p-2 inline-block border rounded">
                                                 <QRCode
-                                                    value={`${hostUrl}/broadcast/${cam.camera_id}`}
+                                                    value={`${hostUrl.startsWith('http') ? hostUrl : 'http://' + hostUrl}/broadcast/${cam.camera_id}`}
                                                     size={100}
                                                 />
                                             </div>
                                             <a
-                                                href={`${hostUrl}/broadcast/${cam.camera_id}`}
+                                                href={`${hostUrl.startsWith('http') ? hostUrl : 'http://' + hostUrl}/broadcast/${cam.camera_id}`}
                                                 target="_blank"
-                                                className="block text-xs text-accent hover:underline decoration-accent"
+                                                className="block text-sm text-accent hover:underline decoration-accent font-medium mt-2"
                                             >
                                                 Open Broadcaster Link
                                             </a>

@@ -24,10 +24,12 @@ def detect_faces(frame):
              frame_small = frame
 
         print(f"Detecting faces in frame of shape {frame_small.shape}")
+        
+        # DeepFace.extract_faces returns a list of dicts
+        # Each dict has keys: "face", "facial_area", "confidence"
         face_objs = DeepFace.extract_faces(
             img_path=frame_small,
-            # target_size removed as it caused unexpected keyword argument error
-            detector_backend="mtcnn", # Improved detection
+            detector_backend="retinaface", # Improved detection.
             enforce_detection=False,
             align=False
         )
@@ -39,7 +41,8 @@ def detect_faces(frame):
             # face_obj['facial_area'] has keys 'x', 'y', 'w', 'h'
             area = face_obj['facial_area']
             x, y, w, h = area['x'], area['y'], area['w'], area['h']
-            
+            confidence = face_obj.get('confidence', 0.0)
+
             # Crop from resized frame (since coordinates are from detection on resized frame)
             face_img = frame_small[y:y+h, x:x+w]
             
@@ -50,6 +53,7 @@ def detect_faces(frame):
             results.append({
                 "face_image": face_img,
                 "bbox": (x, y, w, h), # Note: coordinates are relative to resized frame
+                "confidence": confidence,
                 "frame_time": datetime.utcnow()
             })
             

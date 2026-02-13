@@ -28,17 +28,27 @@ export default function BroadcastPage() {
 
     const startCamera = async () => {
         try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                const isSecure = window.isSecureContext;
+                const protocol = window.location.protocol;
+                throw new Error(
+                    `Camera API not available. Secure Context: ${isSecure}, Protocol: ${protocol}. \n` +
+                    `Mobile browsers block camera on HTTP. \n` +
+                    `Fix: Open 'chrome://flags' on mobile, search 'Insecure origins treated as secure', enable it, and add this IP.`
+                );
+            }
+
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "environment", width: 640, height: 480 }, // Back camera preferred, lower res for speed
+                video: { facingMode: "environment", width: 640, height: 480 },
                 audio: false
             });
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
             }
         } catch (err: any) {
-            const msg = "Error accessing camera: " + (err.message || err.name);
+            console.error(err);
+            const msg = "Error: " + (err.message || err.name);
             setStatus(msg);
-            // Try to log to console and backend if possible (via global ws ref if connected)
             if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
                 wsRef.current.send(JSON.stringify({ type: "error", message: msg }));
             }
@@ -99,8 +109,8 @@ export default function BroadcastPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white p-4">
             <h1 className="text-xl font-bold mb-4">Mobile Broadcaster</h1>
-            <div className={`px-4 py-2 rounded mb-4 ${isStreaming ? 'bg-green-600' : 'bg-red-600'}`}>
-                Status: {status}
+            <div className={`px-4 py-2 rounded mb-4 text-center text-xs whitespace-pre-wrap ${isStreaming ? 'bg-green-600' : 'bg-red-600'}`}>
+                {status}
             </div>
 
             <div className="relative w-full max-w-lg aspect-video bg-gray-800 rounded overflow-hidden">

@@ -21,7 +21,7 @@ router = APIRouter(
 def create_session(
     data: SessionCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends()
+    current_user: User = Depends(get_current_user)
 ):
     new_session = SessionModel(
         org_id=current_user.org_id,
@@ -40,12 +40,16 @@ def create_session(
 
 @router.get("/", response_model=list[SessionResponse])
 def list_sessions(
+    teacher_id: int = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Admin: All sessions for org
+    # Admin: All sessions for org, optionally filtered by teacher
     if current_user.role_id == 1:
-        return db.query(SessionModel).filter(SessionModel.org_id == current_user.org_id).all()
+        query = db.query(SessionModel).filter(SessionModel.org_id == current_user.org_id)
+        if teacher_id:
+            query = query.filter(SessionModel.created_by == teacher_id)
+        return query.all()
     
     # Teacher: Sessions created by me
     if current_user.role_id == 2:

@@ -76,9 +76,9 @@ Since your code is already committed locally, follow these steps to push it to G
     git push -u origin main
     ```
 3.  **Deploy to GitHub Pages**:
-    - Runs `npm run deploy` (which triggers `gh-pages -d build`).
-    - **IMPORTANT**: GitHub Pages handles **Static Frontend Only**. 
-    - The Python Backend **will not run on GitHub**. The deployed site will look good but won't connect to the API unless you deploy the backend elsewhere (AWS, Render) and update `NEXT_PUBLIC_API_URL`.
+    - **Step A (Source)**: `git push origin main` (Backs up your code).
+    - **Step B (Site)**: `npm run deploy` (Publishes the frontend to the web).
+    - **IMPORTANT**: The deployed site is **Static Frontend Only**. API calls will fail unless the backend is hosted elsewhere.
 
 ## 5. Troubleshooting
 - **Camera Black Screen**: Check if your browser is blocking "insecure" camera access. Use HTTPS or `localhost`.

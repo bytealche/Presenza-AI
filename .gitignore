@@ -30,17 +30,21 @@ out/
 build/
 
 # Environment Variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+**/.env
+**/.env.*
 
 # Database
 *.sqlite3
 *.db
 backend/presenza.db
 backend/test.db
+backend_deploy/presenza.db
+backend_deploy/test.db
+
+# Virtual Env
+venv/
+backend/venv/
+backend_deploy/venv/
 
 # IDEs
 .idea/
@@ -55,3 +59,4 @@ Thumbs.db
 # Project Specific
 backend/embeddings/
 backend/runs/
+backend/server.log

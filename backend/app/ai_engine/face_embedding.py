@@ -10,9 +10,9 @@ def generate_embedding(face_image):
         # data[0]["embedding"] is a list
         embedding_objs = DeepFace.represent(
             img_path=face_image,
-            model_name="VGG-Face",
+            model_name="Facenet512",
             enforce_detection=False,
-            detector_backend="opencv",
+            detector_backend="retinaface",
             align=True
         )
         
