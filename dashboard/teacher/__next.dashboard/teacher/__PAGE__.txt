@@ -1,0 +1,9 @@
+1:"$Sreact.fragment"
+2:I[47257,["/Presenza-AI/_next/static/chunks/ff1a16fafef87110.js","/Presenza-AI/_next/static/chunks/ab7476506ba79899.js"],"ClientPageRoot"]
+3:I[71814,["/Presenza-AI/_next/static/chunks/028936f37d879823.js","/Presenza-AI/_next/static/chunks/7c5ed1740476235b.js","/Presenza-AI/_next/static/chunks/b21c966ca4c89554.js","/Presenza-AI/_next/static/chunks/2f6b2feb4df140db.js"],"default"]
+6:I[97367,["/Presenza-AI/_next/static/chunks/ff1a16fafef87110.js","/Presenza-AI/_next/static/chunks/ab7476506ba79899.js"],"OutletBoundary"]
+7:"$Sreact.suspense"
+0:{"buildId":"-2hC9dAYjbjECGyasz_bA","rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/Presenza-AI/_next/static/chunks/b21c966ca4c89554.js","async":true}],["$","script","script-1",{"src":"/Presenza-AI/_next/static/chunks/2f6b2feb4df140db.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"loading":null,"isPartial":false}
+4:{}
+5:{}
+8:null

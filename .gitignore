@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+.next/
+out/
+build/
+
+# Environment Variables
+**/.env
+**/.env.*
+
+# Database
+*.sqlite3
+*.db
+backend/presenza.db
+backend/test.db
+backend_deploy/presenza.db
+backend_deploy/test.db
+
+# Virtual Env
+venv/
+backend/venv/
+backend_deploy/venv/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project Specific
+backend/embeddings/
+backend/runs/
+backend/server.log
