@@ -51,6 +51,10 @@ def delete_camera(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # Only Admin (1) and Teacher (2) can delete
+    if current_user.role_id not in [1, 2]:
+        raise HTTPException(status_code=403, detail="Not authorized to delete cameras")
+
     camera = db.query(CameraDevice).filter(CameraDevice.camera_id == camera_id).first()
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")

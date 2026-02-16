@@ -21,9 +21,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY --chown=user . .
 
-# Expose port 7860 (Hugging Face default)
-EXPOSE 7860
+# Expose port 8000 (Standard)
+EXPOSE 8000
 
 # Command to run the application
-# Use 0.0.0.0 and port 7860
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Use shell form to allow variable expansion for $PORT
+CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"

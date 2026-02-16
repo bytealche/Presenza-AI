@@ -28,23 +28,22 @@ yarn-error.log
 .next/
 out/
 build/
+.turbo/
 
 # Environment Variables
-**/.env
-**/.env.*
+.env
+.env.*
+!.env.example
 
 # Database
 *.sqlite3
 *.db
-backend/presenza.db
-backend/test.db
-backend_deploy/presenza.db
-backend_deploy/test.db
+*.db-journal
 
 # Virtual Env
 venv/
-backend/venv/
-backend_deploy/venv/
+env/
+ENV/
 
 # IDEs
 .idea/
@@ -55,8 +54,16 @@ backend_deploy/venv/
 # OS
 .DS_Store
 Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Project Specific
 backend/embeddings/
 backend/runs/
-backend/server.log
+backend_deploy/
+deployment/

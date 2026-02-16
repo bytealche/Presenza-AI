@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.routers import organizations, roles, users, protected, sessions, enrollments, auth, attendance, attendance_views, ai_trigger, analytics, cameras, stream
 from app.ai_engine.vector_store import load_all_embeddings
@@ -5,7 +6,16 @@ from app.ai_engine.vector_store import load_all_embeddings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Smart Attendance AI")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    print("Loading AI Models...")
+    load_all_embeddings()
+    yield
+    # Shutdown
+    print("Shutting down...")
+
+app = FastAPI(title="Smart Attendance AI", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,4 +44,4 @@ app.include_router(analytics.router)
 app.include_router(cameras.router)
 app.include_router(stream.router)
 
-load_all_embeddings()  # Load embeddings on startup
+# AI Models loaded via lifespan event

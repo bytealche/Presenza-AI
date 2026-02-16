@@ -3,14 +3,22 @@
 import React, { useEffect, useState, useRef } from "react";
 import { getCameras, addCamera, deleteCamera, Camera } from "@/services/cameraService";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 import QRCode from "react-qr-code";
 import { getWsUrl } from "@/utils/config";
 
 export default function CameraPage() {
     const { user } = useAuth();
+    const router = useRouter();
     const [cameras, setCameras] = useState<Camera[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+
+    useEffect(() => {
+        if (user?.role_id === 3) {
+            router.push("/dashboard/student");
+        }
+    }, [user, router]);
 
     // Host IP for QR Code (default to window.location if available, else localhost)
     const [hostUrl, setHostUrl] = useState("");
@@ -20,8 +28,11 @@ export default function CameraPage() {
             // Default to window.location.origin but users likely need to change it from 'localhost'
             setHostUrl(window.location.origin);
         }
+
+
+
         loadCameras();
-    }, []);
+    }, [user]); // Add user dependency
 
     // Form State
     const [newCam, setNewCam] = useState({
@@ -151,9 +162,12 @@ export default function CameraPage() {
                                     </div>
                                 )}
 
-                                <div className="mt-4 flex justify-end">
-                                    <button onClick={() => handleDelete(cam.camera_id)} className="text-red-400 text-sm hover:text-red-300">Delete</button>
-                                </div>
+                                {/* Delete Button (Admin & Faculty Only) */}
+                                {(user?.role_id === 1 || user?.role_id === 2) && (
+                                    <div className="mt-4 flex justify-end">
+                                        <button onClick={() => handleDelete(cam.camera_id)} className="text-red-400 text-sm hover:text-red-300">Delete</button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
