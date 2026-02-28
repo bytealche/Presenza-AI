@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from typing import List
 
 from app.database.dependencies import get_db
@@ -14,9 +15,9 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=CameraResponse)
-def add_camera(
+async def add_camera(
     camera: CameraCreate, 
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     # Optional: Verify org_id matches user's org
@@ -32,36 +33,37 @@ def add_camera(
         status="active"
     )
     db.add(new_camera)
-    db.commit()
-    db.refresh(new_camera)
+    await db.commit()
+    await db.refresh(new_camera)
     return new_camera
 
 @router.get("/", response_model=List[CameraResponse])
-def list_cameras(
-    db: Session = Depends(get_db),
+async def list_cameras(
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     # Filter by user's org
-    cameras = db.query(CameraDevice).filter(CameraDevice.org_id == current_user.org_id).all()
-    return cameras
+    result = await db.execute(select(CameraDevice).where(CameraDevice.org_id == current_user.org_id))
+    return result.scalars().all()
 
 @router.delete("/{camera_id}")
-def delete_camera(
+async def delete_camera(
     camera_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     # Only Admin (1) and Teacher (2) can delete
     if current_user.role_id not in [1, 2]:
         raise HTTPException(status_code=403, detail="Not authorized to delete cameras")
 
-    camera = db.query(CameraDevice).filter(CameraDevice.camera_id == camera_id).first()
+    result = await db.execute(select(CameraDevice).where(CameraDevice.camera_id == camera_id))
+    camera = result.scalars().first()
     if not camera:
         raise HTTPException(status_code=404, detail="Camera not found")
         
     if camera.org_id != current_user.org_id:
         raise HTTPException(status_code=403, detail="Not authorized")
         
-    db.delete(camera)
-    db.commit()
+    await db.delete(camera)
+    await db.commit()
     return {"message": "Camera deleted"}

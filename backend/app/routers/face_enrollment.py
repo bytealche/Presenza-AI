@@ -5,8 +5,9 @@ import numpy as np
 from app.core.role_dependencies import require_roles
 from app.ai_engine.enrollment import enroll_user
 from app.database.dependencies import get_db
-from sqlalchemy.orm import Session
-from app.models.face_embedding import FaceEmbedding
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from app.models.face_profile import FaceProfile
 
 router = APIRouter(
     prefix="/ai/enroll",
@@ -17,22 +18,22 @@ router = APIRouter(
     "/{user_id}",
     dependencies=[Depends(require_roles([1, 2]))]  # admin / teacher
 )
-def enroll_face(
+async def enroll_face(
     user_id: int,
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    contents = file.file.read()
+    contents = await file.read()
     np_img = np.frombuffer(contents, np.uint8)
     frame = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
 
-    path = enroll_user(user_id, frame)
+    path, embedding = enroll_user(user_id, frame)
 
-    record = FaceEmbedding(
+    record = FaceProfile(
         user_id=user_id,
-        embedding_path=path
+        embedding=embedding.flatten().tolist()
     )
     db.add(record)
-    db.commit()
+    await db.commit()
 
     return {"message": "User enrolled successfully"}

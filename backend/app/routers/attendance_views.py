@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from app.database.dependencies import get_db
 from app.models.attendance import AttendanceRecord as Attendance
@@ -18,42 +19,42 @@ router = APIRouter(
     response_model=list[AttendanceView],
     dependencies=[Depends(require_roles([3]))]  # student
 )
-def student_attendance(
-    db: Session = Depends(get_db),
+async def student_attendance(
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return (
-        db.query(Attendance)
-        .filter(Attendance.user_id == current_user.user_id)
-        .all()
+    result = await db.execute(
+        select(Attendance)
+        .where(Attendance.user_id == current_user.user_id)
     )
+    return result.scalars().all()
 @router.get(
     "/teacher",
     response_model=list[AttendanceView],
     dependencies=[Depends(require_roles([2]))]  # teacher
 )
-def teacher_attendance(
-    db: Session = Depends(get_db),
+async def teacher_attendance(
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return (
-        db.query(Attendance)
+    result = await db.execute(
+        select(Attendance)
         .join(SessionModel, Attendance.session_id == SessionModel.session_id)
-        .filter(SessionModel.created_by == current_user.user_id)
-        .all()
+        .where(SessionModel.created_by == current_user.user_id)
     )
+    return result.scalars().all()
 @router.get(
     "/admin",
     response_model=list[AttendanceView],
     dependencies=[Depends(require_roles([1]))]  # admin
 )
-def admin_attendance(
-    db: Session = Depends(get_db),
+async def admin_attendance(
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return (
-        db.query(Attendance)
+    result = await db.execute(
+        select(Attendance)
         .join(SessionModel, Attendance.session_id == SessionModel.session_id)
-        .filter(SessionModel.org_id == current_user.org_id)
-        .all()
+        .where(SessionModel.org_id == current_user.org_id)
     )
+    return result.scalars().all()

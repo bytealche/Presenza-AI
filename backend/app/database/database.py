@@ -1,17 +1,37 @@
-from sqlalchemy import create_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-# Fallback to SQLite if no DATABASE_URL is set or if it's empty
 env_db_url = os.getenv("DATABASE_URL")
-SQLALCHEMY_DATABASE_URL = env_db_url if env_db_url else "sqlite:///./presenza.db"
+if not env_db_url:
+    env_db_url = "sqlite:///./presenza.db"
 
+# Replace standard URLs with async drivers
+if env_db_url.startswith("postgresql://"):
+    SQLALCHEMY_DATABASE_URL = env_db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+elif env_db_url.startswith("sqlite:///"):
+    SQLALCHEMY_DATABASE_URL = env_db_url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+else:
+    SQLALCHEMY_DATABASE_URL = env_db_url
 
-engine = create_engine(
+connect_args_dict = {}
+if "sqlite" in SQLALCHEMY_DATABASE_URL:
+    connect_args_dict["check_same_thread"] = False
+elif "postgresql" in SQLALCHEMY_DATABASE_URL:
+    connect_args_dict["prepared_statement_cache_size"] = 0
+
+engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in SQLALCHEMY_DATABASE_URL else {}
+    echo=False,
+    connect_args=connect_args_dict
 )
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+SessionLocal = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    autocommit=False,
+    autoflush=False
+)

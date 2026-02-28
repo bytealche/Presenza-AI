@@ -6,19 +6,20 @@ from app.ai_engine.adaptive_threshold import adjust_threshold
 from app.ai_engine.fraud_detector import detect_fraud
 from app.ai_engine.config import BASE_THRESHOLD
 from app.ai_engine.presence_tracker import PresenceTracker
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai_engine.engagement_analyzer import EngagementAnalyzer
 liveness_detector = LivenessDetector()
 
 engagement_analyzer = EngagementAnalyzer()
 presence_tracker = PresenceTracker()
-def process_frame(frame):
+async def process_frame(db: AsyncSession, frame):
     decisions = []
     faces = detect_faces(frame)
 
     for face in faces:
         live, live_reasons = liveness_detector.check(face["face_image"])
         embedding = generate_embedding(face["face_image"])
-        user_id, confidence = recognize_face(embedding)
+        user_id, confidence = await recognize_face(db, embedding)
 
         engagement_score = None
         if user_id:
@@ -45,7 +46,8 @@ def process_frame(frame):
             "reason": reason or ("liveness_failed" if not live else None),
             "liveness_reasons": live_reasons,
             "engagement_score": engagement_score,
-            "timestamp": face["frame_time"]
+            "timestamp": face["frame_time"],
+            "bbox": face["bbox"]
         }
 
 

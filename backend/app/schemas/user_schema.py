@@ -1,4 +1,5 @@
-from pydantic import BaseModel , constr
+from pydantic import BaseModel, constr
+from typing import Optional
 
 class UserCreate(BaseModel):
     full_name: str
@@ -14,6 +15,7 @@ class UserResponse(BaseModel):
     status: str
     org_id: int
     role_id: int
+    image_url: Optional[str] = None
 
     class Config:
         orm_mode = True

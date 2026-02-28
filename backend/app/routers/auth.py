@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Body, UploadFile, File, Form, BackgroundTasks
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, status, Body, UploadFile, File, Form, BackgroundTasks, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
 from datetime import datetime, timedelta
 import random
 import string
@@ -15,6 +16,7 @@ from app.schemas.auth_schema import LoginRequest, TokenResponse
 from app.schemas.auth_schema_extended import OTPRequest, OrganizationRegisterRequest, UserRegisterRequest
 from app.core.security import verify_password, create_access_token, hash_password
 from app.ai_engine.face_detection import detect_faces
+from app.ai_engine.liveness_detection import LivenessDetector
 from app.ai_engine.face_embedding import generate_embedding
 from app.ai_engine.vector_store import find_match
 from app.core.email import send_email_sync
@@ -23,13 +25,15 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+from app.core.rate_limit import limiter
 
 # --- OTP Helper ---
 def generate_otp():
     return ''.join(random.choices(string.digits, k=6))
 
 @router.post("/send-otp")
-def send_otp(request: OTPRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def send_otp(request: Request, data: OTPRequest, background_tasks: BackgroundTasks, db: AsyncSession = Depends(get_db)):
     # 1. Check if email already registered? 
     # Usually we allow sending OTP even if registered to reset password, but here it's for registration.
     # Let's allow it.
@@ -40,25 +44,28 @@ def send_otp(request: OTPRequest, background_tasks: BackgroundTasks, db: Session
     
     # 3. Store in DB
     # Invalidate previous codes
-    db.query(VerificationCode).filter(VerificationCode.email == request.email).delete()
+    await db.execute(delete(VerificationCode).where(VerificationCode.email == data.email))
     
-    vc = VerificationCode(email=request.email, code=code, expires_at=expires_at)
+    vc = VerificationCode(email=data.email, code=code, expires_at=expires_at)
     db.add(vc)
-    db.commit()
+    await db.commit()
     
     # 4. Send Email (Background)
     subject = "Verify your Presenza AI Account"
     body = f"Your verification code is: {code}\n\nThis code will expire in 10 minutes."
     
-    background_tasks.add_task(send_email_sync, request.email, subject, body)
+    background_tasks.add_task(send_email_sync, data.email, subject, body)
     
     return {"message": "OTP sent. Please check your email (and spam folder)."}
 
-def verify_otp_logic(email: str, code: str, db: Session):
-    record = db.query(VerificationCode).filter(
-        VerificationCode.email == email,
-        VerificationCode.code == code
-    ).first()
+async def verify_otp_logic(email: str, code: str, db: AsyncSession):
+    result = await db.execute(
+        select(VerificationCode).where(
+            VerificationCode.email == email,
+            VerificationCode.code == code
+        )
+    )
+    record = result.scalars().first()
     
     if not record:
         raise HTTPException(status_code=400, detail="Invalid OTP")
@@ -67,25 +74,27 @@ def verify_otp_logic(email: str, code: str, db: Session):
         raise HTTPException(status_code=400, detail="OTP expired")
         
     # Delete used code
-    db.delete(record)
-    db.commit()
+    await db.delete(record)
+    await db.commit()
     return True
 
 @router.post("/register-organization")
-def register_organization(data: OrganizationRegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def register_organization(request: Request, data: OrganizationRegisterRequest, db: AsyncSession = Depends(get_db)):
     print(f"DEBUG: Registering Org: {data.org_name}, {data.email}")
     try:
         # 1. Verify OTP
-        verify_otp_logic(data.email, data.otp, db)
+        await verify_otp_logic(data.email, data.otp, db)
         
         # 2. Check Email Exists
-        if db.query(User).filter(User.email == data.email).first():
+        result = await db.execute(select(User).where(User.email == data.email))
+        if result.scalars().first():
             raise HTTPException(status_code=400, detail="Email already registered")
             
         # 3. Create Organization
         new_org = Organization(org_name=data.org_name, org_type="Organization")
         db.add(new_org)
-        db.flush() # Get ID
+        await db.flush() # Get ID
         
         # 4. Create Admin User
         hashed = hash_password(data.password)
@@ -98,7 +107,7 @@ def register_organization(data: OrganizationRegisterRequest, db: Session = Depen
             status="active"
         )
         db.add(new_user)
-        db.commit()
+        await db.commit()
         
         return {"message": "Organization registered successfully"}
     except Exception as e:
@@ -108,12 +117,14 @@ def register_organization(data: OrganizationRegisterRequest, db: Session = Depen
         raise e
 
 @router.post("/register-user")
-def register_user(data: UserRegisterRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def register_user(request: Request, data: UserRegisterRequest, db: AsyncSession = Depends(get_db)):
     # 1. Verify OTP
-    verify_otp_logic(data.email, data.otp, db)
+    await verify_otp_logic(data.email, data.otp, db)
     
     # 2. Check Email Exists
-    if db.query(User).filter(User.email == data.email).first():
+    result = await db.execute(select(User).where(User.email == data.email))
+    if result.scalars().first():
         raise HTTPException(status_code=400, detail="Email already registered")
         
     # 3. Determine Status
@@ -132,7 +143,7 @@ def register_user(data: UserRegisterRequest, db: Session = Depends(get_db)):
         status=status
     )
     db.add(new_user)
-    db.commit()
+    await db.commit()
     
     msg = "User registered successfully."
     if status == "pending":
@@ -140,56 +151,11 @@ def register_user(data: UserRegisterRequest, db: Session = Depends(get_db)):
         
     return {"message": msg}
 
-@router.post("/login-with-face", response_model=TokenResponse)
-async def login_with_face(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    # 1. Read Image
-    contents = await file.read()
-    nparr = np.frombuffer(contents, np.uint8)
-    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-    if frame is None:
-        raise HTTPException(status_code=400, detail="Invalid image file")
-
-    # 2. Detect Face
-    faces = detect_faces(frame)
-    if len(faces) == 0:
-        raise HTTPException(status_code=400, detail="No face detected")
-    
-    # Use largest face
-    faces.sort(key=lambda f: f["bbox"][2] * f["bbox"][3], reverse=True)
-    face_item = faces[0]
-
-    # 3. Generate Embedding
-    embedding = generate_embedding(face_item["face_image"])
-    if embedding is None:
-        raise HTTPException(status_code=500, detail="Failed to generate embedding")
-
-    # 4. Match User
-    match_user_id, confidence = find_match(embedding, threshold=0.4)
-    if not match_user_id:
-        raise HTTPException(status_code=401, detail="Face not recognized")
-
-    user = db.query(User).filter(User.user_id == match_user_id).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="User not found")
-
-    # 5. Check Role Restriction (Faculty=2, Student=3)
-    if user.role_id not in [2, 3]:
-        raise HTTPException(status_code=403, detail="Face login not allowed for this role")
-
-    if user.status != "active":
-         raise HTTPException(status_code=403, detail="Account is pending approval or suspended.")
-
-    token = create_access_token(
-        data={"user_id": user.user_id, "role_id": user.role_id, "org_id": user.org_id}
-    )
-
-    return {"access_token": token}
-
-
 @router.post("/login", response_model=TokenResponse)
-def login(data: LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == data.email).first()
+@limiter.limit("10/minute")
+async def login(request: Request, data: LoginRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalars().first()
 
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -206,7 +172,13 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token(
-        data={"user_id": user.user_id, "role_id": user.role_id, "org_id": user.org_id}
+        data={
+            "user_id": user.user_id, 
+            "role_id": user.role_id, 
+            "org_id": user.org_id,
+            "full_name": user.full_name,
+            "email": user.email
+        }
     )
 
     return {"access_token": token}

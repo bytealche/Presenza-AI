@@ -31,17 +31,18 @@ class LivenessDetector:
 
     def check(self, face_image):
         variance = texture_variance(face_image)
-        motion = motion_detect(self.prev_face, face_image)
-
-        self.prev_face = face_image.copy()
-
+        
+        # In a single-shot API request (like login/register from NextJS taking a screenshot),
+        # motion detection cannot work reliably between requests. 
+        # We will heavily rely on texture variance (printed photos have very low variance vs real faces).
+        # A more advanced model like MiniVison FasNet would go here in the future if purely 2D image is used.
+        
         reasons = []
 
         if variance < 15:
-            reasons.append("low_texture_variance")
+            reasons.append("low_texture_variance_possible_photo")
 
-        if not motion:
-            reasons.append("no_motion_detected")
-
+        # Let's increase tolerance for the single shot, 
+        # DeepFace used to reject things constantly, we want to allow reasonable faces.
         is_live = len(reasons) == 0
         return is_live, reasons

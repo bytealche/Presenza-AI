@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body, BackgroundTasks
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 import cv2
 import numpy as np
@@ -12,8 +13,11 @@ from app.core.auth_dependencies import get_current_user
 from app.schemas.user_schema import UserCreate, UserResponse
 from app.core.security import hash_password
 from app.ai_engine.face_detection import detect_faces
-from app.ai_engine.face_embedding import generate_embedding
-from app.ai_engine.vector_store import find_match, add_user, EMBEDDING_DIR
+from app.ai_engine.liveness_detection import LivenessDetector
+from app.ai_engine.face_embedding import generate_embedding, load_model
+from app.ai_engine.vector_store import find_match
+from app.models.face_profile import FaceProfile
+from app.core.supabase_client import supabase
 
 router = APIRouter(
     prefix="/users",
@@ -21,7 +25,7 @@ router = APIRouter(
 )
 
 @router.post("/", response_model=UserResponse)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
+async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     try:
         hashed_password = hash_password(user.password)
 
@@ -34,13 +38,13 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         )
 
         db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
+        await db.commit()
+        await db.refresh(new_user)
 
         return new_user  # ✅ ALWAYS return on success
 
     except IntegrityError:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=400,
             detail="Invalid organization ID, role ID, or duplicate email"
@@ -54,13 +58,14 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/register-with-face", response_model=UserResponse)
 async def register_with_face(
+    background_tasks: BackgroundTasks,
     full_name: str = Form(...),
     email: str = Form(...),
     password: str = Form(...),
     org_id: int = Form(...),
     role_id: int = Form(...),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     print(f"DEBUG: REGISTER FACE - Email: {repr(email)}, Password: {repr(password)}")
     
@@ -101,6 +106,14 @@ async def register_with_face(
     else:
         face_item = faces[0]
 
+    # Anti-spoofing check using standalone LivenessDetector
+    liveness_detector = LivenessDetector()
+    is_live, reasons = liveness_detector.check(face_item["face_image"])
+    
+    if not is_live:
+        print(f"DEBUG: Spoofing rejected during registration: {reasons}")
+        raise HTTPException(status_code=400, detail=f"Face validation failed. Please use a real live camera feed. (Reason: {reasons[0]})")
+
     # Use face_image directly? Or original frame?
     # generate_embedding expects image path or numpy array. 
     # If we pass crop, DeepFace aligns it (which is good).
@@ -112,18 +125,20 @@ async def register_with_face(
         raise HTTPException(status_code=500, detail="Failed to generate face embedding")
 
     # 3. Check Duplicates
-    match_user_id, confidence = find_match(embedding, threshold=0.4) # Strict threshold for duplicates? Or loose?
+    match_user_id, confidence = await find_match(db, embedding, threshold=0.5) # ArcFace threshold
     # DeepFace (VGG-Face) cosine similarity. 0.4 is usually distinct. 
     # vector_store uses L2 distance converted to confidence.
     # We should trust find_match logic.
 
     if match_user_id:
-        existing_user = db.query(User).filter(User.user_id == match_user_id).first()
+        result = await db.execute(select(User).where(User.user_id == match_user_id))
+        existing_user = result.scalars().first()
         if existing_user:
              raise HTTPException(status_code=400, detail="Face already registered with another account.")
     
     # Check if email exists (standard duplicate check)
-    email_user = db.query(User).filter(User.email == email).first()
+    result = await db.execute(select(User).where(User.email == email))
+    email_user = result.scalars().first()
     if email_user:
          raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -145,54 +160,69 @@ async def register_with_face(
             role_id=role_id
         )
         db.add(new_user)
-        db.flush() # Get user_id
+        await db.flush() # Get user_id
 
-        # 5. Save Embedding
-        filename = f"user_{new_user.user_id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.npy"
-        path = os.path.join(EMBEDDING_DIR, filename)
-        add_user(new_user.user_id, embedding, path)
+        # 5. Save Embedding to Postgres using pgvector
+        image_url = None
+        if supabase:
+            try:
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                filename = f"user_{new_user.user_id}_{timestamp}.jpg"
+                res = supabase.storage.from_("profiles").upload(filename, contents, {"content-type": "image/jpeg"})
+                image_url = supabase.storage.from_("profiles").get_public_url(filename)
+                print(f"DEBUG: Uploaded face profile image to Supabase: {image_url}")
+            except Exception as e:
+                print(f"ERROR: Failed to upload image to Supabase: {e}")
 
-        db.commit()
-        db.refresh(new_user)
+        face_profile = FaceProfile(
+            user_id=new_user.user_id,
+            embedding=embedding.flatten().tolist(),
+            image_url=image_url
+        )
+        db.add(face_profile)
+
+        await db.commit()
+        await db.refresh(new_user)
         print(f"DEBUG: SUCCESS - Created user {new_user.user_id} with email {repr(new_user.email)}")
         return new_user
 
     except ValueError as e:
         # Catch errors from hash_password or other value errors
-        db.rollback()
+        await db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
         
     except IntegrityError:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(status_code=400, detail="Integrity error during registration")
         
     except Exception as e:
         import traceback
         traceback.print_exc()
-        db.rollback()
+        await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/", response_model=list[UserResponse])
-def list_users(
+async def list_users(
     role_id: int = None,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user) # Assuming imported
 ):
     # Only Admin
     if current_user.role_id != 1:
         raise HTTPException(status_code=403, detail="Not authorized")
     
-    query = db.query(User).filter(User.org_id == current_user.org_id)
+    stmt = select(User).where(User.org_id == current_user.org_id)
     if role_id:
-        query = query.filter(User.role_id == role_id)
+        stmt = stmt.where(User.role_id == role_id)
         
-    return query.all()
+    result = await db.execute(stmt)
+    return result.scalars().all()
 
 @router.put("/{user_id}/status")
-def update_user_status(
+async def update_user_status(
     user_id: int,
     status: str = Body(..., embed=True), # Expects JSON { "status": "active" }
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     # 1. Admin Only
@@ -200,7 +230,8 @@ def update_user_status(
         raise HTTPException(status_code=403, detail="Not authorized")
         
     # 2. Get User
-    user = db.query(User).filter(User.user_id == user_id).first()
+    result = await db.execute(select(User).where(User.user_id == user_id))
+    user = result.scalars().first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
@@ -213,5 +244,5 @@ def update_user_status(
          raise HTTPException(status_code=400, detail="Invalid status")
          
     user.status = status
-    db.commit()
+    await db.commit()
     return {"message": f"User status updated to {status}"}

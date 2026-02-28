@@ -1,22 +1,22 @@
 from datetime import datetime
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from fastapi import HTTPException
 
 from app.models.attendance import AttendanceRecord as Attendance
 from app.models.enrollment import Enrollment
 from app.models.session import Session as SessionModel
 
-def record_attendance(
-    db: Session,
+async def record_attendance(
+    db: AsyncSession,
     session_id: int,
     user_id: int,
     final_status: str,
     final_score: float | None
 ):
     # 1️⃣ Validate session
-    session = db.query(SessionModel).filter(
-        SessionModel.session_id == session_id
-    ).first()
+    result = await db.execute(select(SessionModel).where(SessionModel.session_id == session_id))
+    session = result.scalars().first()
     if not session:
         raise HTTPException(404, "Session not found")
 
@@ -25,18 +25,20 @@ def record_attendance(
         raise HTTPException(400, "Session not active")
 
     # 2️⃣ Validate enrollment
-    enrolled = db.query(Enrollment).filter(
+    result = await db.execute(select(Enrollment).where(
         Enrollment.session_id == session_id,
         Enrollment.user_id == user_id
-    ).first()
+    ))
+    enrolled = result.scalars().first()
     if not enrolled:
         raise HTTPException(403, "User not enrolled")
 
     # 3️⃣ Prevent duplicates
-    existing = db.query(Attendance).filter(
+    result = await db.execute(select(Attendance).where(
         Attendance.session_id == session_id,
         Attendance.user_id == user_id
-    ).first()
+    ))
+    existing = result.scalars().first()
     if existing:
         return existing  # idempotent
 
@@ -50,6 +52,6 @@ def record_attendance(
     )
 
     db.add(attendance)
-    db.commit()
-    db.refresh(attendance)
+    await db.commit()
+    await db.refresh(attendance)
     return attendance

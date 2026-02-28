@@ -1,12 +1,14 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.models.role import Role
 
-def seed_roles(db: Session):
+async def seed_roles(db: AsyncSession):
     roles = ["admin", "teacher", "student"]
 
     for role_name in roles:
-        exists = db.query(Role).filter(Role.role_name == role_name).first()
+        result = await db.execute(select(Role).where(Role.role_name == role_name))
+        exists = result.scalars().first()
         if not exists:
             db.add(Role(role_name=role_name))
 
-    db.commit()
+    await db.commit()

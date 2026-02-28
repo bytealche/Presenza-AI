@@ -1,5 +1,6 @@
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai_engine.vector_store import find_match
 
-def recognize_face(embedding):
-    user_id, confidence = find_match(embedding)
+async def recognize_face(db: AsyncSession, embedding):
+    user_id, confidence = await find_match(db, embedding)
     return user_id, confidence

@@ -22,6 +22,9 @@ def enroll_user(user_id: int, frame):
     if confidence < MIN_ENROLLMENT_CONFIDENCE:
         raise Exception(f"Face quality too low (Confidence: {confidence:.2f}). Please ensure good lighting and no obstructions.")
 
+    if not face_data.get("is_real", True):
+        raise Exception("Face validation failed. Please use a real live camera feed.")
+
     face_img = face_data["face_image"]
     embedding = generate_embedding(face_img)
     
@@ -35,4 +38,4 @@ def enroll_user(user_id: int, frame):
 
     add_user(user_id, embedding, path)
 
-    return path
+    return path, embedding

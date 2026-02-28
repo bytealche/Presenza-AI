@@ -29,9 +29,10 @@ def detect_faces(frame):
         # Each dict has keys: "face", "facial_area", "confidence"
         face_objs = DeepFace.extract_faces(
             img_path=frame_small,
-            detector_backend="retinaface", # Improved detection.
+            detector_backend="retinaface", # Highly accurate detection
             enforce_detection=False,
-            align=False
+            align=False,
+            anti_spoofing=False
         )
         print(f"DeepFace found: {len(face_objs)} faces/candidates")
         
@@ -42,6 +43,9 @@ def detect_faces(frame):
             area = face_obj['facial_area']
             x, y, w, h = area['x'], area['y'], area['w'], area['h']
             confidence = face_obj.get('confidence', 0.0)
+            is_real = face_obj.get('is_real', True) # Default to True if not returned
+            antispoof = face_obj.get('antispoof_score')
+            print(f"DEBUG: Face {x},{y} - Confidence: {confidence:.2f}, Is Real: {is_real}, Score: {antispoof}")
 
             # Crop from resized frame (since coordinates are from detection on resized frame)
             face_img = frame_small[y:y+h, x:x+w]
@@ -54,11 +58,13 @@ def detect_faces(frame):
                 "face_image": face_img,
                 "bbox": (x, y, w, h), # Note: coordinates are relative to resized frame
                 "confidence": confidence,
+                "is_real": is_real,
                 "frame_time": datetime.utcnow()
             })
             
         return results
 
     except Exception as e:
-        print(f"Error in face detection: {e}")
+        error_msg = str(e).encode('ascii', 'ignore').decode('ascii')
+        print(f"Error in face detection: {error_msg}")
         return []

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
+import { getWsUrl } from "@/utils/config";
+
 export default function BroadcastPage() {
     const params = useParams();
     const cameraId = params.id as string;
@@ -56,8 +58,7 @@ export default function BroadcastPage() {
     };
 
     const connectWebSocket = () => {
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/stream/${cameraId}?client_type=sender`;
+        const wsUrl = getWsUrl(`/ws/stream/${cameraId}?client_type=sender`);
 
         const ws = new WebSocket(wsUrl);
 

@@ -1,9 +1,11 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.models.organization import Organization
 
-def seed_organizations(db: Session):
+async def seed_organizations(db: AsyncSession):
     org_name = "Presenza University"
-    exists = db.query(Organization).filter(Organization.org_name == org_name).first()
+    result = await db.execute(select(Organization).where(Organization.org_name == org_name))
+    exists = result.scalars().first()
     if not exists:
         db.add(Organization(org_name=org_name, org_type="Education"))
-        db.commit()
+        await db.commit()

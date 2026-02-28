@@ -6,6 +6,12 @@ import numpy as np
 import json
 import logging
 from app.ai_engine.decision_engine import process_frame
+from app.ai_engine.attendance_bridge import apply_ai_decisions
+from app.models.session import Session as SessionModel
+from sqlalchemy import select
+from datetime import datetime
+from app.database.database import SessionLocal
+from app.core.websocket_manager import manager
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -15,57 +21,6 @@ router = APIRouter(
     prefix="/ws",
     tags=["Streaming"]
 )
-
-class ConnectionManager:
-    def __init__(self):
-        # camera_id -> List of receiver WebSockets
-        self.receivers: Dict[str, List[WebSocket]] = {}
-        # camera_id -> sender WebSocket (only one sender per cam allowed)
-        self.senders: Dict[str, WebSocket] = {}
-
-    async def connect_receiver(self, websocket: WebSocket, camera_id: str):
-        await websocket.accept()
-        if camera_id not in self.receivers:
-            self.receivers[camera_id] = []
-        self.receivers[camera_id].append(websocket)
-        logger.info(f"Receiver connected: {camera_id}")
-
-    async def connect_sender(self, websocket: WebSocket, camera_id: str):
-        await websocket.accept()
-        # If there's already a sender, maybe close previous?
-        # For now, just overwrite
-        if camera_id in self.senders:
-             try:
-                 await self.senders[camera_id].close()
-                 logger.info(f"Closed existing sender for {camera_id}")
-             except:
-                 pass
-        self.senders[camera_id] = websocket
-        logger.info(f"Sender connected: {camera_id}")
-
-    def disconnect_receiver(self, websocket: WebSocket, camera_id: str):
-        if camera_id in self.receivers:
-            if websocket in self.receivers[camera_id]:
-                self.receivers[camera_id].remove(websocket)
-                logger.info(f"Receiver disconnected: {camera_id}")
-
-    def disconnect_sender(self, camera_id: str):
-        if camera_id in self.senders:
-            del self.senders[camera_id]
-            logger.info(f"Sender disconnected: {camera_id}")
-
-    async def broadcast_to_receivers(self, camera_id: str, data: bytes):
-        if camera_id in self.receivers:
-            # Broadcast to all connected receivers for this camera
-            for connection in self.receivers[camera_id]:
-                try:
-                    await connection.send_bytes(data)
-                except Exception as e:
-                    # If send fails, remove connection?
-                    # For now just log error
-                    logger.error(f"Error sending frame to receiver {camera_id}: {e}")
-
-manager = ConnectionManager()
 
 @router.websocket("/stream/{camera_id}")
 async def websocket_endpoint(websocket: WebSocket, camera_id: str, client_type: str = "item"):
@@ -93,7 +48,21 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: str, client_type: 
                             
                             if frame is not None:
                                 # Run AI Analysis
-                                decisions = process_frame(frame)
+                                async with SessionLocal() as db:
+                                    decisions = await process_frame(db, frame)
+                                    
+                                    # Auto-mark attendance if camera has an active session
+                                    now = datetime.utcnow()
+                                    stmt = select(SessionModel).where(
+                                        SessionModel.camera_id == int(camera_id),
+                                        SessionModel.start_time <= now,
+                                        SessionModel.end_time >= now
+                                    )
+                                    result = await db.execute(stmt)
+                                    active_session = result.scalars().first()
+                                    
+                                    if active_session and decisions:
+                                        await apply_ai_decisions(db, active_session.session_id, decisions)
                                 
                                 # Broadcast results if any faces found (or even empty to clear?)
                                 if decisions:
@@ -121,7 +90,7 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: str, client_type: 
                 
                 elif "text" in message:
                      logger.info(f"Cam {camera_id} LOG: {message['text']}")
-        except WebSocketDisconnect:
+        except (WebSocketDisconnect, RuntimeError):
             manager.disconnect_sender(camera_id)
             logger.info(f"Sender disconnected for {camera_id}")
     else:
@@ -132,6 +101,6 @@ async def websocket_endpoint(websocket: WebSocket, camera_id: str, client_type: 
                 # Receivers just listen, they don't send much
                 # Just keep connection alive
                 await websocket.receive_text() 
-        except WebSocketDisconnect:
+        except (WebSocketDisconnect, RuntimeError):
             manager.disconnect_receiver(websocket, camera_id)
             logger.info(f"Receiver disconnected for {camera_id}")

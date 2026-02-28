@@ -14,3 +14,4 @@ from app.models.adaptive_threshold import AdaptiveThreshold
 from app.models.ai_decision import AIDecisionLog
 from app.models.system_log import SystemLog
 from app.models.enrollment import Enrollment
+from app.models.verification_code import VerificationCode

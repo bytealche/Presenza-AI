@@ -1,6 +1,20 @@
 import numpy as np
 from deepface import DeepFace
 
+def load_model():
+    """
+    Pre-load the Facenet512 model into memory to avoid delay on first request.
+    """
+    print("Pre-loading Face Recognition Model (Facenet512)...")
+    try:
+        # Building the model triggers download/load
+        DeepFace.build_model("Facenet512")
+        print("Face Recognition Model Loaded Successfully.")
+    except Exception as e:
+        error_msg = str(e).encode('ascii', 'ignore').decode('ascii')
+        print(f"Error loading model: {error_msg}")
+        print(f"Error type: {type(e)}")
+
 def generate_embedding(face_image):
     """
     Generates a 128-dim embedding using DeepFace (VGG-Face model).
@@ -12,7 +26,7 @@ def generate_embedding(face_image):
             img_path=face_image,
             model_name="Facenet512",
             enforce_detection=False,
-            detector_backend="retinaface",
+            detector_backend="opencv",
             align=True
         )
         

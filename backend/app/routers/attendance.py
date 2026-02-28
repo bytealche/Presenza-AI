@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
@@ -14,19 +15,21 @@ router = APIRouter(
     prefix="/attendance",
     tags=["Attendance"]
 )
+from app.core.rate_limit import limiter
 
 @router.post(
     "/mark",
     dependencies=[Depends(require_roles([2]))]  # teacher
 )
-def mark_attendance(
+@limiter.limit("20/minute")
+async def mark_attendance(
+    request: Request,
     data: AttendanceMark,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     # 1️⃣ Check session exists
-    session = db.query(SessionModel).filter(
-        SessionModel.session_id == data.session_id
-    ).first()
+    result = await db.execute(select(SessionModel).where(SessionModel.session_id == data.session_id))
+    session = result.scalars().first()
     if not session:
         raise HTTPException(404, "Session not found")
 
@@ -36,18 +39,20 @@ def mark_attendance(
         raise HTTPException(400, "Session not active")
 
     # 3️⃣ Check enrollment
-    enrolled = db.query(Enrollment).filter(
+    result = await db.execute(select(Enrollment).where(
         Enrollment.session_id == data.session_id,
         Enrollment.user_id == data.user_id
-    ).first()
+    ))
+    enrolled = result.scalars().first()
     if not enrolled:
         raise HTTPException(403, "Student not enrolled")
 
     # 4️⃣ Prevent duplicate attendance
-    existing = db.query(Attendance).filter(
+    result = await db.execute(select(Attendance).where(
         Attendance.session_id == data.session_id,
         Attendance.user_id == data.user_id
-    ).first()
+    ))
+    existing = result.scalars().first()
     if existing:
         raise HTTPException(400, "Attendance already marked")
 
@@ -61,16 +66,16 @@ def mark_attendance(
     )
 
     db.add(attendance)
-    db.commit()
+    await db.commit()
     return {"message": "Attendance recorded successfully"}
 
 from app.core.auth_dependencies import get_current_user
 from app.models.user import User
 
 @router.get("/session/{session_id}")
-def get_session_attendance(
+async def get_session_attendance(
     session_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     # 1. Check permissions (Admin or Teacher)
@@ -78,7 +83,8 @@ def get_session_attendance(
         raise HTTPException(status_code=403, detail="Not authorized")
         
     # 2. Check Session
-    session = db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
+    result = await db.execute(select(SessionModel).where(SessionModel.session_id == session_id))
+    session = result.scalars().first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
         
@@ -87,24 +93,14 @@ def get_session_attendance(
          raise HTTPException(status_code=403, detail="Not your session")
          
     # 4. Get Enrollments (All students in this class)
-    # We don't have explicit enrollment table usage yet for "Class Roster" usually?
-    # Actually, in this system, do we have enrollments? 
-    # `app.models.enrollment` exists.
-    # Let's assume all students in Org are eligible, OR check Enrollment table.
-    
-    # Let's simple query AttendanceRecord for this session first.
-    # But we want "Absent" students too.
-    # If we have an Enrollment table, use it.
-    
-    # For now, let's just return the attendance records we HAVE. 
-    # If we want "Absent" for students who didn't mark, we need a roster.
-    # Let's just return records for now.
-    
-    records = db.query(Attendance).filter(Attendance.session_id == session_id).all()
-    
     # We want User details too.
     # Join with User
-    results = db.query(Attendance, User).join(User, Attendance.user_id == User.user_id).filter(Attendance.session_id == session_id).all()
+    result = await db.execute(
+        select(Attendance, User)
+        .join(User, Attendance.user_id == User.user_id)
+        .where(Attendance.session_id == session_id)
+    )
+    results = result.all()
     
     return [
         {

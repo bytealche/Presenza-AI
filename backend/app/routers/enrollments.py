@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.database.dependencies import get_db
@@ -18,9 +19,9 @@ router = APIRouter(
     response_model=EnrollmentResponse,
     dependencies=[Depends(require_roles([2]))]  # teacher
 )
-def enroll_student(
+async def enroll_student(
     data: EnrollmentCreate,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
     try:
         enrollment = Enrollment(
@@ -28,12 +29,12 @@ def enroll_student(
             user_id=data.user_id
         )
         db.add(enrollment)
-        db.commit()
-        db.refresh(enrollment)
+        await db.commit()
+        await db.refresh(enrollment)
         return enrollment
 
     except IntegrityError:
-        db.rollback()
+        await db.rollback()
         raise HTTPException(
             status_code=400,
             detail="Student already enrolled or invalid IDs"
@@ -42,25 +43,25 @@ def enroll_student(
     "/session/{session_id}",
     dependencies=[Depends(require_roles([2]))]
 )
-def get_enrolled_students(
+async def get_enrolled_students(
     session_id: int,
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ):
-    enrollments = (
-        db.query(Enrollment)
-        .filter(Enrollment.session_id == session_id)
-        .all()
+    result = await db.execute(
+        select(Enrollment)
+        .where(Enrollment.session_id == session_id)
     )
-    return enrollments
+    return result.scalars().all()
 
 @router.get(
     "/my",
     response_model=list[EnrollmentResponse],
     dependencies=[Depends(require_roles([3]))] # student
 )
-def get_my_enrollments(
-    db: Session = Depends(get_db),
+async def get_my_enrollments(
+    db: AsyncSession = Depends(get_db),
     current_user: list = Depends(get_current_user) # type hint hack or import User? User is better
 ):
     # Return all enrollments for this student
-    return db.query(Enrollment).filter(Enrollment.user_id == current_user.user_id).all()
+    result = await db.execute(select(Enrollment).where(Enrollment.user_id == current_user.user_id))
+    return result.scalars().all()

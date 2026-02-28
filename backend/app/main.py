@@ -1,21 +1,37 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.routers import organizations, roles, users, protected, sessions, enrollments, auth, attendance, attendance_views, ai_trigger, analytics, cameras, stream
-from app.ai_engine.vector_store import load_all_embeddings
+from app.routers import organizations, roles, users, protected, sessions, enrollments, auth, attendance, attendance_views, ai_trigger, analytics, cameras, stream
+from app.ai_engine.face_embedding import load_model
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from app.core.exceptions import BaseAPIException
+from app.core.rate_limit import limiter
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     print("Loading AI Models...")
-    load_all_embeddings()
+    load_model()
     yield
     # Shutdown
     print("Shutting down...")
 
 app = FastAPI(title="Smart Attendance AI", lifespan=lifespan)
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+@app.exception_handler(BaseAPIException)
+async def custom_exception_handler(request: Request, exc: BaseAPIException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
 
 app.add_middleware(
     CORSMiddleware,

@@ -1,7 +1,7 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.attendance_service import record_attendance
 
-def apply_ai_decisions(db, session_id, decisions):
+async def apply_ai_decisions(db: AsyncSession, session_id, decisions):
     results = []
 
     for d in decisions:
@@ -14,7 +14,7 @@ def apply_ai_decisions(db, session_id, decisions):
 
         status = "present" if not is_fraud else "fraud"
 
-        attendance = record_attendance(
+        attendance = await record_attendance(
             db=db,
             session_id=session_id,
             user_id=user_id,
