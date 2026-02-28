@@ -1,7 +1,12 @@
+import os
 import numpy as np
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.face_profile import FaceProfile
+
+# Directory where local .npy embedding files are stored (used by enrollment legacy path)
+EMBEDDING_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "embeddings")
+os.makedirs(EMBEDDING_DIR, exist_ok=True)
 
 def normalize_vector(vector):
     """Normalize a vector to unit length (L2 norm = 1)."""
@@ -41,3 +46,13 @@ async def find_match(db: AsyncSession, embedding, threshold=0.5):
         return profile.user_id, confidence
         
     return None, confidence
+
+
+def add_user(user_id: int, embedding: np.ndarray, path: str) -> None:
+    """
+    Save a user's face embedding as a .npy file to the given path.
+    Called by enrollment.py when enrolling via the /ai/enroll endpoint.
+    """
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    np.save(path, embedding)
+    print(f"DEBUG: Saved embedding for user {user_id} to {path}")

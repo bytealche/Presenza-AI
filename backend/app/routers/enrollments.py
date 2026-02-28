@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.database.dependencies import get_db
 from app.models.enrollment import Enrollment
+from app.models.user import User
 from app.schemas.enrollment_schema import EnrollmentCreate, EnrollmentResponse
 from app.core.role_dependencies import require_roles
 from app.core.auth_dependencies import get_current_user
@@ -60,7 +61,7 @@ async def get_enrolled_students(
 )
 async def get_my_enrollments(
     db: AsyncSession = Depends(get_db),
-    current_user: list = Depends(get_current_user) # type hint hack or import User? User is better
+    current_user: User = Depends(get_current_user)
 ):
     # Return all enrollments for this student
     result = await db.execute(select(Enrollment).where(Enrollment.user_id == current_user.user_id))

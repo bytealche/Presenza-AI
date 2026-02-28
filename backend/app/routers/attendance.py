@@ -10,12 +10,14 @@ from app.models.enrollment import Enrollment
 from app.models.session import Session as SessionModel
 from app.schemas.attendance_schema import AttendanceMark
 from app.core.role_dependencies import require_roles
+from app.core.rate_limit import limiter
+from app.core.auth_dependencies import get_current_user
+from app.models.user import User
 
 router = APIRouter(
     prefix="/attendance",
     tags=["Attendance"]
 )
-from app.core.rate_limit import limiter
 
 @router.post(
     "/mark",
@@ -68,9 +70,6 @@ async def mark_attendance(
     db.add(attendance)
     await db.commit()
     return {"message": "Attendance recorded successfully"}
-
-from app.core.auth_dependencies import get_current_user
-from app.models.user import User
 
 @router.get("/session/{session_id}")
 async def get_session_attendance(

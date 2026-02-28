@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from app.routers import organizations, roles, users, protected, sessions, enrollments, auth, attendance, attendance_views, ai_trigger, analytics, cameras, stream
-from app.routers import organizations, roles, users, protected, sessions, enrollments, auth, attendance, attendance_views, ai_trigger, analytics, cameras, stream
 from app.ai_engine.face_embedding import load_model
 
 from fastapi import FastAPI, Request

@@ -7,6 +7,8 @@ import string
 import numpy as np
 import cv2
 
+from app.core.rate_limit import limiter
+
 from app.database.dependencies import get_db
 from app.models.user import User
 from app.models.organization import Organization
@@ -25,7 +27,6 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
-from app.core.rate_limit import limiter
 
 # --- OTP Helper ---
 def generate_otp():

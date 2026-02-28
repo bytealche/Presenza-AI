@@ -30,7 +30,8 @@ async def process_frame(db: AsyncSession, frame):
                 confidence=confidence
             )
 
-
+            # Update presence tracker with this frame's data before checking confirmed status
+            presence_tracker.update(user_id, confidence, face["frame_time"])
             confirmed = presence_tracker.is_confirmed(user_id)
         else:
             confirmed = False
