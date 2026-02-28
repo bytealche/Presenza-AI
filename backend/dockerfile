@@ -1,6 +1,6 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-# Install system dependencies for OpenCV and Postgres
+# Install system dependencies required by OpenCV, DeepFace, and psycopg2
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
@@ -8,22 +8,18 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user (Hugging Face Spaces requirement)
-RUN useradd -m -u 1000 user
-USER user
-ENV PATH="/home/user/.local/bin:$PATH"
-
 WORKDIR /app
 
-COPY --chown=user requirements.txt .
+# Copy and install dependencies first (Docker layer cache optimization)
+COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY --chown=user . .
+# Copy application code
+COPY . .
 
-# Expose port 8000 (Standard)
+# Expose port (Render injects $PORT at runtime)
 EXPOSE 8000
 
-# Command to run the application
-# Use shell form to allow variable expansion for $PORT
+# Start the app — Render sets $PORT automatically
 CMD sh -c "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"
