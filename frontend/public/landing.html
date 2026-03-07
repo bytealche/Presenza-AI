@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Presenza AI SaaS Landing Page</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4725f4",
+                        "background-light": "#f6f5f8",
+                        "background-dark": "#020409",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display selection:bg-primary/30">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<header class="fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-white/10 bg-background-dark/80 px-10 py-4 backdrop-blur-md">
+<div class="flex items-center gap-3">
+<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 text-white shadow-lg shadow-indigo-500/20">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</div>
+<h2 class="text-xl font-bold tracking-tight text-white">Presenza</h2>
+</div>
+<nav class="hidden flex-1 justify-center gap-8 md:flex">
+<a class="text-sm font-medium text-slate-300 transition-colors hover:text-white" href="#">Features</a>
+<a class="text-sm font-medium text-slate-300 transition-colors hover:text-white" href="#">How It Works</a>
+<a class="text-sm font-medium text-slate-300 transition-colors hover:text-white" href="#">Dashboard</a>
+<a class="text-sm font-medium text-slate-300 transition-colors hover:text-white" href="#">Testimonials</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="hidden text-sm font-medium text-slate-300 transition-colors hover:text-white md:block">Sign In</button>
+<button class="flex h-10 items-center justify-center rounded-lg bg-primary px-5 text-sm font-bold text-white shadow-[0_0_15px_rgba(71,37,244,0.5)] transition-all hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(71,37,244,0.7)]">
+                    Get Started
+                </button>
+</div>
+</header>
+<main class="flex-1 pt-24">
+<section class="relative mx-auto flex max-w-7xl flex-col items-center justify-center px-6 py-24 text-center lg:py-32">
+<div class="absolute inset-0 -z-10 flex items-center justify-center">
+<div class="h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px]"></div>
+<div class="absolute right-0 top-0 h-[400px] w-[400px] rounded-full bg-cyan-500/10 blur-[100px]"></div>
+</div>
+<div class="mb-6 flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 backdrop-blur-sm">
+<span class="flex h-2 w-2 rounded-full bg-cyan-400"></span>
+<span class="text-xs font-medium tracking-wide text-slate-300">Powered by AI &amp; Computer Vision</span>
+</div>
+<h1 class="mx-auto max-w-4xl text-5xl font-black leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
+                    Smart Attendance,<br/>
+<span class="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-transparent">Reimagined with AI</span>
+</h1>
+<p class="mx-auto mt-6 max-w-2xl text-lg text-slate-400 sm:text-xl">
+                    Presenza is a premium attendance and behavior tracking system. Eliminate manual roll calls, detect anomalies, and gain real-time insights with unparalleled accuracy.
+                </p>
+<div class="mt-10 flex flex-col gap-4 sm:flex-row">
+<button class="flex h-12 items-center justify-center rounded-lg bg-primary px-8 text-base font-bold text-white shadow-[0_0_20px_rgba(71,37,244,0.4)] transition-all hover:bg-primary/90 hover:shadow-[0_0_30px_rgba(71,37,244,0.6)]">
+                        Start Free Trial
+                    </button>
+<button class="flex h-12 items-center justify-center rounded-lg border border-white/10 bg-white/5 px-8 text-base font-bold text-white backdrop-blur-sm transition-all hover:bg-white/10">
+                        View Dashboard
+                    </button>
+</div>
+</section>
+<section class="border-y border-white/5 bg-white/[0.02]">
+<div class="mx-auto max-w-7xl px-6 py-12">
+<div class="grid grid-cols-2 gap-8 md:grid-cols-4">
+<div class="flex flex-col items-center justify-center space-y-2 text-center">
+<span class="text-4xl font-black text-white">99.6%</span>
+<span class="text-sm font-medium text-slate-400">Face Recognition Accuracy</span>
+</div>
+<div class="flex flex-col items-center justify-center space-y-2 text-center">
+<span class="text-4xl font-black text-white">&lt; 0.5s</span>
+<span class="text-sm font-medium text-slate-400">Real-time Processing</span>
+</div>
+<div class="flex flex-col items-center justify-center space-y-2 text-center">
+<span class="text-4xl font-black text-white">500+</span>
+<span class="text-sm font-medium text-slate-400">Institutions</span>
+</div>
+<div class="flex flex-col items-center justify-center space-y-2 text-center">
+<span class="text-4xl font-black text-white">10M+</span>
+<span class="text-sm font-medium text-slate-400">Records Processed</span>
+</div>
+</div>
+</div>
+</section>
+<section class="mx-auto max-w-7xl px-6 py-24">
+<div class="mb-16 text-center">
+<h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">Unmatched Capabilities</h2>
+<p class="mt-4 text-slate-400">Discover how Presenza can revolutionize your attendance tracking.</p>
+</div>
+<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+<div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-8 transition-all hover:border-primary/50 hover:bg-white/10 backdrop-blur-sm">
+<div class="absolute inset-0 -z-10 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+<div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
+<span class="material-symbols-outlined text-[28px]">face</span>
+</div>
+<h3 class="mb-3 text-xl font-bold text-white">Real-Time Face Recognition</h3>
+<p class="text-sm leading-relaxed text-slate-400">Instant and accurate face recognition for seamless attendance tracking, eliminating bottlenecks at entry points.</p>
+</div>
+<div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-8 transition-all hover:border-violet-500/50 hover:bg-white/10 backdrop-blur-sm">
+<div class="absolute inset-0 -z-10 bg-gradient-to-br from-violet-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+<div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-500/20 text-violet-400">
+<span class="material-symbols-outlined text-[28px]">psychology</span>
+</div>
+<h3 class="mb-3 text-xl font-bold text-white">AI Behavior Analysis</h3>
+<p class="text-sm leading-relaxed text-slate-400">Advanced AI algorithms continuously analyze behavior patterns to detect anomalies or unusual activity in real-time.</p>
+</div>
+<div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-8 transition-all hover:border-cyan-500/50 hover:bg-white/10 backdrop-blur-sm">
+<div class="absolute inset-0 -z-10 bg-gradient-to-br from-cyan-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+<div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/20 text-cyan-400">
+<span class="material-symbols-outlined text-[28px]">video_camera_front</span>
+</div>
+<h3 class="mb-3 text-xl font-bold text-white">Multi-Camera Support</h3>
+<p class="text-sm leading-relaxed text-slate-400">Connect and manage hundreds of IP cameras simultaneously for comprehensive, blind-spot-free coverage.</p>
+</div>
+<div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-8 transition-all hover:border-pink-500/50 hover:bg-white/10 backdrop-blur-sm">
+<div class="absolute inset-0 -z-10 bg-gradient-to-br from-pink-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+<div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-pink-500/20 text-pink-400">
+<span class="material-symbols-outlined text-[28px]">query_stats</span>
+</div>
+<h3 class="mb-3 text-xl font-bold text-white">Smart Analytics Dashboard</h3>
+<p class="text-sm leading-relaxed text-slate-400">Get rich, actionable insights with a customizable dashboard visualizing attendance trends and demographic data.</p>
+</div>
+<div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-8 transition-all hover:border-amber-500/50 hover:bg-white/10 backdrop-blur-sm">
+<div class="absolute inset-0 -z-10 bg-gradient-to-br from-amber-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+<div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400">
+<span class="material-symbols-outlined text-[28px]">notifications_active</span>
+</div>
+<h3 class="mb-3 text-xl font-bold text-white">Automated Alerts</h3>
+<p class="text-sm leading-relaxed text-slate-400">Configure custom triggers to receive instant SMS or email alerts for VIP arrivals, blocklisted individuals, or specific events.</p>
+</div>
+<div class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-8 transition-all hover:border-emerald-500/50 hover:bg-white/10 backdrop-blur-sm">
+<div class="absolute inset-0 -z-10 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 transition-opacity group-hover:opacity-100"></div>
+<div class="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+<span class="material-symbols-outlined text-[28px]">cloud_done</span>
+</div>
+<h3 class="mb-3 text-xl font-bold text-white">Secure Cloud Database</h3>
+<p class="text-sm leading-relaxed text-slate-400">Military-grade encryption ensures your biometric data and records are securely stored and compliant with privacy regulations.</p>
+</div>
+</div>
+</section>
+<section class="mx-auto max-w-5xl px-6 py-24">
+<div class="mb-16 text-center">
+<h2 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">How It Works</h2>
+<p class="mt-4 text-slate-400">Four simple steps to autonomous attendance tracking.</p>
+</div>
+<div class="relative">
+<div class="absolute bottom-0 left-[31px] top-0 hidden w-[2px] bg-gradient-to-b from-primary via-cyan-500 to-transparent md:block"></div>
+<div class="space-y-12 md:space-y-16">
+<div class="relative flex flex-col md:flex-row md:items-start md:gap-8">
+<div class="mb-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-[4px] border-background-dark bg-primary text-white z-10 md:mb-0">
+<span class="material-symbols-outlined">person_add</span>
+</div>
+<div class="flex-1 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm md:p-8">
+<span class="text-sm font-bold text-primary">Step 1</span>
+<h3 class="mt-1 text-xl font-bold text-white">Register Faces</h3>
+<p class="mt-2 text-slate-400">Upload employee or student photos individually or in bulk to build your secure baseline database.</p>
+</div>
+</div>
+<div class="relative flex flex-col md:flex-row md:items-start md:gap-8">
+<div class="mb-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-[4px] border-background-dark bg-slate-800 text-white z-10 md:mb-0">
+<span class="material-symbols-outlined">videocam</span>
+</div>
+<div class="flex-1 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm md:p-8">
+<span class="text-sm font-bold text-cyan-400">Step 2</span>
+<h3 class="mt-1 text-xl font-bold text-white">Connect Cameras</h3>
+<p class="mt-2 text-slate-400">Link your existing IP cameras or webcams to the Presenza network. No specialized hardware required.</p>
+</div>
+</div>
+<div class="relative flex flex-col md:flex-row md:items-start md:gap-8">
+<div class="mb-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-[4px] border-background-dark bg-slate-800 text-white z-10 md:mb-0">
+<span class="material-symbols-outlined">center_focus_strong</span>
+</div>
+<div class="flex-1 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm md:p-8">
+<span class="text-sm font-bold text-violet-400">Step 3</span>
+<h3 class="mt-1 text-xl font-bold text-white">AI Scans Room</h3>
+<p class="mt-2 text-slate-400">Our advanced neural networks continuously scan the video feed, identifying multiple faces simultaneously in milliseconds.</p>
+</div>
+</div>
+<div class="relative flex flex-col md:flex-row md:items-start md:gap-8">
+<div class="mb-4 flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-[4px] border-background-dark bg-slate-800 text-white z-10 md:mb-0">
+<span class="material-symbols-outlined">bar_chart</span>
+</div>
+<div class="flex-1 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm md:p-8">
+<span class="text-sm font-bold text-emerald-400">Step 4</span>
+<h3 class="mt-1 text-xl font-bold text-white">View Insights</h3>
+<p class="mt-2 text-slate-400">Access real-time attendance logs, export reports, and analyze behavior trends through the intuitive dashboard.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>

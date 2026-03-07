@@ -7,13 +7,20 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
+    env_file:
+      - ./backend/.env
     environment:
-      - DATABASE_URL=${DATABASE_URL:-sqlite:///./presenza.db}
-      - SECRET_KEY=${SECRET_KEY:-supersecretkey}
+      - DEBUG=true
+      - LOG_LEVEL=INFO
+      - ALLOWED_ORIGINS=http://localhost:3000
     volumes:
-      - ./backend/app:/app/app
       - ./backend/embeddings:/app/embeddings
-      - ./backend/presenza.db:/app/presenza.db
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   frontend:
     build: ./frontend
@@ -24,4 +31,5 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
