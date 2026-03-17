@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Presenza — Mobile Camera</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a12;
+      --surface: #13131f;
+      --surface2: #1c1c2e;
+      --border: #2a2a40;
+      --accent: #6c63ff;
+      --accent2: #a78bfa;
+      --green: #22d3a0;
+      --red: #f43f5e;
+      --yellow: #fbbf24;
+      --text: #e2e2f0;
+      --muted: #6b6b8a;
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0 env(safe-area-inset-bottom);
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    header {
+      width: 100%;
+      padding: 20px 20px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,18,0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo {
+      width: 34px; height: 34px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 18px;
+    }
+    header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    header span { font-size: 13px; color: var(--muted); margin-left: auto; font-weight: 500; }
+
+    /* ── Main ── */
+    main {
+      width: 100%; max-width: 480px;
+      padding: 20px 16px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .card-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.8px;
+      color: var(--muted); text-transform: uppercase; margin-bottom: 12px;
+    }
+
+    /* ── Inputs ── */
+    .input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .field { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    label { font-size: 12px; color: var(--muted); font-weight: 500; }
+    input[type="text"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 15px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    input[type="text"]::placeholder { color: var(--muted); }
+
+    /* ── FPS Slider ── */
+    .slider-row { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+    .slider-row label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    input[type="range"] {
+      flex: 1; accent-color: var(--accent);
+      height: 4px; cursor: pointer;
+    }
+    .slider-val {
+      font-size: 13px; font-weight: 600; color: var(--accent2);
+      min-width: 36px; text-align: right;
+    }
+
+    /* ── Video Preview ── */
+    .video-wrap {
+      position: relative;
+      background: #000;
+      border-radius: 14px;
+      overflow: hidden;
+      width: 100%;
+      aspect-ratio: 4/3;
+    }
+    video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1); /* mirror for selfie */
+      display: block;
+    }
+    .video-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(10,10,18,0.7);
+      flex-direction: column; gap: 8px;
+      font-size: 14px; color: var(--muted);
+    }
+    .video-overlay .cam-icon { font-size: 36px; }
+    #videoEl { display: none; }
+
+    /* ── Status badge ── */
+    .status-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px;
+      background: var(--surface2);
+      border-radius: 10px;
+      font-size: 13px;
+    }
+    .dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 1.8s infinite; }
+    .dot.error { background: var(--red); }
+    .dot.connecting { background: var(--yellow); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    #statusText { flex: 1; color: var(--text); }
+    #frameCount { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 100%; padding: 15px;
+      border: none; border-radius: 12px;
+      font-family: inherit; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #8b5cf6);
+      color: #fff;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(108,99,255,0.4); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .btn-danger {
+      background: rgba(244,63,94,0.15);
+      color: var(--red);
+      border: 1px solid rgba(244,63,94,0.3);
+    }
+    .btn-danger:hover { background: rgba(244,63,94,0.25); }
+
+    .btn-sm {
+      width: auto; padding: 10px 16px;
+      font-size: 13px; border-radius: 10px;
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-sm:hover { border-color: var(--accent); color: var(--accent2); }
+
+    /* ── Stats Grid ── */
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat {
+      background: var(--surface2); border-radius: 12px; padding: 14px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .stat-label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-value { font-size: 22px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+    .stat-value.green { color: var(--green); }
+    .stat-value.purple { color: var(--accent2); }
+
+    /* ── AI results ── */
+    #aiLog {
+      max-height: 160px; overflow-y: auto;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .ai-item {
+      background: var(--surface2); border-radius: 8px; padding: 10px 12px;
+      font-size: 12px; display: flex; align-items: center; gap: 8px;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+    .ai-item .face-id { font-weight: 600; color: var(--accent2); }
+    .ai-chip {
+      font-size: 10px; font-weight: 600; padding: 2px 7px;
+      border-radius: 20px; background: rgba(34,211,160,0.15); color: var(--green);
+      margin-left: auto;
+    }
+    .ai-chip.unknown { background: rgba(251,191,36,0.15); color: var(--yellow); }
+    .no-ai { color: var(--muted); font-size: 13px; text-align: center; padding: 20px 0; }
+
+    /* ── Camera toggle ── */
+    .cam-toggle { display: flex; gap: 8px; }
+    .cam-btn {
+      flex: 1; padding: 10px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--muted); font-size: 12px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; font-family: inherit;
+    }
+    .cam-btn.active { background: rgba(108,99,255,0.15); border-color: var(--accent); color: var(--accent2); }
+
+    canvas { display: none; }
+
+    /* ── Motion overlay ── */
+    .motion-badge {
+      position: absolute; top: 10px; right: 10px;
+      background: rgba(244,63,94,0.85); color: #fff;
+      font-size: 11px; font-weight: 700; padding: 4px 10px;
+      border-radius: 20px; display: none;
+      animation: fadeIn 0.2s ease;
+    }
+    .motion-badge.visible { display: block; }
+    .live-badge {
+      position: absolute; top: 10px; left: 10px;
+      background: rgba(244,63,94,0.9); color: #fff;
+      font-size: 11px; font-weight: 700; padding: 4px 10px;
+      border-radius: 20px; display: none; align-items: center; gap: 5px;
+    }
+    .live-badge.visible { display: flex; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: pulse 1s infinite; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">👁</div>
+  <h1>Presenza</h1>
+  <span>Mobile Camera</span>
+</header>
+
+<main>
+
+  <!-- Connection Config -->
+  <div class="card">
+    <div class="card-label">Connection</div>
+    <div class="input-row">
+      <div class="field">
+        <label>PC IP Address</label>
+        <input type="text" id="ipInput" placeholder="e.g. 192.168.1.5" />
+      </div>
+      <div class="field" style="max-width:90px">
+        <label>Port</label>
+        <input type="text" id="portInput" placeholder="8000" value="8000" />
+      </div>
+    </div>
+    <div style="height:10px"></div>
+    <div class="input-row">
+      <div class="field">
+        <label>Camera ID</label>
+        <input type="text" id="camIdInput" placeholder="e.g. cam1" value="cam1" />
+      </div>
+    </div>
+    <div style="height:14px"></div>
+    <div class="card-label">Frame Rate</div>
+    <div class="slider-row">
+      <label>FPS</label>
+      <input type="range" id="fpsSlider" min="1" max="30" value="15" />
+      <span class="slider-val" id="fpsVal">15 fps</span>
+    </div>
+  </div>
+
+  <!-- Camera Preview -->
+  <div class="card" style="padding: 14px 14px 14px;">
+    <div class="card-label" style="margin-bottom:10px">Camera Preview</div>
+
+    <!-- Front / Back toggle -->
+    <div class="cam-toggle" style="margin-bottom:10px">
+      <button class="cam-btn" id="btnFront" onclick="switchCamera('user')">🤳 Front</button>
+      <button class="cam-btn active" id="btnBack" onclick="switchCamera('environment')">📷 Rear</button>
+    </div>
+
+    <div class="video-wrap">
+      <div class="video-overlay" id="videoOverlay">
+        <div class="cam-icon">📷</div>
+        <span>Camera not started</span>
+      </div>
+      <video id="videoEl" autoplay playsinline muted></video>
+      <div class="live-badge" id="liveBadge"><div class="live-dot"></div> LIVE</div>
+      <div class="motion-badge" id="motionBadge">⚡ MOTION</div>
+    </div>
+    <canvas id="captureCanvas"></canvas>
+  </div>
+
+  <!-- Status -->
+  <div class="card">
+    <div class="card-label">Status</div>
+    <div class="status-bar">
+      <div class="dot" id="statusDot"></div>
+      <span id="statusText">Not connected</span>
+      <span id="frameCount"></span>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Frames Sent</div>
+      <div class="stat-value purple" id="statFrames">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Faces Found</div>
+      <div class="stat-value green" id="statFaces">0</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <button class="btn btn-primary" id="btnConnect" onclick="startStreaming()">
+    🚀 Start Streaming
+  </button>
+  <button class="btn btn-danger" id="btnStop" onclick="stopStreaming()" style="display:none">
+    ⏹ Stop Streaming
+  </button>
+
+  <!-- AI Results -->
+  <div class="card">
+    <div class="card-label">Live AI Analysis</div>
+    <div id="aiLog"><div class="no-ai">No AI results yet — start streaming to see face recognition results.</div></div>
+  </div>
+
+</main>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  let ws = null;
+  let stream = null;
+  let sendInterval = null;
+  let framesSent = 0;
+  let facesFound = 0;
+  let facingMode = 'environment'; // rear camera by default
+
+  const video    = document.getElementById('videoEl');
+  const canvas   = document.getElementById('captureCanvas');
+  const ctx      = canvas.getContext('2d');
+  const overlay  = document.getElementById('videoOverlay');
+  const liveBadge   = document.getElementById('liveBadge');
+  const motionBadge = document.getElementById('motionBadge');
+  let prevImageData = null;
+  let motionTimer = null;
+
+  // ── FPS slider ──────────────────────────────────────────────────────────────
+  const fpsSlider = document.getElementById('fpsSlider');
+  const fpsVal    = document.getElementById('fpsVal');
+  fpsSlider.addEventListener('input', () => {
+    fpsVal.textContent = fpsSlider.value + ' fps';
+    if (sendInterval) {
+      clearInterval(sendInterval);
+      sendInterval = setInterval(sendFrame, 1000 / parseInt(fpsSlider.value));
+    }
+  });
+
+  // ── Camera Switch ───────────────────────────────────────────────────────────
+  function switchCamera(mode) {
+    facingMode = mode;
+    document.getElementById('btnFront').classList.toggle('active', mode === 'user');
+    document.getElementById('btnBack').classList.toggle('active', mode === 'environment');
+    // mirror only for front camera
+    video.style.transform = mode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
+    if (stream) {
+      stream.getTracks().forEach(t => t.stop());
+      startCamera();
+    }
+  }
+
+  // ── Camera Start ────────────────────────────────────────────────────────────
+  async function startCamera() {
+    try {
+      const constraints = {
+        video: {
+          facingMode: { ideal: facingMode },
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      };
+      stream = await navigator.mediaDevices.getUserMedia(constraints);
+      video.srcObject = stream;
+      video.style.display = 'block';
+      overlay.style.display = 'none';
+      liveBadge.classList.add('visible');
+      return true;
+    } catch (err) {
+      setStatus('error', '❌ Camera access denied: ' + err.message);
+      return false;
+    }
+  }
+
+  // ── Motion Detection ────────────────────────────────────────────────────────
+  function detectMotion() {
+    const w = canvas.width, h = canvas.height;
+    const current = ctx.getImageData(0, 0, w, h);
+    if (!prevImageData) { prevImageData = current; return false; }
+
+    const d1 = prevImageData.data, d2 = current.data;
+    let diff = 0;
+    const step = 8; // sample every 8th pixel for speed
+    for (let i = 0; i < d1.length; i += step * 4) {
+      diff += Math.abs(d1[i] - d2[i]) + Math.abs(d1[i+1] - d2[i+1]) + Math.abs(d1[i+2] - d2[i+2]);
+    }
+    const avgDiff = diff / (d1.length / (step * 4));
+    prevImageData = current;
+    return avgDiff > 12; // threshold — tune as needed
+  }
+
+  // ── Send Frame ──────────────────────────────────────────────────────────────
+  function sendFrame() {
+    if (!ws || ws.readyState !== WebSocket.OPEN || !stream) return;
+
+    canvas.width  = video.videoWidth  || 640;
+    canvas.height = video.videoHeight || 480;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Motion detection
+    const motion = detectMotion();
+    if (motion) {
+      motionBadge.classList.add('visible');
+      clearTimeout(motionTimer);
+      motionTimer = setTimeout(() => motionBadge.classList.remove('visible'), 800);
+    }
+
+    canvas.toBlob(blob => {
+      if (!blob) return;
+      blob.arrayBuffer().then(buf => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(buf);
+          framesSent++;
+          document.getElementById('statFrames').textContent = framesSent;
+          document.getElementById('frameCount').textContent = framesSent + ' frames';
+        }
+      });
+    }, 'image/jpeg', 0.6);
+  }
+
+  // ── WebSocket ───────────────────────────────────────────────────────────────
+  async function startStreaming() {
+    const ip     = document.getElementById('ipInput').value.trim();
+    const port   = document.getElementById('portInput').value.trim() || '8000';
+    const camId  = document.getElementById('camIdInput').value.trim() || 'cam1';
+
+    if (!ip) { alert('Please enter your PC\'s IP address.'); return; }
+
+    setStatus('connecting', 'Starting camera...');
+    const ok = await startCamera();
+    if (!ok) return;
+
+    const url = `ws://${ip}:${port}/ws/stream/${camId}?client_type=sender`;
+    setStatus('connecting', 'Connecting to backend...');
+
+    try {
+      ws = new WebSocket(url);
+      ws.binaryType = 'arraybuffer';
+
+      ws.onopen = () => {
+        setStatus('connected', `Streaming to ${ip}:${port} → cam: ${camId}`);
+        document.getElementById('btnConnect').style.display = 'none';
+        document.getElementById('btnStop').style.display = 'block';
+        const fps = parseInt(fpsSlider.value);
+        sendInterval = setInterval(sendFrame, 1000 / fps);
+      };
+
+      ws.onmessage = (evt) => {
+        try {
+          const msg = JSON.parse(evt.data);
+          if (msg.type === 'ai_analysis' && Array.isArray(msg.data)) {
+            handleAIResults(msg.data);
+          }
+        } catch {}
+      };
+
+      ws.onerror = () => setStatus('error', '❌ Connection failed — check IP and backend');
+      ws.onclose = () => {
+        setStatus('disconnected', 'Disconnected');
+        clearInterval(sendInterval);
+        sendInterval = null;
+        document.getElementById('btnConnect').style.display = 'block';
+        document.getElementById('btnStop').style.display = 'none';
+      };
+
+    } catch (err) {
+      setStatus('error', '❌ ' + err.message);
+    }
+  }
+
+  function stopStreaming() {
+    if (sendInterval) { clearInterval(sendInterval); sendInterval = null; }
+    if (ws) { ws.close(); ws = null; }
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    video.style.display = 'none';
+    overlay.style.display = 'flex';
+    liveBadge.classList.remove('visible');
+    motionBadge.classList.remove('visible');
+    setStatus('idle', 'Not connected');
+    document.getElementById('btnConnect').style.display = 'block';
+    document.getElementById('btnStop').style.display = 'none';
+    framesSent = 0; facesFound = 0;
+    document.getElementById('statFrames').textContent = '0';
+    document.getElementById('statFaces').textContent = '0';
+    document.getElementById('frameCount').textContent = '';
+  }
+
+  // ── AI Results ──────────────────────────────────────────────────────────────
+  function handleAIResults(decisions) {
+    const log = document.getElementById('aiLog');
+    // Clear placeholder
+    const placeholder = log.querySelector('.no-ai');
+    if (placeholder) placeholder.remove();
+
+    decisions.forEach(d => {
+      facesFound++;
+      document.getElementById('statFaces').textContent = facesFound;
+
+      const isKnown = d.action === 'mark_attendance';
+      const label = d.user_id ? `User ${d.user_id}` : 'Unknown';
+      const chipClass = isKnown ? '' : 'unknown';
+      const chipLabel = isKnown ? '✓ Known' : '? Unknown';
+
+      const item = document.createElement('div');
+      item.className = 'ai-item';
+      item.innerHTML = `
+        <span>🧑</span>
+        <span class="face-id">${label}</span>
+        <span style="color:var(--muted);font-size:11px">conf: ${((d.confidence||0)*100).toFixed(0)}%</span>
+        <span class="ai-chip ${chipClass}">${chipLabel}</span>
+      `;
+      log.prepend(item);
+
+      // Keep only last 10
+      while (log.children.length > 10) log.removeChild(log.lastChild);
+    });
+  }
+
+  // ── Status Helper ───────────────────────────────────────────────────────────
+  function setStatus(state, text) {
+    const dot = document.getElementById('statusDot');
+    const txt = document.getElementById('statusText');
+    dot.className = 'dot';
+    if (state === 'connected')   dot.classList.add('connected');
+    else if (state === 'error')  dot.classList.add('error');
+    else if (state === 'connecting') dot.classList.add('connecting');
+    txt.textContent = text;
+  }
+</script>
+</body>
+</html>

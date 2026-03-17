@@ -1,8 +1,11 @@
 from contextlib import asynccontextmanager
 import logging
 
+from pathlib import Path
+import os
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -72,3 +75,9 @@ app.include_router(ai_trigger.router)
 app.include_router(analytics.router)
 app.include_router(cameras.router)
 app.include_router(stream.router)
+
+# ── Mobile Camera Sender Page ─────────────────────────────────────────────────
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+static_dir = os.path.join(base_dir, "static")
+app.mount("/mobile", StaticFiles(directory=static_dir, html=True), name="mobile")
+

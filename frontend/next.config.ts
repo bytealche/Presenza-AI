@@ -7,12 +7,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   images: {
-    unoptimized: true,   // GitHub Pages doesn't support Next.js Image Optimization API
+    unoptimized: true,
   },
-  ...(isProd ? {
-    output: 'export',      // Key for GitHub Pages static export
-    basePath: '/Presenza-AI',
-  } : {}),
 };
 
 export default nextConfig;

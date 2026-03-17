@@ -1,16 +1,24 @@
 export const getApiUrl = () => {
     // If NEXT_PUBLIC_API_URL is set (e.g. in cloud env), use it
-    if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+    if (process.env.NEXT_PUBLIC_API_URL) {
+        return process.env.NEXT_PUBLIC_API_URL;
+    }
 
-    // Otherwise, assume backend is on same host as frontend but port 8000
-    // This allows accessing via 192.168.x.x without changing code
+    // In production, if it's missing, we log a warning but still fail gracefully
+    if (process.env.NODE_ENV === "production") {
+        console.warn("NEXT_PUBLIC_API_URL is not set in production. Ensure environment variables are loaded.");
+        // Fallback relative or assumed domain if possible, but default empty to avoid localhost leakage
+        return "";
+    }
+
+    // Otherwise (local dev), assume backend is on same host as frontend
     if (typeof window !== "undefined") {
         const protocol = window.location.protocol;
         const hostname = window.location.hostname;
         return `${protocol}//${hostname}:8000`;
     }
 
-    return "http://localhost:8000"; // Fallback for SSR
+    return "http://localhost:8000"; // Fallback for SSR during dev
 };
 
 export const getWsUrl = (path: string) => {
