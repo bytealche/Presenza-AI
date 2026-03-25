@@ -1,0 +1,14 @@
+import os
+import psycopg2
+from dotenv import load_dotenv
+
+load_dotenv()
+db_url = os.environ.get("DATABASE_URL")
+
+print(f"Testing connection to: {db_url}")
+try:
+    conn = psycopg2.connect(db_url, connect_timeout=5)
+    print("Connection successful!")
+    conn.close()
+except Exception as e:
+    print(f"Connection failed: {e}")

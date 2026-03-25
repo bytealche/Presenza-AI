@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Presenza AI | Intelligence Meets Attendance</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Manrope:wght@400;500;600&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #11131f;
+            color: #e1e1f3;
+            font-family: 'Manrope', sans-serif;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(50, 52, 65, 0.6);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .hero-gradient {
+            background: radial-gradient(circle at 50% -20%, #1d1f2c 0%, #0c0e1a 100%);
+        }
+        .neon-glow-cyan {
+            box-shadow: 0 0 32px rgba(0, 218, 243, 0.08);
+        }
+        .text-gradient-cyan {
+            background: linear-gradient(to right, #9cf0ff, #00daf3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .ghost-border {
+            border: 1px solid rgba(145, 144, 150, 0.15);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "secondary-fixed": "#9cf0ff",
+                "on-error": "#690005",
+                "on-tertiary-fixed": "#23005c",
+                "surface-variant": "#323441",
+                "on-secondary": "#00363d",
+                "inverse-primary": "#5c5d6c",
+                "surface-tint": "#c5c5d6",
+                "on-tertiary-fixed-variant": "#5516be",
+                "outline-variant": "#46464c",
+                "tertiary": "#d0bcff",
+                "on-primary-fixed-variant": "#444654",
+                "surface-container": "#1d1f2c",
+                "primary-fixed-dim": "#c5c5d6",
+                "outline": "#919096",
+                "primary-container": "#0c0e1a",
+                "on-error-container": "#ffdad6",
+                "tertiary-fixed-dim": "#d0bcff",
+                "secondary-fixed-dim": "#00daf3",
+                "primary-fixed": "#e1e1f3",
+                "primary": "#c5c5d6",
+                "surface-container-lowest": "#0b0d19",
+                "tertiary-fixed": "#e9ddff",
+                "error": "#ffb4ab",
+                "on-secondary-container": "#00616d",
+                "surface": "#11131f",
+                "on-surface-variant": "#c7c5cc",
+                "on-tertiary": "#3c0091",
+                "on-primary": "#2e303d",
+                "surface-dim": "#11131f",
+                "inverse-on-surface": "#2e303d",
+                "error-container": "#93000a",
+                "on-primary-container": "#797a8a",
+                "surface-container-highest": "#323441",
+                "tertiary-container": "#14003b",
+                "on-secondary-fixed": "#001f24",
+                "background": "#11131f",
+                "surface-container-high": "#272936",
+                "on-primary-fixed": "#191b27",
+                "surface-container-low": "#191b27",
+                "on-surface": "#e1e1f3",
+                "secondary-container": "#00e3fd",
+                "surface-bright": "#373846",
+                "on-secondary-fixed-variant": "#004f58",
+                "inverse-surface": "#e1e1f3",
+                "secondary": "#bdf4ff",
+                "on-tertiary-container": "#8b5cf6",
+                "on-background": "#e1e1f3"
+              },
+              fontFamily: {
+                "headline": ["Noto Serif"],
+                "body": ["Manrope"],
+                "label": ["Inter"]
+              },
+              borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-surface selection:bg-secondary/30">
+<!-- TopNavBar -->
+<nav class="bg-surface_container_highest/60 backdrop-blur-xl rounded-full mt-6 mx-auto max-w-5xl px-6 py-3 sticky top-6 z-50 border border-white/15 shadow-[0_0_32px_rgba(208,188,255,0.08)] flex justify-between items-center w-full">
+<div class="text-2xl font-serif font-bold text-on_surface tracking-tight">Presenza</div>
+<div class="hidden md:flex items-center space-x-8">
+<a class="text-secondary border-b-2 border-secondary pb-1 font-label text-xs uppercase tracking-wide font-semibold" href="#">Product</a>
+<a class="text-on_surface_variant hover:text-on_surface transition-colors font-label text-xs uppercase tracking-wide font-semibold" href="#">Solutions</a>
+<a class="text-on_surface_variant hover:text-on_surface transition-colors font-label text-xs uppercase tracking-wide font-semibold" href="#">Enterprise</a>
+<a class="text-on_surface_variant hover:text-on_surface transition-colors font-label text-xs uppercase tracking-wide font-semibold" href="#">Pricing</a>
+</div>
+<button class="bg-gradient-to-r from-secondary-fixed to-secondary-fixed-dim text-on-secondary px-6 py-2 rounded-md font-label text-xs uppercase tracking-widest font-bold hover:scale-105 active:scale-95 transition-all duration-300">
+            Request Demo
+        </button>
+</nav>
+<!-- Hero Section -->
+<section class="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-32 hero-gradient px-6 overflow-hidden">
+<div class="absolute inset-0 z-0 opacity-20 pointer-events-none">
+<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-tertiary/20 rounded-full blur-[120px]"></div>
+<div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-[120px]"></div>
+</div>
+<div class="relative z-10 text-center max-w-4xl mx-auto mb-20">
+<span class="font-label text-xs uppercase tracking-[0.3em] text-secondary mb-6 block">Intelligence Meets Attendance</span>
+<h1 class="font-headline text-5xl md:text-7xl lg:text-8xl font-medium text-on-surface leading-tight tracking-tight">
+                Be Present <br/> Without <span class="italic text-gradient-cyan">The Process.</span>
+</h1>
+<p class="font-body text-lg md:text-xl text-on-surface-variant max-w-2xl mx-auto mt-8 leading-relaxed">
+                Enterprise-grade visual intelligence for modern environments. Automated, precise, and ethically designed attendance tracking.
+            </p>
+<div class="mt-12 flex flex-col sm:flex-row gap-6 justify-center">
+<button class="px-10 py-4 bg-gradient-to-r from-secondary-fixed to-secondary-fixed-dim text-on-secondary font-bold rounded-md shadow-[0_0_40px_rgba(0,218,243,0.2)] hover:shadow-[0_0_60px_rgba(0,218,243,0.4)] transition-all">
+                    Start Integration
+                </button>
+<button class="px-10 py-4 ghost-border rounded-md text-on-surface font-semibold hover:bg-white/5 transition-all">
+                    View Case Studies
+                </button>
+</div>
+</div>
+<!-- Hero Visual: 3D Classroom/Live Feed -->
+<div class="relative w-full max-w-6xl mx-auto group">
+<div class="absolute -inset-4 bg-gradient-to-r from-secondary/10 via-tertiary/10 to-secondary/10 rounded-2xl blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
+<div class="relative bg-surface-container-low rounded-xl overflow-hidden ghost-border shadow-2xl">
+<img alt="Modern classroom environment" class="w-full aspect-video object-cover opacity-60 grayscale-[0.5]" data-alt="Modern university lecture hall with rows of seats and ambient lighting, viewed from a high technical perspective with digital overlays" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBn3z4F6f7cfzvJQ___6nYa5NHRJe9eSUpH0D3wAxmew7dUFmzEbv_KKlEgREjMharndXoqOdtzXMYk9Ris4RpZtQR7dC3eep2of25jQfLZdc0Ud5QZOj5QJFVBL6Rc-kXxKOXBFyIpVdrlsS0CxMyJRjk5l3u-lbwAENAnDKWbF1Bgn1ndmcFMR02_YIWNwOlRIL6sAVCJA7gkfbS_cXmrmkK4FGARsSFqDnru-ZIs1aNTkQrNNs11gXCeVQ-kqVw0ZEpTLnTXZcBQ"/>
+<!-- AI Overlay Mockup -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<div class="w-full h-full border-[1px] border-secondary/20 flex flex-wrap content-start p-12 gap-8">
+<!-- Scanning Squares -->
+<div class="w-32 h-32 border border-secondary/60 relative animate-pulse">
+<div class="absolute -top-1 -left-1 w-2 h-2 bg-secondary"></div>
+<div class="absolute top-2 right-2 flex items-center gap-1">
+<span class="w-1 h-1 bg-secondary rounded-full"></span>
+<span class="text-[8px] font-label text-secondary uppercase font-bold">Matching...</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Floating Glass Card -->
+<div class="absolute top-8 right-8 w-72 glass-panel p-6 rounded-xl ghost-border neon-glow-cyan">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 bg-error rounded-full animate-ping"></span>
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface">Live Feed</span>
+</div>
+<span class="font-label text-[10px] text-on-surface-variant uppercase">Cam_01</span>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="font-label text-[10px] text-on-surface-variant uppercase">Current Cap:</span>
+<span class="font-body text-sm font-bold text-secondary">42 / 50</span>
+</div>
+<div class="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[84%]"></div>
+</div>
+<div class="pt-2 border-t border-white/5 space-y-2">
+<div class="flex items-center gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest"></div>
+<div class="flex-1">
+<div class="h-1.5 w-16 bg-white/10 rounded"></div>
+</div>
+<span class="font-label text-[8px] text-secondary uppercase">Verified</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Performance Stats -->
+<section class="py-24 bg-surface-container-lowest relative z-10">
+<div class="max-w-7xl mx-auto px-12 grid grid-cols-1 md:grid-cols-3 gap-16 text-center">
+<div>
+<div class="font-headline text-5xl text-on-surface mb-2">99.9%</div>
+<div class="font-label text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Precision Rate</div>
+</div>
+<div>
+<div class="font-headline text-5xl text-secondary mb-2">&lt;0.2s</div>
+<div class="font-label text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Latency Floor</div>
+</div>
+<div>
+<div class="font-headline text-5xl text-on-surface mb-2">150M+</div>
+<div class="font-label text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Events Processed</div>
+</div>
+</div>
+</section>
+<!-- Core Features Section -->
+<section class="py-32 bg-surface px-6">
+<div class="max-w-7xl mx-auto">
+<div class="mb-24">
+<span class="font-label text-xs uppercase tracking-[0.3em] text-tertiary mb-4 block">Capabilites</span>
+<h2 class="font-headline text-4xl md:text-5xl font-medium max-w-2xl">Clinical precision in <span class="italic">behavioral recognition.</span></h2>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Main Feature: Face Recognition -->
+<div class="lg:col-span-7 bg-surface-container-low rounded-xl p-12 ghost-border group relative overflow-hidden">
+<div class="relative z-10 h-full flex flex-col justify-between">
+<div>
+<span class="material-symbols-outlined text-secondary text-4xl mb-6" data-icon="face">face</span>
+<h3 class="font-headline text-3xl mb-4">Real-Time Face Recognition</h3>
+<p class="font-body text-on-surface-variant leading-relaxed max-w-md">
+                                Secure, encrypted biometric mapping that identifies individuals instantly across multiple entry points without friction.
+                            </p>
+</div>
+<div class="mt-12 flex gap-4">
+<span class="px-4 py-1.5 bg-secondary/10 rounded-full text-secondary font-label text-[10px] uppercase tracking-wider font-bold">Biometric Liveness</span>
+<span class="px-4 py-1.5 bg-secondary/10 rounded-full text-secondary font-label text-[10px] uppercase tracking-wider font-bold">AES-256</span>
+</div>
+</div>
+<!-- Visual Ornament -->
+<div class="absolute right-[-10%] top-[-10%] w-[50%] opacity-20 group-hover:opacity-40 transition-opacity duration-700">
+<img alt="Scanning visual" class="rounded-full aspect-square object-cover" data-alt="Highly detailed 3D technical blueprint of a human facial mesh with glowing data points on a dark navy background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRmuVS-Lwcp5PQZR0vKIk-z7slnLH1X2CjWQyNAuBGt9JgN78BDIcxtz_4hWIIExtuXbVaOJRngOx0LpSxdiL1Us7HYZ9b-zxbM_GA5FLoNhRWjGjionuKFP9MJGhkN9FfqcYdcwQfEqD1FP0Z8Ab8xdoTmmymBb8vh7EHlaB3tqHDzR37VGX9ASf12r8HBMqtMagYT649S6sfm_gfvdELoz2J8Yr4O_cK58svVIbUHFUSFVf3F9EXGAocG-_vH-HKraOtoLjcbj3b"/>
+</div>
+</div>
+<!-- Feature: AI Behavior Analysis -->
+<div class="lg:col-span-5 bg-surface-container-high rounded-xl p-12 ghost-border flex flex-col justify-center">
+<div class="mb-12">
+<div class="flex items-center gap-4 mb-6">
+<div class="w-12 h-12 rounded-lg bg-tertiary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary" data-icon="psychology">psychology</span>
+</div>
+</div>
+<h3 class="font-headline text-2xl mb-4">AI Behavior Analysis</h3>
+<p class="font-body text-on-surface-variant text-sm leading-relaxed">
+                            Go beyond presence. Monitor engagement, focus levels, and environmental interaction through advanced skeletal tracking.
+                        </p>
+</div>
+<!-- Metric Card -->
+<div class="glass-panel p-6 rounded-lg ghost-border mt-auto">
+<div class="flex justify-between items-center mb-4">
+<span class="font-label text-[10px] uppercase text-on-surface-variant">Engagement Index</span>
+<span class="font-label text-[10px] uppercase text-tertiary">Optimized</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline text-4xl text-on-surface">88%</span>
+<span class="material-symbols-outlined text-secondary text-sm" data-icon="trending_up">trending_up</span>
+</div>
+</div>
+</div>
+<!-- Feature: Multi-Camera -->
+<div class="lg:col-span-12 bg-surface-container-lowest rounded-xl p-12 ghost-border">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+<div>
+<h3 class="font-headline text-3xl mb-6">Multi-Camera <br/> Mesh Support</h3>
+<p class="font-body text-on-surface-variant leading-relaxed mb-8">
+                                Seamlessly stitch together hundreds of feeds into a single, unified oversight layer. No blind spots, no dropped packets.
+                            </p>
+<button class="font-label text-xs uppercase tracking-widest text-secondary font-bold flex items-center gap-2 group">
+                                Explore Architecture 
+                                <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="aspect-video bg-surface-container-high rounded-lg overflow-hidden ghost-border">
+<img alt="CCTV 1" class="w-full h-full object-cover opacity-50 hover:opacity-100 transition duration-500" data-alt="High angle grainy CCTV security footage of an empty corporate hallway in cool blue tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCdK7PkXdkZiUxzAARD4SWRwcz6f2Rk-1-Kd11-W6mzlAJy-vuAT0hQsa-lYBW0avy4NvDPm404Ibvma7NARhF4CBFieenPWhhh_V-9UvjOsk2ENJbzSUZj8WVlAD0kMGyL-be2-sUTy3c2Zl411qWRM2qNx_UUMW4CDF4jKGaGopme5mSndneHDnUpGDNdHiigEoQ7bMnR93IEo9XMpfIZyANbJLsXhBCH00lKIl1ZVnpGcLFcHqd578pYB9qhJ1iT76KtTOHgK1yS"/>
+</div>
+<div class="aspect-video bg-surface-container-high rounded-lg overflow-hidden ghost-border">
+<img alt="CCTV 2" class="w-full h-full object-cover opacity-50 hover:opacity-100 transition duration-500" data-alt="Black and white thermal security camera view of people moving through a building lobby" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdsciQotrWnieMKBVPn5dfNi_YbebcfwTetiNL_gUCvPf-qdWEuNMXD9FGCVhIWBTVeqUU-fEP-cgggElIVmtlVvo3otpQLU9TD-fFEDJM44V3N9sVUArldzfGD9cgu8YkUP_Q88CSLcBolicpJXvvI5Ibg-F5mLf_aWmyKog41l2fSuxbCUZ-LCID-8D7qu7OhUMIF69RooHwRLcXFRPMCPcTfRlncJhmjXXwjlx-Ouv1OOyc3KLwNG7Vo-jY1QiOO8Yw9o1PwGQQ"/>
+</div>
+<div class="aspect-video bg-surface-container-high rounded-lg overflow-hidden ghost-border">
+<img alt="CCTV 3" class="w-full h-full object-cover opacity-50 hover:opacity-100 transition duration-500" data-alt="Security monitor view of a modern glass-walled office boardroom with minimalist furniture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvxmGCXVIGNFcSafsmLrDAPhJ7HirHPvYm5FtA0qm_47Sb8kKaXoi6L_750ZpFV32hB6geJ77kulQW55Tvl3baqnSuNIJH2bIJN9-hS-0xKYD0IgksbUcHei6ptwHcyL_Sj7IqEmljia6LtiAn0KFRji8PVw9SbAMepPhZujfV8KzyBr_3ms1rMbrAVBOqtzwNt1MnXGgJRKX3ENDnOZxC4lQbGaWtAMAA7AXAkWKnReMY-Oo7teL7LDzGFA5Ml4p80JbbQaikdIGa"/>
+</div>
+<div class="aspect-video bg-surface-container-high rounded-lg overflow-hidden ghost-border">
+<img alt="CCTV 4" class="w-full h-full object-cover opacity-50 hover:opacity-100 transition duration-500" data-alt="Wide angle view of a sleek skyscraper facade reflecting city lights at night with a digital grid overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiDN-TZAqU5dMZ2tp1P0UHJ8K56jQq1FaNvaV6kb1-xpKGHmeA68IFw5TxyD6QseCrh_sCjRa87YHMWhW00PkjM6NEswKvuNbmJ60BVpeYE0xekwdtnEwOekcaBl5R49Lt7v3ZbmmhIj6_fRoYVR2Sbm6Kv43Cdnu6yvYoC_kglJ4XOXNlYUxGRgDD-CFd3NE-BPjteDcvNYVA0vjvIGFPmrjMHVbTsKLxOb-5cI9nHoCWoVMN7eAtA7noY78t1i7RbMkfba9ps_7V"/>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Integration Section -->
+<section class="py-32 bg-primary-container relative overflow-hidden">
+<div class="max-w-7xl mx-auto px-12">
+<div class="flex flex-col md:flex-row justify-between items-end mb-24 gap-8">
+<div class="max-w-xl">
+<span class="font-label text-xs uppercase tracking-[0.3em] text-secondary mb-4 block">Infrastructure</span>
+<h2 class="font-headline text-4xl md:text-5xl font-medium">Seamless setup, <br/> <span class="text-on-surface-variant">infinite scale.</span></h2>
+</div>
+<div class="pb-2">
+<p class="font-body text-on-surface-variant text-sm">Deployment typically takes less than 4 hours for enterprise clusters.</p>
+</div>
+</div>
+<div class="relative">
+<!-- Timeline Line -->
+<div class="absolute left-0 md:left-1/2 top-0 bottom-0 w-px bg-white/10 -translate-x-1/2 hidden md:block"></div>
+<div class="space-y-24">
+<!-- Step 1 -->
+<div class="relative flex flex-col md:flex-row items-center gap-12 md:gap-0">
+<div class="md:w-1/2 md:pr-24 text-left md:text-right">
+<h4 class="font-headline text-2xl mb-4 text-on-surface">Node Deployment</h4>
+<p class="font-body text-on-surface-variant">Install our lightweight edge containers on your existing server hardware or cloud instances.</p>
+</div>
+<div class="absolute left-0 md:left-1/2 w-4 h-4 rounded-full bg-secondary border-4 border-primary-container z-10 -translate-x-1/2"></div>
+<div class="md:w-1/2 md:pl-24">
+<span class="font-label text-6xl font-black text-white/5 select-none">01</span>
+</div>
+</div>
+<!-- Step 2 -->
+<div class="relative flex flex-col md:flex-row-reverse items-center gap-12 md:gap-0">
+<div class="md:w-1/2 md:pl-24 text-left">
+<h4 class="font-headline text-2xl mb-4 text-on-surface">Stream Sync</h4>
+<p class="font-body text-on-surface-variant">Automated camera discovery via ONVIF and RTSP protocols. Real-time calibration begins instantly.</p>
+</div>
+<div class="absolute left-0 md:left-1/2 w-4 h-4 rounded-full bg-tertiary border-4 border-primary-container z-10 -translate-x-1/2"></div>
+<div class="md:w-1/2 md:pr-24 text-right">
+<span class="font-label text-6xl font-black text-white/5 select-none">02</span>
+</div>
+</div>
+<!-- Step 3 -->
+<div class="relative flex flex-col md:flex-row items-center gap-12 md:gap-0">
+<div class="md:w-1/2 md:pr-24 text-left md:text-right">
+<h4 class="font-headline text-2xl mb-4 text-on-surface">Policy Mapping</h4>
+<p class="font-body text-on-surface-variant">Define presence rules, behavior thresholds, and privacy masks within our unified control panel.</p>
+</div>
+<div class="absolute left-0 md:left-1/2 w-4 h-4 rounded-full bg-secondary border-4 border-primary-container z-10 -translate-x-1/2"></div>
+<div class="md:w-1/2 md:pl-24">
+<span class="font-label text-6xl font-black text-white/5 select-none">03</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="bg-primary_container w-full pt-24 pb-12 tonal-shift via-surface_container_lowest">
+<div class="max-w-7xl mx-auto px-12 grid grid-cols-2 md:grid-cols-4 gap-16">
+<div class="col-span-2">
+<div class="text-3xl font-serif font-black text-on_surface mb-8">Presenza AI.</div>
+<p class="font-body text-on-surface-variant max-w-sm leading-relaxed mb-8">
+                    Defining the next standard of spatial intelligence for corporate and educational institutions worldwide.
+                </p>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all opacity-80 hover:opacity-100" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="public">public</span>
+</a>
+<a class="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center hover:bg-white/5 transition-all opacity-80 hover:opacity-100" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="share">share</span>
+</a>
+</div>
+</div>
+<div class="flex flex-col gap-4">
+<span class="font-label text-xs uppercase tracking-widest text-secondary font-bold mb-4">Platform</span>
+<a class="text-on_surface_variant hover:text-secondary transition-transform duration-200 hover:translate-x-1 font-body text-sm" href="#">Features</a>
+<a class="text-on_surface_variant hover:text-secondary transition-transform duration-200 hover:translate-x-1 font-body text-sm" href="#">Infrastructure</a>
+<a class="text-on_surface_variant hover:text-secondary transition-transform duration-200 hover:translate-x-1 font-body text-sm" href="#">Privacy Labs</a>
+<a class="text-on_surface_variant hover:text-secondary transition-transform duration-200 hover:translate-x-1 font-body text-sm" href="#">Developer Portal</a>
+</div>
+<div class="flex flex-col gap-4">
+<span class="font-label text-xs uppercase tracking-widest text-secondary font-bold mb-4">Company</span>
+<a class="text-on_surface_variant hover:text-secondary transition-transform duration-200 hover:translate-x-1 font-body text-sm" href="#">About</a>
+<a class="text-on_surface_variant hover:text-secondary transition-transform duration-200 hover:translate-x-1 font-body text-sm" href="#">Careers</a>
+<a class="text-on_surface_variant hover:text-secondary transition-transform duration-200 hover:translate-x-1 font-body text-sm" href="#">Legal</a>
+<a class="text-on_surface_variant hover:text-secondary transition-transform duration-200 hover:translate-x-1 font-body text-sm" href="#">Security</a>
+</div>
+</div>
+<div class="max-w-7xl mx-auto px-12 mt-24 pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="font-body text-xs text-on-surface-variant">© 2024 Presenza AI. All rights reserved.</div>
+<div class="flex gap-12">
+<a class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-on-surface" href="#">LinkedIn</a>
+<a class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant hover:text-on-surface" href="#">Twitter</a>
+</div>
+</div>
+</footer>
+</body></html>

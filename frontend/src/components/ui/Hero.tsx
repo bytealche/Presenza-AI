@@ -8,7 +8,7 @@ export function Hero() {
     return (
         <section className="relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-background">
             {/* --- Animated Mesh Gradient Background --- */}
-            <div className="absolute inset-0 w-full h-full opacity-40 mix-blend-screen pointer-events-none">
+            <div className="absolute inset-0 w-full h-full opacity-60 mix-blend-screen pointer-events-none">
                 <motion.div
                     animate={{
                         scale: [1, 1.2, 1],
@@ -16,7 +16,7 @@ export function Hero() {
                         x: [-100, 100, -100],
                     }}
                     transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-accent rounded-full blur-[120px]"
+                    className="absolute top-[-20%] left-[-10%] w-[50vw] h-[50vw] bg-accent/20 rounded-full blur-[140px]"
                 />
                 <motion.div
                     animate={{
@@ -25,15 +25,7 @@ export function Hero() {
                         y: [-50, 50, -50],
                     }}
                     transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-                    className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-purple-900 rounded-full blur-[120px]"
-                />
-                <motion.div
-                    animate={{
-                        opacity: [0.5, 0.8, 0.5],
-                        scale: [1, 1.1, 1],
-                    }}
-                    transition={{ duration: 15, repeat: Infinity }}
-                    className="absolute top-[30%] left-[30%] w-[30vw] h-[30vw] bg-indigo-900 rounded-full blur-[100px]"
+                    className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] bg-violet/20 rounded-full blur-[140px]"
                 />
             </div>
 
@@ -45,8 +37,9 @@ export function Hero() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="mb-6 px-4 py-1.5 rounded-full border border-white/10 bg-white/5 backdrop-blur-md text-xs font-medium tracking-wide text-foreground/80 uppercase"
+                    className="mb-8 px-4 py-1.5 rounded-full border border-[rgba(145,144,150,0.15)] bg-secondary/50 backdrop-blur-md text-xs font-semibold tracking-widest text-muted uppercase flex items-center gap-2"
                 >
+                    <span className="flex h-2 w-2 rounded-full bg-accent animate-pulse shadow-[0_0_8px_#bdf4ff]"></span>
                     The Future of Engagement
                 </motion.div>
 
@@ -57,24 +50,24 @@ export function Hero() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7, duration: 0.8 }}
                 >
-                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-200 to-indigo-400">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-white via-indigo-100 to-indigo-300">
                         Intelligent Presence
                     </span>
                     <br />
-                    <span className="text-stroke relative inline-block mt-2 text-foreground">
+                    <span className="bg-clip-text text-transparent bg-gradient-to-r from-accent to-accent-dark relative inline-block mt-2">
                         Redefined.
                     </span>
                 </motion.h1>
 
                 {/* Subtitle */}
                 <motion.p
-                    className="max-w-2xl text-lg md:text-xl text-muted mb-12 sm:px-8"
+                    className="max-w-2xl text-lg md:text-xl text-muted mb-12 sm:px-8 leading-relaxed"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 1, duration: 0.8 }}
                 >
-                    Real-time AI behavioral analysis for the modern classroom.
-                    Experience seamless tracking, instant insights, and automated attendance with
+                    Real-time AI behavioral analysis for the modern enterprise.
+                    Experience seamless tracking, instant insights, and absolute precision with
                     <span className="text-accent font-semibold"> Presenza AI</span>.
                 </motion.p>
 
@@ -86,13 +79,13 @@ export function Hero() {
                     transition={{ delay: 1.2 }}
                 >
                     <MagneticButton>
-                        <a href="/login" className="flex items-center gap-2 px-8 py-4 bg-accent text-white rounded-full font-semibold shadow-[0_0_30px_-5px_var(--color-accent)] hover:shadow-[0_0_50px_-10px_var(--color-accent)] transition-all">
+                        <a href="/login" className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-accent to-accent-dark text-[#00363d] rounded-full font-bold shadow-[0_0_30px_-5px_rgba(189,244,255,0.4)] hover:shadow-[0_0_50px_-10px_rgba(189,244,255,0.6)] transition-all transform hover:-translate-y-0.5">
                             Initialize System <ArrowRight className="w-5 h-5" />
                         </a>
                     </MagneticButton>
 
                     <MagneticButton>
-                        <button className="flex items-center gap-2 px-8 py-4 bg-secondary/50 text-white rounded-full font-medium border border-white/5 hover:bg-secondary/80 transition-all backdrop-blur-sm">
+                        <button className="flex items-center gap-2 px-8 py-4 text-foreground rounded-full font-semibold border border-[rgba(145,144,150,0.2)] hover:bg-secondary/80 transition-all backdrop-blur-sm">
                             <Play className="w-5 h-5 fill-current" /> Watch Demo
                         </button>
                     </MagneticButton>

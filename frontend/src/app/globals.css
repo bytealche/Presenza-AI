@@ -1,23 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  /* Obsidian/Green Theme */
-  --background: #050505;
-  /* 60% Base */
-  --secondary: #0f172a;
-  /* Slate-900 (Cool dark) */
-  --accent: #10b981;
-  /* Emerald-500 */
-
-  --foreground: #ededed;
-  --muted: #94a3b8;
-  /* Slate-400 */
+  /* Indigo Monolith Theme */
+  --background: #0c0e1a;
+  --secondary: #191b27;
+  --accent: #bdf4ff; /* cyan */
+  --accent-dark: #9cf0ff;
+  --violet: #d0bcff;
+  --foreground: #e1e1f3;
+  --muted: #c7c5cc;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
+  --color-violet: var(--violet);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
 
@@ -45,30 +44,25 @@ html {
 /* Glassmorphism Utilities */
 /* Glassmorphism Utilities */
 .glass {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(25, 27, 39, 0.4);
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(145, 144, 150, 0.15);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
 }
 
 .glass-card {
-  background-color: rgba(15, 23, 42, 0.3);
-  /* secondary/30 where secondary is #0f172a */
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: rgba(25, 27, 39, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(145, 144, 150, 0.1);
   border-radius: 0.75rem;
-  /* rounded-xl */
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  /* shadow-lg */
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
   transition: all 500ms ease-out;
 }
 
 .glass-card:hover {
-  background-color: rgba(15, 23, 42, 0.4);
-  /* secondary/40 */
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 15px rgba(16, 185, 129, 0.1);
-  /* shadow-2xl + emerald glow */
+  background-color: rgba(39, 41, 54, 0.8);
+  border-color: rgba(145, 144, 150, 0.25);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(208, 188, 255, 0.08);
   transform: translateY(-4px);
 }
 
@@ -94,7 +88,7 @@ body::before {
   height: 100vh;
   z-index: -1;
   background:
-    radial-gradient(circle at 15% 50%, rgba(16, 185, 129, 0.15), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(20, 184, 166, 0.15), transparent 25%);
+    radial-gradient(circle at 15% 50%, rgba(189, 244, 255, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(208, 188, 255, 0.08), transparent 25%);
   pointer-events: none;
 }
