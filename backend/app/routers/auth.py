@@ -75,7 +75,7 @@ async def send_otp(
     db: AsyncSession = Depends(get_db),
 ):
     code = generate_otp()
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+    expires_at = datetime.utcnow() + timedelta(minutes=10)
 
     # Invalidate any previous codes for this email
     await db.execute(delete(VerificationCode).where(VerificationCode.email == data.email))
