@@ -25,3 +25,4 @@ torchvision>=0.16.0
 
 supabase>=2.3.0
 gunicorn>=21.2.0
+slowapi>=0.1.9
