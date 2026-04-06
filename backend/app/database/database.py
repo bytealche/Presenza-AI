@@ -21,6 +21,7 @@ connect_args_dict = {}
 if "sqlite" in SQLALCHEMY_DATABASE_URL:
     connect_args_dict["check_same_thread"] = False
 elif "postgresql" in SQLALCHEMY_DATABASE_URL:
+    connect_args_dict["statement_cache_size"] = 0
     connect_args_dict["prepared_statement_cache_size"] = 0
 
 engine = create_async_engine(
