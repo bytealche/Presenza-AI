@@ -20,12 +20,12 @@ async def add_camera(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    # Optional: Verify org_id matches user's org
-    if current_user.org_id != camera.org_id and current_user.role_id != 1: # Only admin
-         raise HTTPException(status_code=403, detail="Not authorized to add camera for this organization")
+    # Only Admin (1) and Teacher (2) can add cameras
+    if current_user.role_id not in [1, 2]:
+        raise HTTPException(status_code=403, detail="Only admins and teachers can add cameras")
 
     new_camera = CameraDevice(
-        org_id=camera.org_id,
+        org_id=current_user.org_id,  # Always use the authenticated user's org
         camera_type=camera.camera_type,
         location=camera.location,
         connection_url=camera.connection_url,

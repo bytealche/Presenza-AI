@@ -56,16 +56,9 @@ export default function CameraPage() {
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            if (!user?.org_id) {
-                alert("Organization ID missing. Please relogin.");
-                return;
-            }
-
-            // For mobile, we generate a dummy URL initially, or just use ID
             const isMobile = newCam.camera_type === "mobile";
 
             await addCamera({
-                org_id: user.org_id,
                 camera_type: newCam.camera_type,
                 location: newCam.location,
                 connection_url: isMobile ? "Generated on Save" : newCam.connection_url,

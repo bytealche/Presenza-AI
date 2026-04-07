@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 class CameraCreate(BaseModel):
-    org_id: int
+    org_id: Optional[int] = None  # No longer required; backend uses token's org_id
     camera_type: str = "ip" # ip, browser, mobile
     location: str
     connection_url: Optional[str] = None

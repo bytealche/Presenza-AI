@@ -11,7 +11,7 @@ export interface Camera {
 }
 
 export interface CameraCreate {
-    org_id: number;
+    org_id?: number;  // Optional - backend uses token's org_id
     camera_type: string;
     location: string;
     connection_url?: string;
