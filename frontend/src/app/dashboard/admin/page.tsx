@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getUsers, updateUserStatus } from "@/services/authService";
-import { User, Check, X, Clock, Shield, BarChart2, Video } from "lucide-react";
+import { User, Check, X, Clock, Shield, BarChart2, Video, Camera } from "lucide-react";
 import FacultyReports from "@/components/admin/FacultyReports";
+import ActiveFaceEnrollment from "@/components/admin/ActiveFaceEnrollment";
 
 export default function AdminDashboard() {
     const { user } = useAuth();
@@ -12,6 +13,7 @@ export default function AdminDashboard() {
     const [activeTab, setActiveTab] = useState<"users" | "reports" | "cameras">("users");
     const [users, setUsers] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [enrollUser, setEnrollUser] = useState<{ id: number; name: string } | null>(null);
 
     useEffect(() => {
         if (user && user.role_id !== 1) {
@@ -164,12 +166,20 @@ export default function AdminDashboard() {
                                                 </div>
                                             )}
                                             {user.status === "active" && user.role_id !== 1 && (
-                                                <button
-                                                    onClick={() => handleStatusUpdate(user.user_id, "suspended")}
-                                                    className="text-red-400 hover:text-red-300 transition-colors"
-                                                >
-                                                    Suspend
-                                                </button>
+                                                <div className="flex gap-4 items-center">
+                                                    <button
+                                                        onClick={() => setEnrollUser({ id: user.user_id, name: user.full_name })}
+                                                        className="text-accent hover:text-accent/80 transition-colors flex items-center gap-1"
+                                                    >
+                                                        <Camera className="w-4 h-4" /> Enroll Face
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleStatusUpdate(user.user_id, "suspended")}
+                                                        className="text-red-400 hover:text-red-300 transition-colors"
+                                                    >
+                                                        Suspend
+                                                    </button>
+                                                </div>
                                             )}
                                             {user.status === "suspended" && (
                                                 <button
@@ -190,6 +200,25 @@ export default function AdminDashboard() {
                             No users found.
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Enrollment Modal */}
+            {enrollUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="relative w-full max-w-2xl">
+                        <button 
+                            onClick={() => setEnrollUser(null)}
+                            className="absolute -top-10 right-0 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <ActiveFaceEnrollment 
+                            userId={enrollUser.id} 
+                            userName={enrollUser.name} 
+                            onSuccess={() => {}} 
+                        />
+                    </div>
                 </div>
             )}
 

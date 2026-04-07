@@ -37,6 +37,11 @@ export const sendOTP = async (email: string) => {
   return res.data;
 }
 
+export const resetPassword = async (data: any) => {
+  const res = await api.post("/auth/reset-password", data);
+  return res.data;
+}
+
 export const registerOrganization = async (data: any) => {
   const res = await api.post("/auth/register-organization", data);
   return res.data;

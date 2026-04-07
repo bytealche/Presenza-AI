@@ -17,3 +17,8 @@ class UserRegisterRequest(BaseModel):
     otp: str
     role_id: int
     org_id: Optional[int] = None
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: constr(min_length=8, max_length=64)

@@ -201,6 +201,138 @@ async def register_with_face(
         await db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+import tempfile
+import uuid
+
+@router.post("/register-video-profile")
+async def register_video_profile(
+    user_id: int = Form(...),
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # This can be called by Admin or the User themselves
+    if current_user.role_id != 1 and current_user.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this user's face profile")
+
+    # Verify user exists
+    result = await db.execute(select(User).where(User.user_id == user_id))
+    target_user = result.scalars().first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="Target user not found")
+
+    # 1. Save video temporarily to disk (OpenCV VideoCapture needs a real file)
+    temp_filename = os.path.join(tempfile.gettempdir(), f"{uuid.uuid4().hex}.webm")
+    try:
+        with open(temp_filename, "wb") as f:
+            f.write(await file.read())
+            
+        # 2. Extract frames
+        cap = cv2.VideoCapture(temp_filename)
+        frames = []
+        count = 0
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret:
+                break
+            # Take every 3rd frame to get variety over the 5-10 second clip (assuming 30fps -> 10fps or so)
+            if count % 3 == 0:
+                frames.append(frame)
+            count += 1
+        cap.release()
+        
+        if len(frames) == 0:
+            raise HTTPException(status_code=400, detail="Could not extract any frames from the video. Ensure it is a valid webm file.")
+            
+        # Cap to a reasonable max number of frames to process so we don't blow up memory/time
+        max_frames = 30
+        if len(frames) > max_frames:
+            # Sample evenly
+            indices = np.linspace(0, len(frames) - 1, max_frames, dtype=int)
+            frames = [frames[i] for i in indices]
+            
+        # 3. Process frames and get embeddings
+        embeddings = []
+        liveness_detector = LivenessDetector()
+        best_face_img = None
+        largest_area = 0
+        
+        for frame in frames:
+            faces = detect_faces(frame)
+            if len(faces) != 1:
+                continue # Skip frames with 0 or multiple faces to avoid noise
+                
+            face_item = faces[0]
+            
+            # Anti-spoof check
+            is_live, _ = liveness_detector.check(face_item["face_image"])
+            if not is_live:
+                continue # Skip spoofed looking frames
+                
+            embedding = generate_embedding(face_item["face_image"])
+            if embedding is not None:
+                embeddings.append(embedding.flatten())
+                
+                # Save the highest res face for the profile picture
+                area = face_item["bbox"][2] * face_item["bbox"][3]
+                if area > largest_area:
+                    largest_area = area
+                    best_face_img = face_item["face_image"]
+                    
+        if len(embeddings) < 3: # Require at least 3 high quality frames
+            raise HTTPException(status_code=400, detail="Video rejected: Could not extract enough high-quality facial frames. Please ensure good lighting and only one face in the frame.")
+            
+        print(f"DEBUG: Successfully processed {len(embeddings)} pristine frames from video.")
+        
+        # 4. Math: Average the embeddings to create a master 3D-like map
+        avg_embedding = np.mean(embeddings, axis=0)
+        # Re-normalize just to be safe
+        avg_embedding = avg_embedding / np.linalg.norm(avg_embedding)
+        
+        # 5. Check Duplicates (against other users)
+        match_user_id, confidence = await find_match(db, avg_embedding, threshold=0.5)
+        if match_user_id and match_user_id != user_id:
+             raise HTTPException(status_code=400, detail=f"Face already registered with another account (User ID: {match_user_id}).")
+             
+        # 6. Upload Best Image to Supabase
+        image_url = None
+        if supabase and best_face_img is not None:
+            try:
+                # Convert BGR back to RGB/JPEG
+                _, buffer = cv2.imencode('.jpg', best_face_img)
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                filename = f"user_{target_user.user_id}_{timestamp}.jpg"
+                
+                supabase.storage.from_("profiles").upload(filename, buffer.tobytes(), {"content-type": "image/jpeg"})
+                image_url = supabase.storage.from_("profiles").get_public_url(filename)
+            except Exception as e:
+                print(f"ERROR: Failed to upload Face to Supabase: {e}")
+
+        # 7. Save to DB
+        result = await db.execute(select(FaceProfile).where(FaceProfile.user_id == target_user.user_id))
+        existing_profile = result.scalars().first()
+        
+        if existing_profile:
+            existing_profile.embedding = avg_embedding.tolist()
+            if image_url:
+                existing_profile.image_url = image_url
+            db.add(existing_profile)
+        else:
+            face_profile = FaceProfile(
+                user_id=target_user.user_id,
+                embedding=avg_embedding.tolist(),
+                image_url=image_url
+            )
+            db.add(face_profile)
+            
+        await db.commit()
+        
+        return {"message": "Video face profile registered successfully!", "frames_analyzed": len(embeddings)}
+
+    finally:
+        if os.path.exists(temp_filename):
+            os.remove(temp_filename)
+
 @router.get("/", response_model=list[UserResponse])
 async def list_users(
     role_id: int = None,

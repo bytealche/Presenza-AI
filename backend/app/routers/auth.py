@@ -16,7 +16,7 @@ from app.models.organization import Organization
 from app.models.verification_code import VerificationCode
 from app.models.role import Role
 from app.schemas.auth_schema import LoginRequest, TokenResponse, RefreshRequest
-from app.schemas.auth_schema_extended import OTPRequest, OrganizationRegisterRequest, UserRegisterRequest
+from app.schemas.auth_schema_extended import OTPRequest, OrganizationRegisterRequest, UserRegisterRequest, ResetPasswordRequest
 from app.core.security import verify_password, create_access_token, create_refresh_token, decode_token, hash_password
 from app.ai_engine.face_detection import detect_faces
 from app.ai_engine.liveness_detection import LivenessDetector
@@ -235,3 +235,29 @@ async def logout():
     For token blacklisting, integrate Redis here in the future.
     """
     return {"message": "Logged out successfully. Please discard your tokens."}
+
+@router.post("/reset-password")
+@limiter.limit("5/minute")
+async def reset_password(
+    request: Request,
+    data: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    # Verify OTP first
+    await verify_otp_logic(data.email, data.otp, db)
+
+    # Find the user
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalars().first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Hash new password and update
+    user.password_hash = hash_password(data.new_password)
+    db.add(user)
+    await db.commit()
+    
+    logger.info(f"Password reset successfully for user: {data.email}")
+    return {"message": "Password has been reset successfully."}
+
