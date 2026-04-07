@@ -2,17 +2,19 @@ import smtplib
 from email.message import EmailMessage
 import urllib.request
 import json
+import logging
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 def send_email_sync(to_email: str, subject: str, body: str):
     """
-    Sends an email using standard smtplib (blocking), but falling back to 
-    Brevo's HTTP API (port 443) which bypasses server port restrictions.
+    Sends an email using standard smtplib (blocking), but uses 
+    Brevo's HTTP API (port 443) preferentially to bypass HF firewalls.
     Should be used with FastAPI BackgroundTasks.
     """
     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        print("SMTP credentials not set. Mocking email send.")
-        print(f"To: {to_email}, Subject: {subject}, Body: {body}")
+        logger.warning("SMTP credentials not set. Mocking email send.")
         return False
 
     sender_email = settings.EMAIL_FROM or settings.SMTP_USER
@@ -41,14 +43,16 @@ def send_email_sync(to_email: str, subject: str, body: str):
             try:
                 with urllib.request.urlopen(req, timeout=10) as response:
                     if response.status in [200, 201, 202]:
-                        print(f"Successfully sent OTP via Brevo API to {to_email}")
+                        logger.info(f"Successfully sent OTP via Brevo API to {to_email}")
                         return True
             except urllib.error.HTTPError as e:
-                print(f"Brevo HTTP API fallback failed: {e.code} {e.read().decode('utf-8')}")
+                logger.error(f"Brevo HTTP API explicitly rejected the email: {e.code} {e.read().decode('utf-8')}")
+                return False  # Do NOT fallback to SMTP if Brevo explicitly rejected our payload
         except Exception as e:
-            print(f"Brevo HTTP API error: {e}")
+            logger.error(f"Brevo HTTP request setup failed: {e}")
+            return False
 
-    # 2. Fallback to classic SMTP
+    # 2. Fallback to classic SMTP for non-Brevo hosts
     msg = EmailMessage()
     msg["From"] = sender_email
     msg["To"] = to_email
@@ -60,9 +64,9 @@ def send_email_sync(to_email: str, subject: str, body: str):
             server.starttls()
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
             server.send_message(msg)
-        print(f"Successfully sent OTP via SMTP to {to_email}")
+        logger.info(f"Successfully sent OTP via SMTP to {to_email}")
         return True
     except Exception as e:
-        print(f"Failed to send email via SMTP: {e}")
+        logger.error(f"Failed to send email via SMTP: {e}")
         return False
 
