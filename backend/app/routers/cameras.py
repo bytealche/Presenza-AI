@@ -14,7 +14,7 @@ router = APIRouter(
     tags=["Cameras"]
 )
 
-@router.post("/", response_model=CameraResponse)
+@router.post("", response_model=CameraResponse)
 async def add_camera(
     camera: CameraCreate, 
     db: AsyncSession = Depends(get_db),
@@ -37,7 +37,7 @@ async def add_camera(
     await db.refresh(new_camera)
     return new_camera
 
-@router.get("/", response_model=List[CameraResponse])
+@router.get("", response_model=List[CameraResponse])
 async def list_cameras(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
