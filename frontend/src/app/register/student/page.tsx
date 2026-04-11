@@ -25,6 +25,15 @@ export default function RegisterStudentPage() {
     const [success, setSuccess] = useState("");
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
     const webcamRef = useRef<Webcam>(null);
+    const [cameraDevices, setCameraDevices] = useState<MediaDeviceInfo[]>([]);
+    const [selectedCamera, setSelectedCamera] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        navigator.mediaDevices.enumerateDevices().then(devs => {
+            const vids = devs.filter(d => d.kind === "videoinput");
+            setCameraDevices(vids);
+        }).catch(console.error);
+    }, []);
 
     // Registered user data to carry into step 2
     const [registeredPayload, setRegisteredPayload] = useState<FormData | null>(null);
@@ -150,6 +159,20 @@ export default function RegisterStudentPage() {
                         {/* Face Capture */}
                         <div className="space-y-2">
                             <label className="block text-sm font-medium text-gray-300">Face Registration</label>
+
+                            {/* Camera device selector */}
+                            {cameraDevices.length > 1 && (
+                                <select
+                                    className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:border-accent outline-none mb-1"
+                                    value={selectedCamera || ""}
+                                    onChange={e => { setSelectedCamera(e.target.value); setCapturedImage(null); }}
+                                >
+                                    {cameraDevices.map((d, i) => (
+                                        <option key={d.deviceId} value={d.deviceId}>{d.label || `Camera ${i + 1}`}</option>
+                                    ))}
+                                </select>
+                            )}
+
                             <div className="relative rounded-lg overflow-hidden border border-white/10 bg-black/40 aspect-video flex items-center justify-center">
                                 {capturedImage ? (
                                     <>
@@ -161,7 +184,8 @@ export default function RegisterStudentPage() {
                                     </>
                                 ) : (
                                     <Webcam audio={false} ref={webcamRef} screenshotFormat="image/jpeg"
-                                        videoConstraints={{ facingMode: "user" }} className="w-full h-full object-cover" />
+                                        videoConstraints={selectedCamera ? { deviceId: { exact: selectedCamera } } : { facingMode: "user" }}
+                                        className="w-full h-full object-cover" />
                                 )}
                             </div>
                             {!capturedImage && (
