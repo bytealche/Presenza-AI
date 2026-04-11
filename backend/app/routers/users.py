@@ -24,7 +24,7 @@ router = APIRouter(
     tags=["Users"]
 )
 
-@router.post("/", response_model=UserResponse)
+@router.post("", response_model=UserResponse)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     try:
         hashed_password = hash_password(user.password)
@@ -333,7 +333,7 @@ async def register_video_profile(
         if os.path.exists(temp_filename):
             os.remove(temp_filename)
 
-@router.get("/", response_model=list[UserResponse])
+@router.get("", response_model=list[UserResponse])
 async def list_users(
     role_id: int = None,
     db: AsyncSession = Depends(get_db),
