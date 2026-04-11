@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 @router.post(
-    "/",
+    "",
     response_model=SessionResponse,
     dependencies=[Depends(require_roles([2]))]  # teacher
 )
@@ -39,7 +39,7 @@ async def create_session(
     await db.refresh(new_session)
     return new_session
 
-@router.get("/", response_model=list[SessionResponse])
+@router.get("", response_model=list[SessionResponse])
 async def list_sessions(
     teacher_id: int = None,
     db: AsyncSession = Depends(get_db),

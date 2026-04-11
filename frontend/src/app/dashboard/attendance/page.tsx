@@ -1,8 +1,8 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getSessions, getSessionAttendance, Session, AttendanceRecord } from "@/services/sessionService";
-import { Loader2, Calendar, User, Search, Filter } from "lucide-react";
+import { Loader2, Calendar, Search, Filter, RefreshCw, ShieldAlert, CheckCircle, Clock, XCircle, AlertTriangle } from "lucide-react";
 
 export default function AttendancePage() {
     const { user } = useAuth();
@@ -12,36 +12,29 @@ export default function AttendancePage() {
     const [loading, setLoading] = useState(true);
     const [loadingAttendance, setLoadingAttendance] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+    const [autoRefresh, setAutoRefresh] = useState(false);
+    const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
     useEffect(() => {
-        if (user) {
-            loadSessions();
-        }
+        if (user) loadSessions();
     }, [user]);
+
+    // Auto-refresh every 10 seconds when enabled
+    useEffect(() => {
+        if (!autoRefresh || !selectedSession) return;
+        const interval = setInterval(() => refreshAttendance(selectedSession), 10000);
+        return () => clearInterval(interval);
+    }, [autoRefresh, selectedSession]);
 
     const loadSessions = async () => {
         if (!user) return;
         try {
-            // For teachers, this returns only their sessions due to backend filtering or we pass ID
-            // For students, this might return sessions they are enrolled in? 
-            // Currently getSessions takes teacher_id. 
-            // If we are a student, we might want "My Attendance" which is different.
-            // But for this task "Restrict student records visibility for Faculty", we focus on Faculty view.
-
-            // If Teacher (role 2):
             if (user.role_id === 2) {
                 const data = await getSessions(user.user_id);
                 setSessions(data);
-                if (data.length > 0) {
-                    // Auto select first? No, let them choose.
-                }
-            }
-            // If Student (role 3):
-            else if (user.role_id === 3) {
-                // TODO: Student view logic. 
-                // For now, let's just show "Select a Class" if we can fetch enrolled classes.
-                // or just show "My Attendance Record" if we have that API.
-                // We don't have getStudentAttendance yet.
+            } else if (user.role_id === 1) {
+                const data = await getSessions();
+                setSessions(data);
             }
         } catch (error) {
             console.error("Failed to load sessions", error);
@@ -50,12 +43,23 @@ export default function AttendancePage() {
         }
     };
 
+    const refreshAttendance = useCallback(async (sessionId: number) => {
+        try {
+            const data = await getSessionAttendance(sessionId);
+            setAttendance(data);
+            setLastRefreshed(new Date());
+        } catch (error) {
+            console.error("Failed to refresh attendance", error);
+        }
+    }, []);
+
     const handleSessionChange = async (sessionId: number) => {
         setSelectedSession(sessionId);
         setLoadingAttendance(true);
         try {
             const data = await getSessionAttendance(sessionId);
             setAttendance(data);
+            setLastRefreshed(new Date());
         } catch (error) {
             console.error("Failed to load attendance", error);
             setAttendance([]);
@@ -65,12 +69,16 @@ export default function AttendancePage() {
     };
 
     const filteredAttendance = attendance.filter(record =>
-        record.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.email.toLowerCase().includes(searchTerm.toLowerCase())
+        record.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (loading) return <div className="p-8 text-center text-muted">Loading...</div>;
+    // Counts
+    const presentCount = attendance.filter(r => r.status?.toLowerCase() === "present").length;
+    const fraudCount = attendance.filter(r => r.status?.toLowerCase() === "fraud").length;
+    const totalCount = attendance.length;
 
+    // Student view
     if (user?.role_id === 3) {
         return (
             <div className="p-8 text-center text-muted">
@@ -80,21 +88,73 @@ export default function AttendancePage() {
         );
     }
 
-    // Admin (1) or Teacher (2) view
+    if (loading) return <div className="p-8 text-center text-muted flex items-center gap-2 justify-center"><Loader2 className="w-5 h-5 animate-spin" /> Loading...</div>;
+
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-                    Attendance Records
-                </h2>
+            {/* Header */}
+            <div className="flex justify-between items-start">
+                <div>
+                    <h2 className="text-2xl font-bold text-white">Attendance Records</h2>
+                    <p className="text-muted text-sm mt-1">AI-powered live attendance tracking</p>
+                </div>
+                {selectedSession && (
+                    <div className="flex items-center gap-3">
+                        {lastRefreshed && (
+                            <span className="text-xs text-muted">
+                                Updated {lastRefreshed.toLocaleTimeString()}
+                            </span>
+                        )}
+                        <button
+                            onClick={() => selectedSession && refreshAttendance(selectedSession)}
+                            className="flex items-center gap-1.5 text-sm text-accent hover:text-accent/80 transition-colors"
+                        >
+                            <RefreshCw className="w-4 h-4" /> Refresh
+                        </button>
+                        <label className="flex items-center gap-1.5 text-sm cursor-pointer select-none">
+                            <div className={`w-9 h-5 rounded-full transition-colors ${autoRefresh ? "bg-accent" : "bg-white/10"} relative`}
+                                onClick={() => setAutoRefresh(p => !p)}>
+                                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${autoRefresh ? "left-4" : "left-0.5"}`} />
+                            </div>
+                            <span className="text-muted">Auto</span>
+                        </label>
+                    </div>
+                )}
             </div>
 
+            {/* Summary badges */}
+            {selectedSession && attendance.length > 0 && (
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3">
+                        <CheckCircle className="w-6 h-6 text-green-400" />
+                        <div>
+                            <p className="text-xs text-muted">Present</p>
+                            <p className="text-2xl font-bold text-green-400">{presentCount}</p>
+                        </div>
+                    </div>
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3">
+                        <ShieldAlert className="w-6 h-6 text-red-400" />
+                        <div>
+                            <p className="text-xs text-muted">Spoofing / Fraud</p>
+                            <p className="text-2xl font-bold text-red-400">{fraudCount}</p>
+                        </div>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center gap-3">
+                        <Calendar className="w-6 h-6 text-muted" />
+                        <div>
+                            <p className="text-xs text-muted">Total Detected</p>
+                            <p className="text-2xl font-bold text-white">{totalCount}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Controls */}
-            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 items-center">
+            <div className="bg-secondary/30 backdrop-blur-md border border-white/5 rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center">
                 <div className="relative flex-1 w-full md:w-auto">
-                    <Filter className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                    <Filter className="absolute left-3 top-3 h-5 w-5 text-muted" />
                     <select
-                        className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent/50 outline-none"
+                        className="w-full pl-10 pr-4 py-2 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-accent/50 outline-none"
                         value={selectedSession || ""}
                         onChange={(e) => handleSessionChange(Number(e.target.value))}
                     >
@@ -106,13 +166,12 @@ export default function AttendancePage() {
                         ))}
                     </select>
                 </div>
-
                 <div className="relative flex-1 w-full md:w-auto">
-                    <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                    <Search className="absolute left-3 top-3 h-5 w-5 text-muted" />
                     <input
                         type="text"
-                        placeholder="Search Student..."
-                        className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-accent/50 outline-none"
+                        placeholder="Search by name or email..."
+                        className="w-full pl-10 pr-4 py-2 bg-black/20 border border-white/10 rounded-lg text-white placeholder-muted focus:ring-2 focus:ring-accent/50 outline-none"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         disabled={!selectedSession}
@@ -120,57 +179,79 @@ export default function AttendancePage() {
                 </div>
             </div>
 
-            {/* Attendance Table */}
+            {/* Table */}
             {selectedSession ? (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="bg-secondary/30 backdrop-blur-md rounded-xl border border-white/5 overflow-hidden">
                     {loadingAttendance ? (
-                        <div className="p-12 text-center text-gray-500 flex flex-col items-center">
-                            <Loader2 className="w-8 h-8 animate-spin mb-2 text-accent" />
+                        <div className="p-12 text-center text-muted flex flex-col items-center gap-2">
+                            <Loader2 className="w-8 h-8 animate-spin text-accent" />
                             Loading records...
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full">
-                                <thead className="bg-gray-50/50">
+                                <thead className="bg-black/20">
                                     <tr>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Student</th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
-                                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Time</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-muted uppercase">Student</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-muted uppercase">Status</th>
+                                        <th className="px-6 py-4 text-left text-xs font-semibold text-muted uppercase">Detected At</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {filteredAttendance.map((record, idx) => (
-                                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center">
-                                                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm mr-3">
-                                                        {record.full_name.charAt(0)}
+                                <tbody className="divide-y divide-white/5">
+                                    {filteredAttendance.map((record, idx) => {
+                                        const statusLower = record.status?.toLowerCase();
+                                        const isFraud = statusLower === "fraud";
+                                        const isPresent = statusLower === "present";
+                                        const isLate = statusLower === "late";
+
+                                        return (
+                                            <tr key={idx} className={`transition-colors ${isFraud ? "bg-red-500/5 hover:bg-red-500/10" : "hover:bg-white/5"}`}>
+                                                <td className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`h-9 w-9 rounded-full flex items-center justify-center text-white font-bold text-sm ${isFraud ? "bg-gradient-to-br from-red-500 to-orange-600" : "bg-gradient-to-br from-indigo-500 to-purple-600"}`}>
+                                                            {record.full_name?.charAt(0) ?? "?"}
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-medium text-white">{record.full_name}</div>
+                                                            <div className="text-xs text-muted">{record.email}</div>
+                                                        </div>
+                                                        {isFraud && (
+                                                            <span className="ml-auto flex items-center gap-1 text-xs text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">
+                                                                <AlertTriangle className="w-3 h-3" /> Spoofing Detected
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                    <div>
-                                                        <div className="text-sm font-medium text-gray-900">{record.full_name}</div>
-                                                        <div className="text-xs text-gray-500">{record.email}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-2.5 py-1 text-xs rounded-full font-medium border ${record.status === 'Present'
-                                                        ? 'bg-green-50 text-green-700 border-green-100'
-                                                        : record.status === 'Late'
-                                                            ? 'bg-yellow-50 text-yellow-700 border-yellow-100'
-                                                            : 'bg-red-50 text-red-700 border-red-100'
-                                                    }`}>
-                                                    {record.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-500 font-mono">
-                                                {new Date(record.timestamp).toLocaleTimeString()}
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    {isFraud ? (
+                                                        <span className="flex items-center gap-1.5 text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/30 px-2.5 py-1 rounded-full w-fit">
+                                                            <ShieldAlert className="w-3.5 h-3.5" /> FRAUD
+                                                        </span>
+                                                    ) : isPresent ? (
+                                                        <span className="flex items-center gap-1.5 text-xs font-bold text-green-400 bg-green-500/10 border border-green-500/30 px-2.5 py-1 rounded-full w-fit">
+                                                            <CheckCircle className="w-3.5 h-3.5" /> Present
+                                                        </span>
+                                                    ) : isLate ? (
+                                                        <span className="flex items-center gap-1.5 text-xs font-bold text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2.5 py-1 rounded-full w-fit">
+                                                            <Clock className="w-3.5 h-3.5" /> Late
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1.5 text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/30 px-2.5 py-1 rounded-full w-fit">
+                                                            <XCircle className="w-3.5 h-3.5" /> Absent
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4 text-sm text-muted font-mono">
+                                                    {record.timestamp ? new Date(record.timestamp).toLocaleTimeString() : "—"}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                     {filteredAttendance.length === 0 && (
                                         <tr>
-                                            <td colSpan={3} className="px-6 py-12 text-center text-gray-400">
-                                                No attendance records found for this session.
+                                            <td colSpan={3} className="px-6 py-16 text-center text-muted">
+                                                <Calendar className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                                                No attendance records found yet. Start streaming to auto-detect attendance.
                                             </td>
                                         </tr>
                                     )}
@@ -180,9 +261,9 @@ export default function AttendancePage() {
                     )}
                 </div>
             ) : (
-                <div className="text-center py-20 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-                    <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">Select a class above to view attendance records.</p>
+                <div className="text-center py-20 bg-secondary/20 rounded-xl border border-white/5 border-dashed">
+                    <Calendar className="w-12 h-12 text-muted mx-auto mb-3 opacity-30" />
+                    <p className="text-muted">Select a class above to view AI-detected attendance records.</p>
                 </div>
             )}
         </div>
