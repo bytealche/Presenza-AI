@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { sendOTP, resetPassword } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
@@ -15,6 +15,19 @@ export default function ForgotPasswordPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const [resendCooldown, setResendCooldown] = useState(0);
+    const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const startCooldown = () => {
+        setResendCooldown(30);
+        if (cooldownRef.current) clearInterval(cooldownRef.current);
+        cooldownRef.current = setInterval(() => {
+            setResendCooldown(prev => {
+                if (prev <= 1) { clearInterval(cooldownRef.current!); return 0; }
+                return prev - 1;
+            });
+        }, 1000);
+    };
 
     const handleSendOTP = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,6 +41,7 @@ export default function ForgotPasswordPage() {
             await sendOTP(email);
             setSuccess("OTP sent! Please check your email.");
             setStep(2);
+            startCooldown();
         } catch (err: any) {
             setError(err.response?.data?.detail || "Failed to send reset code.");
         } finally {
@@ -120,37 +134,41 @@ export default function ForgotPasswordPage() {
                         <div className="space-y-4">
                             <div className="relative">
                                 <ShieldCheck className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
-                                <input
-                                    type="text"
-                                    required
+                                <input type="text" required
                                     className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
-                                    placeholder="Enter 6-digit OTP"
-                                    value={otp}
-                                    onChange={(e) => setOtp(e.target.value)}
-                                />
+                                    placeholder="Enter 6-digit OTP" value={otp}
+                                    onChange={(e) => setOtp(e.target.value)} />
                             </div>
-
                             <div className="relative">
                                 <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
-                                <input
-                                    type="password"
-                                    required
+                                <input type="password" required
                                     className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
-                                    placeholder="New Password"
-                                    value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)}
-                                />
+                                    placeholder="New Password" value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)} />
                             </div>
                         </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading || !otp || !newPassword}
+                        {/* Resend OTP row */}
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted">Didn&apos;t receive OTP?</span>
+                            <button type="button"
+                                onClick={async () => {
+                                    if (resendCooldown > 0) return;
+                                    setLoading(true);
+                                    try { await sendOTP(email); setSuccess("OTP resent!"); startCooldown(); }
+                                    catch (e: any) { setError(e.response?.data?.detail || "Failed to resend."); }
+                                    finally { setLoading(false); }
+                                }}
+                                disabled={resendCooldown > 0}
+                                className="text-accent hover:underline disabled:opacity-50 disabled:no-underline min-w-[90px] text-right transition-opacity">
+                                {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
+                            </button>
+                        </div>
+
+                        <button type="submit" disabled={loading || !otp || !newPassword}
                             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${loading || !otp || !newPassword
                                 ? "bg-white/5 text-muted cursor-not-allowed"
-                                : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"
-                                }`}
-                        >
+                                : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"}`}>
                             {loading ? "Resetting..." : "Reset Password"}
                         </button>
                     </form>

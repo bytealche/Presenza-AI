@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { registerUser, sendOTP, getOrganizations } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import { User, Mail, Lock, ArrowRight, ShieldCheck, Building, CheckCircle } from "lucide-react";
@@ -20,12 +20,25 @@ export default function RegisterFacultyPage() {
     });
     const [otpSent, setOtpSent] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [resendCooldown, setResendCooldown] = useState(0);
+    const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
     useEffect(() => {
         getOrganizations().then(setOrganizations).catch(console.error);
     }, []);
+
+    const startCooldown = () => {
+        setResendCooldown(30);
+        if (cooldownRef.current) clearInterval(cooldownRef.current);
+        cooldownRef.current = setInterval(() => {
+            setResendCooldown(prev => {
+                if (prev <= 1) { clearInterval(cooldownRef.current!); return 0; }
+                return prev - 1;
+            });
+        }, 1000);
+    };
 
     const handleSendOTP = async () => {
         if (!formData.email) { setError("Please enter an email address."); return; }
@@ -34,6 +47,7 @@ export default function RegisterFacultyPage() {
             await sendOTP(formData.email);
             setOtpSent(true);
             setSuccess("OTP sent to your email.");
+            startCooldown();
         } catch (err: any) {
             setError(err.response?.data?.detail || "Failed to send OTP.");
         } finally { setLoading(false); }
@@ -125,9 +139,9 @@ export default function RegisterFacultyPage() {
                                 <input name="email" type="email" required className={inputClass} placeholder="Email Address"
                                     value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                             </div>
-                            <button type="button" onClick={handleSendOTP} disabled={loading || otpSent}
-                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-white/10 transition-colors">
-                                {otpSent ? "Resend" : "Get OTP"}
+                            <button type="button" onClick={handleSendOTP} disabled={loading || resendCooldown > 0}
+                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-white/10 transition-colors min-w-[72px] text-center">
+                                {resendCooldown > 0 ? `${resendCooldown}s` : otpSent ? "Resend" : "Get OTP"}
                             </button>
                         </div>
 

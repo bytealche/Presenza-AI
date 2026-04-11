@@ -21,6 +21,8 @@ export default function RegisterStudentPage() {
     });
     const [otpSent, setOtpSent] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [resendCooldown, setResendCooldown] = useState(0);
+    const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -42,6 +44,17 @@ export default function RegisterStudentPage() {
         getOrganizations().then(setOrganizations).catch(console.error);
     }, []);
 
+    const startCooldown = () => {
+        setResendCooldown(30);
+        if (cooldownRef.current) clearInterval(cooldownRef.current);
+        cooldownRef.current = setInterval(() => {
+            setResendCooldown(prev => {
+                if (prev <= 1) { clearInterval(cooldownRef.current!); return 0; }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
     const handleSendOTP = async () => {
         if (!formData.email) { setError("Please enter an email address."); return; }
         setLoading(true); setError("");
@@ -49,6 +62,7 @@ export default function RegisterStudentPage() {
             await sendOTP(formData.email);
             setOtpSent(true);
             setSuccess("OTP sent to your email.");
+            startCooldown();
         } catch (err: any) {
             setError(err.response?.data?.detail || "Failed to send OTP.");
         } finally { setLoading(false); }
@@ -202,9 +216,9 @@ export default function RegisterStudentPage() {
                                 <input name="email" type="email" required className={inputClass} placeholder="Email Address"
                                     value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                             </div>
-                            <button type="button" onClick={handleSendOTP} disabled={loading || otpSent}
-                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-white/10 transition-colors">
-                                {otpSent ? "Resend" : "Get OTP"}
+                            <button type="button" onClick={handleSendOTP} disabled={loading || resendCooldown > 0}
+                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-white/10 transition-colors min-w-[72px] text-center">
+                                {resendCooldown > 0 ? `${resendCooldown}s` : otpSent ? "Resend" : "Get OTP"}
                             </button>
                         </div>
 
