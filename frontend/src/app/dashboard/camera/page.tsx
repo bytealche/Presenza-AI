@@ -318,6 +318,11 @@ function DeviceCameraStreamer({ cameraId }: { cameraId: string }) {
 
             ws.onmessage = (event) => {
                 if (typeof event.data === "string") {
+                    if (event.data === "__ping__") {
+                        // Respond to server heartbeat to keep connection alive
+                        ws.send("__pong__");
+                        return;
+                    }
                     try {
                         const parsed = JSON.parse(event.data);
                         if (parsed.type === "ai_analysis") setAiData(parsed.data);
@@ -330,7 +335,14 @@ function DeviceCameraStreamer({ cameraId }: { cameraId: string }) {
             };
 
             ws.onerror = () => setStatus("WebSocket error");
-            ws.onclose = () => { setStatus("Disconnected"); setIsStreaming(false); };
+            ws.onclose = () => {
+                setStatus("Disconnected");
+                setIsStreaming(false);
+                // Auto-reconnect after 3s if streaming was active
+                setTimeout(() => {
+                    if (isStreaming) startStreaming();
+                }, 3000);
+            };
         } catch (err: any) {
             setStatus(`Error: ${err.message}`);
         }
@@ -416,6 +428,10 @@ function StreamViewer({ cameraId }: { cameraId: string }) {
             ws = new WebSocket(wsUrl);
             ws.onmessage = (event) => {
                 if (typeof event.data === "string") {
+                    if (event.data === "__ping__") {
+                        ws.send("__pong__");
+                        return;
+                    }
                     try {
                         const parsed = JSON.parse(event.data);
                         if (parsed.type === "ai_analysis") setAiData(parsed.data);

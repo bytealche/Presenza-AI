@@ -17,8 +17,8 @@ def detect_faces(frame):
         # 'opencv' is fast (Haar). 'retinaface' is best but slow.
         # Switching to 'mtcnn' as 'opencv' failed to detect face in test image.
         
-        if frame.shape[0] > 1000:
-             scale = 1000 / frame.shape[0]
+        if frame.shape[0] > 640:
+             scale = 640 / frame.shape[0]
              frame_small = cv2.resize(frame, (0, 0), fx=scale, fy=scale)
         else:
              frame_small = frame
@@ -26,12 +26,12 @@ def detect_faces(frame):
         print(f"Detecting faces in frame of shape {frame_small.shape}")
         
         # DeepFace.extract_faces returns a list of dicts
-        # Each dict has keys: "face", "facial_area", "confidence"
+        # Use 'opencv' (Haar) backend — fast on CPU, works on Hugging Face Spaces
         face_objs = DeepFace.extract_faces(
             img_path=frame_small,
-            detector_backend="retinaface", # Highly accurate detection
+            detector_backend="opencv",   # Fast Haar cascade, CPU-friendly
             enforce_detection=False,
-            align=False,
+            align=True,
             anti_spoofing=False
         )
         print(f"DeepFace found: {len(face_objs)} faces/candidates")
