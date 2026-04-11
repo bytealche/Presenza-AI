@@ -222,13 +222,13 @@ export default function RegisterStudentPage() {
                                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData.org_id === String(org.org_id) ? "border-accent" : "border-white/30"}`}>
                                         {formData.org_id === String(org.org_id) && <div className="w-2.5 h-2.5 rounded-full bg-accent" />}
                                     </div>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 flex-1">
                                         <div className="w-9 h-9 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
                                             <Building className="w-5 h-5 text-accent" />
                                         </div>
                                         <div>
                                             <p className="font-semibold text-white text-sm">{org.org_name}</p>
-                                            {org.email && <p className="text-xs text-muted">{org.email}</p>}
+                                            <p className="text-xs text-muted capitalize">{org.org_type}</p>
                                         </div>
                                     </div>
                                 </label>

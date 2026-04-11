@@ -12,7 +12,7 @@ router = APIRouter(
     tags=["Organizations"]
 )
 
-@router.post("/", response_model=OrganizationResponse)
+@router.post("", response_model=OrganizationResponse)
 async def create_organization(
     org: OrganizationCreate,
     db: AsyncSession = Depends(get_db)
@@ -26,7 +26,7 @@ async def create_organization(
     await db.refresh(new_org)
     return new_org
 
-@router.get("/", response_model=list[OrganizationResponse])
+@router.get("", response_model=list[OrganizationResponse])
 async def list_organizations(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Organization))
     return result.scalars().all()
