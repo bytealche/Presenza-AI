@@ -106,8 +106,18 @@ export default function TeacherDashboard() {
                         <div key={cls.session_id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-start mb-4">
                                 <h4 className="text-lg font-bold text-gray-900">{cls.session_name}</h4>
-                                <span className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full border border-blue-100">
-                                    {new Date(cls.start_time) > new Date() ? "Scheduled" : "Active/Past"}
+                                <span className={`text-xs px-2 py-1 rounded-full border font-medium ${
+                                        new Date(cls.end_time) < new Date()
+                                            ? 'bg-gray-100 text-gray-500 border-gray-200'
+                                            : new Date(cls.start_time) <= new Date() && new Date(cls.end_time) >= new Date()
+                                            ? 'bg-green-50 text-green-700 border-green-200'
+                                            : 'bg-blue-50 text-blue-700 border-blue-100'
+                                    }`}>
+                                    {new Date(cls.end_time) < new Date()
+                                        ? 'Ended'
+                                        : new Date(cls.start_time) <= new Date()
+                                        ? '🔴 Live'
+                                        : 'Scheduled'}
                                 </span>
                             </div>
 
@@ -124,10 +134,12 @@ export default function TeacherDashboard() {
                                     <MapPin className="w-4 h-4 text-gray-400" />
                                     <span>{cls.location || "Online"}</span>
                                 </div>
-                                {cls.camera_id && (
+                            {cls.camera_id && (
                                     <div className="flex items-center gap-2">
                                         <Video className="w-4 h-4 text-gray-400" />
-                                        <span>Camera ID: {cls.camera_id}</span>
+                                        <span>
+                                            {cameras.find(c => c.camera_id === cls.camera_id)?.location || `Camera #${cls.camera_id}`}
+                                        </span>
                                     </div>
                                 )}
                             </div>

@@ -5,8 +5,10 @@ export interface Session {
   session_name: string;
   start_time: string;
   end_time: string;
-  location: string;
+  location?: string;
   camera_id?: number;
+  org_id?: number;
+  created_by?: number;
 }
 
 export interface SessionCreate {

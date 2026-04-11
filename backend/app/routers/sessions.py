@@ -17,7 +17,7 @@ router = APIRouter(
 @router.post(
     "",
     response_model=SessionResponse,
-    dependencies=[Depends(require_roles([2]))]  # teacher
+    dependencies=[Depends(require_roles([1, 2]))]  # admin + teacher
 )
 async def create_session(
     data: SessionCreate,
