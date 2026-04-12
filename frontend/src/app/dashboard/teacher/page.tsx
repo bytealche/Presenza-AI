@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getTeacherStats, TeacherStats } from "@/services/dashboardService";
 import { getSessions, createSession, Session } from "@/services/sessionService";
 import { getCameras, Camera } from "@/services/cameraService";
-import { Plus, Calendar, MapPin, Video, Clock, X, Loader2 } from "lucide-react";
+import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2 } from "lucide-react";
 import { DeviceCameraStreamer } from "@/components/CameraStream";
 
 export default function TeacherDashboard() {
@@ -147,12 +147,19 @@ export default function TeacherDashboard() {
                             </div>
 
                             {/* Stream Button */}
-                            {cls.camera_id && new Date(cls.end_time) >= new Date() && (
+                            {cls.camera_id ? (
                                 <button
                                     onClick={() => setStreamingCameraId(cls.camera_id!.toString())}
                                     className="mt-4 w-full bg-accent/10 hover:bg-accent/20 text-accent font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
                                 >
                                     <Video className="w-4 h-4" /> Start Streaming
+                                </button>
+                            ) : (
+                                <button
+                                    disabled
+                                    className="mt-4 w-full bg-gray-100 text-gray-400 font-medium py-2 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                                >
+                                    <VideoOff className="w-4 h-4" /> No Camera Assigned
                                 </button>
                             )}
                         </div>
