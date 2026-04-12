@@ -41,6 +41,17 @@ class ConnectionManager:
             del self.senders[camera_id]
             logger.info(f"Sender disconnected: {camera_id}")
 
+    async def send_to_sender(self, camera_id: str, data):
+        """Send JSON data back to the sender (e.g. AI analysis boxes for the source preview)"""
+        if camera_id in self.senders:
+            try:
+                if isinstance(data, str):
+                    await self.senders[camera_id].send_text(data)
+                else:
+                    await self.senders[camera_id].send_bytes(data)
+            except Exception as e:
+                logger.error(f"Error sending frame to sender {camera_id}: {e}")
+                
     async def broadcast_to_receivers(self, camera_id: str, data):
         """Send video frames or JSON data to all receivers watching this camera_id"""
         if camera_id in self.receivers:

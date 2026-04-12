@@ -46,7 +46,7 @@ async def _ai_loop(camera_id: str):
 
                 if decisions:
                     # Mark attendance for active session
-                    now = datetime.utcnow()
+                    now = datetime.now()
                     stmt = select(SessionModel).where(
                         SessionModel.camera_id == int(camera_id),
                         SessionModel.start_time <= now,
@@ -68,10 +68,9 @@ async def _ai_loop(camera_id: str):
                         d_safe["bbox"] = list(d_safe["bbox"])
                     safe_decisions.append(d_safe)
 
-                await manager.broadcast_to_receivers(
-                    camera_id,
-                    json.dumps({"type": "ai_analysis", "data": safe_decisions})
-                )
+                payload = json.dumps({"type": "ai_analysis", "data": safe_decisions})
+                await manager.broadcast_to_receivers(camera_id, payload)
+                await manager.send_to_sender(camera_id, payload)
 
         except asyncio.CancelledError:
             break
