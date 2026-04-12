@@ -4,6 +4,7 @@ import { getTeacherStats, TeacherStats } from "@/services/dashboardService";
 import { getSessions, createSession, Session } from "@/services/sessionService";
 import { getCameras, Camera } from "@/services/cameraService";
 import { Plus, Calendar, MapPin, Video, Clock, X, Loader2 } from "lucide-react";
+import { DeviceCameraStreamer } from "@/components/CameraStream";
 
 export default function TeacherDashboard() {
     const [stats, setStats] = useState<TeacherStats | null>(null);
@@ -12,6 +13,7 @@ export default function TeacherDashboard() {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [creating, setCreating] = useState(false);
+    const [streamingCameraId, setStreamingCameraId] = useState<string | null>(null);
 
     // Form State
     const [newClass, setNewClass] = useState({
@@ -134,7 +136,7 @@ export default function TeacherDashboard() {
                                     <MapPin className="w-4 h-4 text-gray-400" />
                                     <span>{cls.location || "Online"}</span>
                                 </div>
-                            {cls.camera_id && (
+                                {cls.camera_id && (
                                     <div className="flex items-center gap-2">
                                         <Video className="w-4 h-4 text-gray-400" />
                                         <span>
@@ -143,6 +145,16 @@ export default function TeacherDashboard() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Stream Button */}
+                            {cls.camera_id && new Date(cls.end_time) >= new Date() && (
+                                <button
+                                    onClick={() => setStreamingCameraId(cls.camera_id!.toString())}
+                                    className="mt-4 w-full bg-accent/10 hover:bg-accent/20 text-accent font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Video className="w-4 h-4" /> Start Streaming
+                                </button>
+                            )}
                         </div>
                     ))}
 
@@ -250,6 +262,29 @@ export default function TeacherDashboard() {
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Stream Class Modal */}
+            {streamingCameraId && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-secondary rounded-2xl shadow-2xl w-full max-w-3xl p-6 relative animate-in fade-in zoom-in duration-200 border border-white/10">
+                        <button
+                            onClick={() => setStreamingCameraId(null)}
+                            className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <h3 className="text-2xl font-bold text-white mb-2">Live Class Stream</h3>
+                        <p className="text-sm text-gray-400 mb-6 border-b border-white/10 pb-4">
+                            Streaming to Camera #{streamingCameraId}. The AI is automatically detecting faces and marking attendance for registered students.
+                        </p>
+
+                        <div className="w-full max-w-2xl mx-auto">
+                            <DeviceCameraStreamer cameraId={streamingCameraId} />
+                        </div>
                     </div>
                 </div>
             )}
