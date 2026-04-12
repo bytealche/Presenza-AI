@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from typing import List
-from app.database.database import get_db
+from app.database.dependencies import get_db
 from app.models.ai_decision import AIDecisionLog
 from app.models.attendance import AttendanceRecord
 from app.models.user import User
