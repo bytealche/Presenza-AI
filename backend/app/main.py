@@ -17,7 +17,7 @@ from app.core.rate_limit import limiter
 from app.routers import (
     organizations, roles, users, protected, sessions,
     enrollments, auth, attendance, attendance_views,
-    ai_trigger, analytics, cameras, stream, health,
+    ai_trigger, analytics, cameras, stream, health, ai_logs
 )
 from app.ai_engine.face_embedding import load_model
 
@@ -75,6 +75,7 @@ app.include_router(ai_trigger.router)
 app.include_router(analytics.router)
 app.include_router(cameras.router)
 app.include_router(stream.router)
+app.include_router(ai_logs.router)
 
 # ── Mobile Camera Sender Page ─────────────────────────────────────────────────
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -2,6 +2,7 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.attendance import AttendanceRecord as Attendance
+from app.models.ai_decision import AIDecisionLog
 from app.models.session import Session as SessionModel
 import logging
 
@@ -61,6 +62,17 @@ async def apply_ai_decisions(db: AsyncSession, session_id: int, decisions: list)
         )
         db.add(attendance)
         try:
+            await db.flush()  # Flush to get the attendance_id
+            
+            # Log the AI decision
+            ai_log = AIDecisionLog(
+                attendance_id=attendance.attendance_id,
+                model_name="deepface_resnet_liveness",
+                confidence_score=float(confidence) if confidence else 0.0,
+                decision_reason=d.get("reason") or ("fraud_detected" if is_fraud else "confirmed_genuine")
+            )
+            db.add(ai_log)
+            
             await db.commit()
             await db.refresh(attendance)
             logger.info(f"Marked {user_id} as {final_status} in session {session_id}")

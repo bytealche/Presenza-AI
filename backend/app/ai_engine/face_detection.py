@@ -31,7 +31,7 @@ def detect_faces(frame):
             img_path=frame_small,
             detector_backend="opencv",   # Fast Haar cascade, CPU-friendly
             enforce_detection=False,
-            align=True,
+            align=False,                 # DO NOT ALIGN (prevents black padding ruining liveness check)
             anti_spoofing=False
         )
         print(f"DeepFace found: {len(face_objs)} faces/candidates")

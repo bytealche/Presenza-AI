@@ -39,7 +39,7 @@ class LivenessDetector:
         
         reasons = []
 
-        if variance < 15:
+        if variance < 5:
             reasons.append("low_texture_variance_possible_photo")
 
         # Let's increase tolerance for the single shot, 
