@@ -12,13 +12,24 @@ liveness_detector = LivenessDetector()
 
 engagement_analyzer = EngagementAnalyzer()
 presence_tracker = PresenceTracker()
+import asyncio
+
 async def process_frame(db: AsyncSession, frame):
     decisions = []
-    faces = detect_faces(frame)
+    
+    # 1. CPU-bound tracking
+    faces = await asyncio.to_thread(detect_faces, frame)
 
     for face in faces:
-        live, live_reasons = liveness_detector.check(face["face_image"])
-        embedding = generate_embedding(face["face_image"])
+        # 2. CPU-bound embedding and liveness
+        def _analyze():
+            live, live_reasons = liveness_detector.check(face["face_image"])
+            embedding = generate_embedding(face["face_image"])
+            return live, live_reasons, embedding
+            
+        live, live_reasons, embedding = await asyncio.to_thread(_analyze)
+        
+        # 3. Async DB boundary
         user_id, confidence = await recognize_face(db, embedding)
 
         engagement_score = None
@@ -50,8 +61,6 @@ async def process_frame(db: AsyncSession, frame):
             "timestamp": face["frame_time"],
             "bbox": face["bbox"]
         }
-
-
 
         decisions.append(decision)
 

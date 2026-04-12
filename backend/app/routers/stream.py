@@ -41,14 +41,11 @@ async def _ai_loop(camera_id: str):
                 await asyncio.sleep(0.5)
                 continue
 
-            # Run AI in thread pool so it doesn't block event loop
-            decisions = await asyncio.get_event_loop().run_in_executor(
-                None, _sync_process_frame, frame
-            )
+            async with SessionLocal() as db:
+                decisions = await process_frame(db, frame)
 
-            if decisions:
-                # Mark attendance for active session
-                async with SessionLocal() as db:
+                if decisions:
+                    # Mark attendance for active session
                     now = datetime.utcnow()
                     stmt = select(SessionModel).where(
                         SessionModel.camera_id == int(camera_id),
@@ -85,28 +82,6 @@ async def _ai_loop(camera_id: str):
         await asyncio.sleep(2.0)
 
     logger.info(f"AI loop stopped for camera {camera_id}")
-
-
-def _sync_process_frame(frame):
-    """Synchronous wrapper for AI processing — runs in thread executor."""
-    import importlib
-    decision_engine = importlib.import_module("app.ai_engine.decision_engine")
-
-    # Use asyncio.run in the thread
-    loop = asyncio.new_event_loop()
-    try:
-        from app.database.database import SessionLocal as SL
-
-        async def _inner():
-            async with SL() as db:
-                return await decision_engine.process_frame(db, frame)
-
-        return loop.run_until_complete(_inner())
-    except Exception as e:
-        logger.error(f"Sync AI error: {e}")
-        return []
-    finally:
-        loop.close()
 
 
 @router.websocket("/stream/{camera_id}")
