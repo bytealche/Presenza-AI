@@ -67,6 +67,69 @@ export default function TeacherDashboard() {
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading dashboard...</div>;
 
+    const activeClasses = classes.filter(cls => new Date(cls.end_time) >= new Date());
+    const pastClasses = classes.filter(cls => new Date(cls.end_time) < new Date());
+    const renderClassCard = (cls: Session) => (
+        <div key={cls.session_id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
+            <div className="flex justify-between items-start mb-4">
+                <h4 className="text-lg font-bold text-gray-900">{cls.session_name}</h4>
+                <span className={`text-xs px-2 py-1 rounded-full border font-medium ${
+                        new Date(cls.end_time) < new Date()
+                            ? 'bg-gray-100 text-gray-500 border-gray-200'
+                            : new Date(cls.start_time) <= new Date() && new Date(cls.end_time) >= new Date()
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : 'bg-blue-50 text-blue-700 border-blue-100'
+                    }`}>
+                    {new Date(cls.end_time) < new Date()
+                        ? 'Ended'
+                        : new Date(cls.start_time) <= new Date()
+                        ? '🔴 Live'
+                        : 'Scheduled'}
+                </span>
+            </div>
+
+            <div className="space-y-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-400" />
+                    <span>{new Date(cls.start_time).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span>{new Date(cls.start_time).toLocaleTimeString()} - {new Date(cls.end_time).toLocaleTimeString()}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <span>{cls.location || "Online"}</span>
+                </div>
+                {cls.camera_id && (
+                    <div className="flex items-center gap-2">
+                        <Video className="w-4 h-4 text-gray-400" />
+                        <span>
+                            {cameras.find(c => c.camera_id === cls.camera_id)?.location || `Camera #${cls.camera_id}`}
+                        </span>
+                    </div>
+                )}
+            </div>
+
+            {/* Stream Button */}
+            {cls.camera_id ? (
+                <button
+                    onClick={() => setStreamingCameraId(cls.camera_id!.toString())}
+                    className="mt-4 w-full bg-accent/10 hover:bg-accent/20 text-accent font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                    <Video className="w-4 h-4" /> Start Streaming
+                </button>
+            ) : (
+                <button
+                    disabled
+                    className="mt-4 w-full bg-gray-100 text-gray-400 font-medium py-2 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                >
+                    <VideoOff className="w-4 h-4" /> No Camera Assigned
+                </button>
+            )}
+        </div>
+    );
+
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-center">
@@ -100,78 +163,28 @@ export default function TeacherDashboard() {
                 </div>
             )}
 
-            {/* Classes List */}
+            {/* Active Classes List */}
             <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-800">My Classes</h3>
+                <h3 className="text-xl font-semibold text-gray-800">Active & Upcoming Classes</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {classes.map((cls) => (
-                        <div key={cls.session_id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-                            <div className="flex justify-between items-start mb-4">
-                                <h4 className="text-lg font-bold text-gray-900">{cls.session_name}</h4>
-                                <span className={`text-xs px-2 py-1 rounded-full border font-medium ${
-                                        new Date(cls.end_time) < new Date()
-                                            ? 'bg-gray-100 text-gray-500 border-gray-200'
-                                            : new Date(cls.start_time) <= new Date() && new Date(cls.end_time) >= new Date()
-                                            ? 'bg-green-50 text-green-700 border-green-200'
-                                            : 'bg-blue-50 text-blue-700 border-blue-100'
-                                    }`}>
-                                    {new Date(cls.end_time) < new Date()
-                                        ? 'Ended'
-                                        : new Date(cls.start_time) <= new Date()
-                                        ? '🔴 Live'
-                                        : 'Scheduled'}
-                                </span>
-                            </div>
-
-                            <div className="space-y-2 text-sm text-gray-600">
-                                <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-gray-400" />
-                                    <span>{new Date(cls.start_time).toLocaleDateString()}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-gray-400" />
-                                    <span>{new Date(cls.start_time).toLocaleTimeString()} - {new Date(cls.end_time).toLocaleTimeString()}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-gray-400" />
-                                    <span>{cls.location || "Online"}</span>
-                                </div>
-                                {cls.camera_id && (
-                                    <div className="flex items-center gap-2">
-                                        <Video className="w-4 h-4 text-gray-400" />
-                                        <span>
-                                            {cameras.find(c => c.camera_id === cls.camera_id)?.location || `Camera #${cls.camera_id}`}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Stream Button */}
-                            {cls.camera_id ? (
-                                <button
-                                    onClick={() => setStreamingCameraId(cls.camera_id!.toString())}
-                                    className="mt-4 w-full bg-accent/10 hover:bg-accent/20 text-accent font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <Video className="w-4 h-4" /> Start Streaming
-                                </button>
-                            ) : (
-                                <button
-                                    disabled
-                                    className="mt-4 w-full bg-gray-100 text-gray-400 font-medium py-2 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
-                                >
-                                    <VideoOff className="w-4 h-4" /> No Camera Assigned
-                                </button>
-                            )}
-                        </div>
-                    ))}
-
-                    {classes.length === 0 && (
+                    {activeClasses.map(renderClassCard)}
+                    {activeClasses.length === 0 && (
                         <div className="col-span-full text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-                            <p className="text-gray-500">No classes found. Create one to get started.</p>
+                            <p className="text-gray-500">No active or scheduled classes at the moment.</p>
                         </div>
                     )}
                 </div>
             </div>
+
+            {/* Past Classes List */}
+            {pastClasses.length > 0 && (
+                <div className="space-y-4 pt-8 border-t border-gray-100">
+                    <h3 className="text-xl font-semibold text-gray-600">Past Classes</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75 grayscale-[20%]">
+                        {pastClasses.map(renderClassCard)}
+                    </div>
+                </div>
+            )}
 
             {/* Create Class Modal */}
             {isModalOpen && (
