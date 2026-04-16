@@ -77,8 +77,8 @@ async def _ai_loop(camera_id: str):
         except Exception as e:
             logger.error(f"AI loop error for cam {camera_id}: {e}")
 
-        # Process a frame every 2 seconds (fast enough, won't overload CPU)
-        await asyncio.sleep(2.0)
+        # Process a frame every 0.5 seconds for much more responsive detection
+        await asyncio.sleep(0.5)
 
     logger.info(f"AI loop stopped for camera {camera_id}")
 

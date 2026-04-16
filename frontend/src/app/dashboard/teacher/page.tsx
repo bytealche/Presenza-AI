@@ -111,8 +111,15 @@ export default function TeacherDashboard() {
                 )}
             </div>
 
-            {/* Stream Button */}
-            {cls.camera_id ? (
+            {/* Action Buttons */}
+            {new Date(cls.end_time) < new Date() ? (
+                <button
+                    onClick={() => window.location.href = `/dashboard/attendance?sessionId=${cls.session_id}`}
+                    className="mt-4 w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                    <Calendar className="w-4 h-4" /> Check Attendance
+                </button>
+            ) : cls.camera_id ? (
                 <button
                     onClick={() => setStreamingCameraId(cls.camera_id!.toString())}
                     className="mt-4 w-full bg-accent/10 hover:bg-accent/20 text-accent font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"

@@ -29,12 +29,23 @@ export default function AttendancePage() {
     const loadSessions = async () => {
         if (!user) return;
         try {
+            let data: Session[] = [];
             if (user.role_id === 2) {
-                const data = await getSessions(user.user_id);
-                setSessions(data);
+                data = await getSessions(user.user_id);
             } else if (user.role_id === 1) {
-                const data = await getSessions();
-                setSessions(data);
+                data = await getSessions();
+            }
+            setSessions(data);
+
+            if (typeof window !== 'undefined') {
+                const params = new URLSearchParams(window.location.search);
+                const initialSessionId = params.get("sessionId");
+                if (initialSessionId) {
+                    const sId = parseInt(initialSessionId, 10);
+                    if (data.some(s => s.session_id === sId)) {
+                        handleSessionChange(sId);
+                    }
+                }
             }
         } catch (error) {
             console.error("Failed to load sessions", error);
