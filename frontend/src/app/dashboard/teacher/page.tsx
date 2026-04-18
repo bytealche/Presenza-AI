@@ -14,6 +14,7 @@ export default function TeacherDashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [creating, setCreating] = useState(false);
     const [streamingCameraId, setStreamingCameraId] = useState<string | null>(null);
+    const [streamingSessionId, setStreamingSessionId] = useState<number | null>(null);
 
     // Form State
     const [newClass, setNewClass] = useState({
@@ -121,7 +122,10 @@ export default function TeacherDashboard() {
                 </button>
             ) : cls.camera_id ? (
                 <button
-                    onClick={() => setStreamingCameraId(cls.camera_id!.toString())}
+                    onClick={() => {
+                    setStreamingCameraId(cls.camera_id!.toString());
+                    setStreamingSessionId(cls.session_id);
+                }}
                     className="mt-4 w-full bg-accent/10 hover:bg-accent/20 text-accent font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                     <Video className="w-4 h-4" /> Start Streaming
@@ -296,9 +300,12 @@ export default function TeacherDashboard() {
             {/* Stream Class Modal */}
             {streamingCameraId && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-secondary rounded-2xl shadow-2xl w-full max-w-3xl p-6 relative animate-in fade-in zoom-in duration-200 border border-white/10">
+                    <div className="bg-secondary rounded-2xl shadow-2xl w-full max-w-5xl p-6 relative animate-in fade-in zoom-in duration-200 border border-white/10">
                         <button
-                            onClick={() => setStreamingCameraId(null)}
+                            onClick={() => {
+                    setStreamingCameraId(null);
+                    setStreamingSessionId(null);
+                }}
                             className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
                         >
                             <X className="w-6 h-6" />
@@ -310,7 +317,10 @@ export default function TeacherDashboard() {
                         </p>
 
                         <div className="w-full max-w-2xl mx-auto">
-                            <DeviceCameraStreamer cameraId={streamingCameraId} />
+                            <DeviceCameraStreamer
+                                cameraId={streamingCameraId}
+                                sessionId={streamingSessionId ?? undefined}
+                            />
                         </div>
                     </div>
                 </div>
