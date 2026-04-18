@@ -7,8 +7,10 @@
   --accent: #bdf4ff; /* cyan */
   --accent-dark: #9cf0ff;
   --violet: #d0bcff;
-  --foreground: #e1e1f3;
-  --muted: #c7c5cc;
+  --foreground: #f0f0ff;        /* brighter near-white for primary text */
+  --muted: #a8a6b8;             /* was #c7c5cc — now higher contrast on dark bg */
+  --muted-bright: #cccada;      /* for secondary labels that need to be readable */
+  --placeholder: #6e6c7e;       /* placeholder text — intentionally dimmer */
 }
 
 @theme inline {
@@ -19,6 +21,8 @@
   --color-violet: var(--violet);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
+  --color-muted-bright: var(--muted-bright);
+  --color-placeholder: var(--placeholder);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -30,6 +34,27 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Ensure typed text is always visible inside inputs */
+input, textarea, select {
+  color: #f0f0ff;
+  caret-color: var(--accent);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--placeholder);
+  opacity: 1; /* Firefox reduces opacity by default */
+}
+
+/* Autofill text color fix (Chrome/Safari wash out autofill with white bg) */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #f0f0ff;
+  -webkit-box-shadow: 0 0 0px 1000px #1a1c2a inset;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 ::selection {

@@ -26,8 +26,8 @@ def generate_embedding(face_image):
             img_path=face_image,
             model_name="Facenet512",
             enforce_detection=False,
-            detector_backend="opencv",
-            align=True
+            detector_backend="skip",  # Face already cropped upstream — skip re-detection
+            align=False               # Alignment requires detection landmarks; skipped for speed
         )
         
         if not embedding_objs:

@@ -16,20 +16,25 @@ import asyncio
 
 async def process_frame(db: AsyncSession, frame):
     decisions = []
-    
-    # 1. CPU-bound tracking
+
+    # 1. Detect all faces (CPU-bound, runs in thread pool)
     faces = await asyncio.to_thread(detect_faces, frame)
 
-    for face in faces:
-        # 2. CPU-bound embedding and liveness
-        def _analyze():
-            live, live_reasons = liveness_detector.check(face["face_image"])
-            embedding = generate_embedding(face["face_image"])
-            return live, live_reasons, embedding
-            
-        live, live_reasons, embedding = await asyncio.to_thread(_analyze)
-        
-        # 3. Async DB boundary
+    if not faces:
+        return decisions
+
+    # 2. Run liveness + embedding for ALL faces in parallel
+    def _analyze_face(face_image):
+        live, live_reasons = liveness_detector.check(face_image)
+        embedding = generate_embedding(face_image)
+        return live, live_reasons, embedding
+
+    analysis_results = await asyncio.gather(
+        *[asyncio.to_thread(_analyze_face, face["face_image"]) for face in faces]
+    )
+
+    # 3. Sequential async DB work (DB sessions are not thread-safe to parallelize)
+    for face, (live, live_reasons, embedding) in zip(faces, analysis_results):
         user_id, confidence = await recognize_face(db, embedding)
 
         engagement_score = None
@@ -41,7 +46,6 @@ async def process_frame(db: AsyncSession, frame):
                 confidence=confidence
             )
 
-            # Update presence tracker with this frame's data before checking confirmed status
             presence_tracker.update(user_id, confidence, face["frame_time"])
             confirmed = presence_tracker.is_confirmed(user_id)
         else:
