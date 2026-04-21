@@ -32,6 +32,16 @@ export function Hero() {
             {/* --- Main Content --- */}
             <div className="relative z-10 max-w-7xl mx-auto px-6 text-center flex flex-col items-center">
 
+                {/* Project Logo */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3, duration: 0.8 }}
+                    className="mb-8"
+                >
+                    <img src="/logo.png" alt="Presenza AI Logo" className="w-28 h-28 object-contain drop-shadow-[0_0_30px_rgba(189,244,255,0.3)] hover:scale-105 transition-transform duration-500 cursor-pointer" />
+                </motion.div>
+
                 {/* Elite Badge */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -45,7 +55,7 @@ export function Hero() {
 
                 {/* Hero Title */}
                 <motion.h1
-                    className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-8"
+                    className="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-8"
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7, duration: 0.8 }}
@@ -73,22 +83,26 @@ export function Hero() {
 
                 {/* CTA Buttons */}
                 <motion.div
-                    className="flex flex-col sm:flex-row items-center gap-6"
+                    className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 1.2 }}
                 >
-                    <MagneticButton>
-                        <a href="/login" className="flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-accent to-accent-dark text-[#00363d] rounded-full font-bold shadow-[0_0_30px_-5px_rgba(189,244,255,0.4)] hover:shadow-[0_0_50px_-10px_rgba(189,244,255,0.6)] transition-all transform hover:-translate-y-0.5">
-                            Initialize System <ArrowRight className="w-5 h-5" />
-                        </a>
-                    </MagneticButton>
+                    <div className="w-full sm:w-auto">
+                        <MagneticButton>
+                            <a href="/login" className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-accent to-accent-dark text-[#00363d] rounded-full font-bold shadow-[0_0_30px_-5px_rgba(189,244,255,0.4)] hover:shadow-[0_0_50px_-10px_rgba(189,244,255,0.6)] transition-all transform hover:-translate-y-0.5 whitespace-nowrap">
+                                Initialize System <ArrowRight className="w-5 h-5" />
+                            </a>
+                        </MagneticButton>
+                    </div>
 
-                    <MagneticButton>
-                        <button className="flex items-center gap-2 px-8 py-4 text-foreground rounded-full font-semibold border border-[rgba(145,144,150,0.2)] hover:bg-secondary/80 transition-all backdrop-blur-sm">
-                            <Play className="w-5 h-5 fill-current" /> Watch Demo
-                        </button>
-                    </MagneticButton>
+                    <div className="w-full sm:w-auto">
+                        <MagneticButton>
+                            <button className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 text-foreground rounded-full font-semibold border border-[rgba(145,144,150,0.2)] hover:bg-secondary/80 transition-all backdrop-blur-sm whitespace-nowrap">
+                                <Play className="w-5 h-5 fill-current" /> Watch Demo
+                            </button>
+                        </MagneticButton>
+                    </div>
                 </motion.div>
             </div>
 

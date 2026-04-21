@@ -9,8 +9,8 @@ export default function Home() {
       <Hero />
 
       {/* Elite Capabilities Section */}
-      <section className="py-32 px-6 max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-20">
+      <section className="py-16 md:py-32 px-4 md:px-6 max-w-7xl mx-auto relative z-10">
+        <div className="text-center mb-12 md:mb-20">
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6">
                 Unmatched Capabilities
             </h2>

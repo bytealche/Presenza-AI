@@ -165,13 +165,13 @@ export default function AttendancePage() {
                 <div className="relative flex-1 w-full md:w-auto">
                     <Filter className="absolute left-3 top-3 h-5 w-5 text-muted" />
                     <select
-                        className="w-full pl-10 pr-4 py-2 bg-black/20 border border-white/10 rounded-lg text-white focus:ring-2 focus:ring-accent/50 outline-none"
+                        className="w-full pl-10 pr-4 py-2 bg-black/20 border border-white/10 rounded-lg text-white appearance-none focus:ring-2 focus:ring-accent/50 outline-none"
                         value={selectedSession || ""}
                         onChange={(e) => handleSessionChange(Number(e.target.value))}
                     >
-                        <option value="">Select a Class to View Attendance</option>
+                        <option value="" className="bg-[#0c0e1a] text-white">Select a Class to View Attendance</option>
                         {sessions.map(session => (
-                            <option key={session.session_id} value={session.session_id}>
+                            <option key={session.session_id} value={session.session_id} className="bg-[#0c0e1a] text-white">
                                 {session.session_name} ({new Date(session.start_time).toLocaleDateString()})
                             </option>
                         ))}
