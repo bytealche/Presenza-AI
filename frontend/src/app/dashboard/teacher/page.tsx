@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getTeacherStats, TeacherStats } from "@/services/dashboardService";
 import { getSessions, createSession, Session } from "@/services/sessionService";
 import { getCameras, Camera } from "@/services/cameraService";
-import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2 } from "lucide-react";
+import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2, Sparkles } from "lucide-react";
 import { DeviceCameraStreamer } from "@/components/CameraStream";
 
 export default function TeacherDashboard() {
@@ -15,6 +15,7 @@ export default function TeacherDashboard() {
     const [creating, setCreating] = useState(false);
     const [streamingCameraId, setStreamingCameraId] = useState<string | null>(null);
     const [streamingSessionId, setStreamingSessionId] = useState<number | null>(null);
+    const [mounted, setMounted] = useState(false);
 
     // Form State
     const [newClass, setNewClass] = useState({
@@ -26,6 +27,7 @@ export default function TeacherDashboard() {
     });
 
     useEffect(() => {
+        setMounted(true);
         loadData();
     }, []);
 
@@ -66,122 +68,146 @@ export default function TeacherDashboard() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading dashboard...</div>;
-
-    const activeClasses = classes.filter(cls => new Date(cls.end_time) >= new Date());
-    const pastClasses = classes.filter(cls => new Date(cls.end_time) < new Date());
-    const renderClassCard = (cls: Session) => (
-        <div key={cls.session_id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-                <h4 className="text-lg font-bold text-gray-900">{cls.session_name}</h4>
-                <span className={`text-xs px-2 py-1 rounded-full border font-medium ${
-                        new Date(cls.end_time) < new Date()
-                            ? 'bg-gray-100 text-gray-500 border-gray-200'
-                            : new Date(cls.start_time) <= new Date() && new Date(cls.end_time) >= new Date()
-                            ? 'bg-green-50 text-green-700 border-green-200'
-                            : 'bg-blue-50 text-blue-700 border-blue-100'
-                    }`}>
-                    {new Date(cls.end_time) < new Date()
-                        ? 'Ended'
-                        : new Date(cls.start_time) <= new Date()
-                        ? '🔴 Live'
-                        : 'Scheduled'}
-                </span>
-            </div>
-
-            <div className="space-y-2 text-sm text-gray-600">
-                <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-gray-400" />
-                    <span>{new Date(cls.start_time).toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    <span>{new Date(cls.start_time).toLocaleTimeString()} - {new Date(cls.end_time).toLocaleTimeString()}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <span>{cls.location || "Online"}</span>
-                </div>
-                {cls.camera_id && (
-                    <div className="flex items-center gap-2">
-                        <Video className="w-4 h-4 text-gray-400" />
-                        <span>
-                            {cameras.find(c => c.camera_id === cls.camera_id)?.location || `Camera #${cls.camera_id}`}
-                        </span>
-                    </div>
-                )}
-            </div>
-
-            {/* Action Buttons */}
-            {new Date(cls.end_time) < new Date() ? (
-                <button
-                    onClick={() => window.location.href = `/dashboard/attendance?sessionId=${cls.session_id}`}
-                    className="mt-4 w-full bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                    <Calendar className="w-4 h-4" /> Check Attendance
-                </button>
-            ) : cls.camera_id ? (
-                <button
-                    onClick={() => {
-                    setStreamingCameraId(cls.camera_id!.toString());
-                    setStreamingSessionId(cls.session_id);
-                }}
-                    className="mt-4 w-full bg-accent/10 hover:bg-accent/20 text-accent font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                    <Video className="w-4 h-4" /> Start Streaming
-                </button>
-            ) : (
-                <button
-                    disabled
-                    className="mt-4 w-full bg-gray-100 text-gray-400 font-medium py-2 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
-                >
-                    <VideoOff className="w-4 h-4" /> No Camera Assigned
-                </button>
-            )}
+    if (loading) return (
+        <div className="flex h-[60vh] w-full items-center justify-center">
+            <Loader2 className="w-10 h-10 text-accent animate-spin" />
         </div>
     );
 
+    const activeClasses = classes.filter(cls => new Date(cls.end_time) >= new Date());
+    const pastClasses = classes.filter(cls => new Date(cls.end_time) < new Date());
+    
+    const renderClassCard = (cls: Session, index: number) => {
+        const isLive = new Date(cls.start_time) <= new Date() && new Date(cls.end_time) >= new Date();
+        const isEnded = new Date(cls.end_time) < new Date();
+        
+        return (
+            <div 
+                key={cls.session_id} 
+                className="glass-card p-6 flex flex-col justify-between"
+                style={{ animationDelay: `${index * 100}ms` }}
+            >
+                <div className="flex justify-between items-start mb-6">
+                    <h4 className="text-xl font-semibold text-foreground tracking-tight line-clamp-2">{cls.session_name}</h4>
+                    <span className={`text-xs px-3 py-1.5 rounded-full font-medium tracking-wide shadow-sm flex items-center gap-1.5 transition-all whitespace-nowrap ml-3 ${
+                            isEnded
+                                ? 'bg-white/5 text-white/50 border border-white/10'
+                                : isLive
+                                ? 'bg-red-500/10 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)] animate-pulse'
+                                : 'bg-accent/10 text-accent font-semibold border border-accent/30 shadow-[0_0_10px_rgba(189,244,255,0.15)]'
+                        }`}>
+                        {isLive && <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>}
+                        {isEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
+                    </span>
+                </div>
+
+                <div className="space-y-3 text-sm text-muted-bright mb-6">
+                    <div className="flex items-center gap-3">
+                        <Calendar className="w-4 h-4 text-accent/70" />
+                        <span>{new Date(cls.start_time).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <Clock className="w-4 h-4 text-accent/70" />
+                        <span>{new Date(cls.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(cls.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <MapPin className="w-4 h-4 text-accent/70" />
+                        <span className="truncate">{cls.location || "Online"}</span>
+                    </div>
+                    {cls.camera_id && (
+                        <div className="flex items-center gap-3">
+                            <Video className="w-4 h-4 text-accent/70" />
+                            <span className="truncate">
+                                {cameras.find(c => c.camera_id === cls.camera_id)?.location || `Cam ID: ${cls.camera_id}`}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Action Buttons */}
+                {isEnded ? (
+                    <button
+                        onClick={() => window.location.href = `/dashboard/attendance?sessionId=${cls.session_id}`}
+                        className="w-full bg-secondary text-foreground hover:text-accent border border-white/10 hover:border-accent/30 font-medium py-3 rounded-lg transition-all flex items-center justify-center gap-2 group"
+                    >
+                        <Calendar className="w-4 h-4 group-hover:scale-110 transition-transform" /> Attendance Report
+                    </button>
+                ) : cls.camera_id ? (
+                    <button
+                        onClick={() => {
+                        setStreamingCameraId(cls.camera_id!.toString());
+                        setStreamingSessionId(cls.session_id);
+                    }}
+                        className={`w-full font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 group ${isLive ? 'bg-gradient-to-r from-accent to-accent-dark text-black hover:shadow-[0_0_20px_rgba(189,244,255,0.4)]' : 'bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 hover:border-accent/50'}`}
+                    >
+                        <Video className={`w-4 h-4 group-hover:animate-bounce`} /> {isLive ? 'Join Stream' : 'Start Stream'}
+                    </button>
+                ) : (
+                    <button
+                        disabled
+                        className="w-full bg-secondary/50 text-white/30 border border-white/5 font-medium py-3 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
+                    >
+                        <VideoOff className="w-4 h-4" /> No Camera Assigned
+                    </button>
+                )}
+            </div>
+        );
+    }
+
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-                    Teacher Dashboard
-                </h2>
+        <div className={`space-y-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                <div>
+                    <h2 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-accent via-white to-violet drop-shadow-md tracking-tight">
+                        Teacher Dashboard
+                    </h2>
+                    <p className="text-muted-bright mt-2 text-sm md:text-base">Manage your scheduled sessions, cameras, and attendance tracking.</p>
+                </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-accent hover:bg-accent/90 text-white px-4 py-2 rounded-lg transition-all shadow-lg shadow-accent/20"
+                    className="flex items-center gap-2 bg-gradient-to-r from-accent to-accent-dark hover:from-accent-dark hover:to-accent text-secondary px-6 py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(189,244,255,0.25)] hover:shadow-[0_0_25px_rgba(189,244,255,0.5)] hover:-translate-y-0.5 font-bold"
                 >
-                    <Plus className="w-4 h-4" />
-                    Create Class
+                    <Plus className="w-5 h-5 flex-shrink-0" />
+                    <span>Create Class</span>
                 </button>
             </div>
 
             {/* Stats Row */}
             {stats && (
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
-                    <div className="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-100 p-6">
-                        <dt className="text-sm font-medium text-gray-500 truncate">Total Classes</dt>
-                        <dd className="mt-2 text-3xl font-bold text-gray-900">{stats.total_classes}</dd>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="glass-card p-6 flex flex-col justify-center border-l-4 border-l-accent text-center md:text-left">
+                        <dt className="text-sm font-medium text-muted-bright tracking-wider uppercase flex items-center justify-center md:justify-start gap-2">
+                            <Sparkles className="w-4 h-4 text-accent" /> Total Classes
+                        </dt>
+                        <dd className="mt-4 text-5xl font-extrabold text-white tracking-tighter">{stats.total_classes}</dd>
                     </div>
-                    <div className="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-100 p-6">
-                        <dt className="text-sm font-medium text-gray-500 truncate">Avg. Attendance</dt>
-                        <dd className="mt-2 text-3xl font-bold text-gray-900">{stats.avg_attendance}%</dd>
+                    <div className="glass-card p-6 flex flex-col justify-center border-l-4 border-l-violet text-center md:text-left">
+                        <dt className="text-sm font-medium text-muted-bright tracking-wider uppercase flex items-center justify-center md:justify-start gap-2">
+                            <Sparkles className="w-4 h-4 text-violet" /> Avg. Attendance
+                        </dt>
+                        <dd className="mt-4 text-5xl font-extrabold text-accent tracking-tighter">{stats.avg_attendance}%</dd>
                     </div>
-                    <div className="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-100 p-6">
-                        <dt className="text-sm font-medium text-gray-500 truncate">Low Engagement Alerts</dt>
-                        <dd className="mt-2 text-3xl font-bold text-yellow-600">{stats.low_engagement}</dd>
+                    <div className="glass-card p-6 flex flex-col justify-center border-l-4 border-l-red-500 text-center md:text-left">
+                        <dt className="text-sm font-medium text-muted-bright tracking-wider uppercase flex items-center justify-center md:justify-start gap-2">
+                            <Sparkles className="w-4 h-4 text-red-400" /> Endanger Alerts
+                        </dt>
+                        <dd className="mt-4 text-5xl font-extrabold text-red-400 tracking-tighter">{stats.low_engagement}</dd>
                     </div>
                 </div>
             )}
 
             {/* Active Classes List */}
-            <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-gray-800">Active & Upcoming Classes</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {activeClasses.map(renderClassCard)}
+            <div className="space-y-6">
+                <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+                    <div className="w-2 h-6 bg-accent rounded-full shadow-[0_0_10px_rgba(189,244,255,0.5)]"></div>
+                    <h3 className="text-2xl font-bold text-white tracking-tight">Active & Upcoming</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {activeClasses.map((cls, idx) => renderClassCard(cls, idx))}
                     {activeClasses.length === 0 && (
-                        <div className="col-span-full text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-                            <p className="text-gray-500">No active or scheduled classes at the moment.</p>
+                        <div className="col-span-full text-center py-16 glass-card border-[1px] border-dashed border-white/10">
+                            <p className="text-muted-bright text-lg">No active or scheduled classes at the moment.</p>
                         </div>
                     )}
                 </div>
@@ -189,34 +215,37 @@ export default function TeacherDashboard() {
 
             {/* Past Classes List */}
             {pastClasses.length > 0 && (
-                <div className="space-y-4 pt-8 border-t border-gray-100">
-                    <h3 className="text-xl font-semibold text-gray-600">Past Classes</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75 grayscale-[20%]">
-                        {pastClasses.map(renderClassCard)}
+                <div className="space-y-6 pt-6">
+                    <div className="flex items-center gap-3 border-b border-white/10 pb-4 opacity-75">
+                        <div className="w-2 h-6 bg-white/20 rounded-full"></div>
+                        <h3 className="text-2xl font-bold text-white/70 tracking-tight">Past Classes</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 opacity-60 hover:opacity-100 transition-opacity duration-500">
+                        {pastClasses.map((cls, idx) => renderClassCard(cls, idx))}
                     </div>
                 </div>
             )}
 
             {/* Create Class Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 relative animate-in fade-in zoom-in duration-200">
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
+                    <div className="bg-secondary/90 border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-md p-8 relative animate-in zoom-in-95 duration-300">
                         <button
                             onClick={() => setIsModalOpen(false)}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                            className="absolute top-5 right-5 text-muted-bright hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-2 rounded-full"
                         >
                             <X className="w-5 h-5" />
                         </button>
 
-                        <h3 className="text-2xl font-bold text-gray-900 mb-6">Create New Class</h3>
+                        <h3 className="text-2xl font-bold text-white mb-6 tracking-tight">Schedule Session</h3>
 
-                        <form onSubmit={handleCreateClass} className="space-y-4">
+                        <form onSubmit={handleCreateClass} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Class Name</label>
+                                <label className="block text-sm font-medium text-muted-bright mb-2">Class Name</label>
                                 <input
                                     type="text"
                                     required
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                                    className="w-full px-4 py-3 bg-background/50 text-white rounded-xl border border-white/10 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all placeholder:text-white/20"
                                     placeholder="e.g. CS101 - Intro to AI"
                                     value={newClass.session_name}
                                     onChange={(e) => setNewClass({ ...newClass, session_name: e.target.value })}
@@ -225,21 +254,23 @@ export default function TeacherDashboard() {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                                    <label className="block text-sm font-medium text-muted-bright mb-2">Start</label>
                                     <input
                                         type="datetime-local"
                                         required
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                                        style={{ colorScheme: 'dark' }}
+                                        className="w-full px-4 py-3 bg-background/50 text-white rounded-xl border border-white/10 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
                                         value={newClass.start_time}
                                         onChange={(e) => setNewClass({ ...newClass, start_time: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                                    <label className="block text-sm font-medium text-muted-bright mb-2">End</label>
                                     <input
                                         type="datetime-local"
                                         required
-                                        className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                                        style={{ colorScheme: 'dark' }}
+                                        className="w-full px-4 py-3 bg-background/50 text-white rounded-xl border border-white/10 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
                                         value={newClass.end_time}
                                         onChange={(e) => setNewClass({ ...newClass, end_time: e.target.value })}
                                     />
@@ -247,10 +278,10 @@ export default function TeacherDashboard() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                                <label className="block text-sm font-medium text-muted-bright mb-2">Location</label>
                                 <input
                                     type="text"
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                                    className="w-full px-4 py-3 bg-background/50 text-white rounded-xl border border-white/10 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all placeholder:text-white/20"
                                     placeholder="e.g. Room 304 or Zoom Link"
                                     value={newClass.location}
                                     onChange={(e) => setNewClass({ ...newClass, location: e.target.value })}
@@ -258,37 +289,34 @@ export default function TeacherDashboard() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Camera (Optional)</label>
+                                <label className="block text-sm font-medium text-muted-bright mb-2">Camera Integration</label>
                                 <select
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                                    className="w-full px-4 py-3 bg-background/50 text-white rounded-xl border border-white/10 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all appearance-none"
                                     value={newClass.camera_id}
                                     onChange={(e) => setNewClass({ ...newClass, camera_id: e.target.value })}
                                 >
-                                    <option value="">Select a camera</option>
+                                    <option value="" className="bg-secondary text-white">No camera tracking</option>
                                     {cameras.map(cam => (
-                                        <option key={cam.camera_id} value={cam.camera_id}>
-                                            {cam.location} - {cam.description || cam.camera_type} {cam.connection_url ? `(${cam.connection_url})` : ''}
+                                        <option key={cam.camera_id} value={cam.camera_id} className="bg-secondary text-white">
+                                            {cam.location} - {cam.description || cam.camera_type} {cam.connection_url ? `(${cam.connection_url.substring(0,20)}...)` : ''}
                                         </option>
                                     ))}
                                 </select>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Select a camera to associate with this class. If you see a localhost URL, ensure it is accessible from the server.
-                                </p>
                             </div>
 
                             <div className="pt-4">
                                 <button
                                     type="submit"
                                     disabled={creating}
-                                    className="w-full bg-accent hover:bg-accent/90 text-white font-semibold py-3 rounded-lg transition-all flex justify-center items-center gap-2"
+                                    className="w-full bg-gradient-to-r from-accent to-accent-dark hover:from-accent-dark hover:to-accent text-secondary shadow-[0_0_15px_rgba(189,244,255,0.3)] hover:shadow-[0_0_25px_rgba(189,244,255,0.5)] font-bold py-3.5 rounded-xl transition-all flex justify-center items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {creating ? (
                                         <>
                                             <Loader2 className="w-5 h-5 animate-spin" />
-                                            Creating...
+                                            Initializing...
                                         </>
                                     ) : (
-                                        "Create Class"
+                                        "Confirm Schedule"
                                     )}
                                 </button>
                             </div>
@@ -299,28 +327,36 @@ export default function TeacherDashboard() {
 
             {/* Stream Class Modal */}
             {streamingCameraId && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-secondary rounded-2xl shadow-2xl w-full max-w-5xl p-6 relative animate-in fade-in zoom-in duration-200 border border-white/10">
-                        <button
-                            onClick={() => {
-                    setStreamingCameraId(null);
-                    setStreamingSessionId(null);
-                }}
-                            className="absolute top-4 right-4 text-white/50 hover:text-white transition-colors"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
+                <div className="fixed inset-0 bg-background/90 backdrop-blur-xl z-[100] flex items-center justify-center p-2 sm:p-8">
+                    <div className="glass-card shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-6xl overflow-hidden relative animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+                        <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-secondary/30">
+                            <div>
+                                <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3 tracking-tight">
+                                    <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
+                                    Live Analysis Stream
+                                </h3>
+                                <p className="text-xs sm:text-sm text-muted-bright mt-1">
+                                    AI-powered real-time tracking for Camera #{streamingCameraId}.
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setStreamingCameraId(null);
+                                    setStreamingSessionId(null);
+                                }}
+                                className="text-muted-bright hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-2 sm:p-2.5 rounded-full"
+                            >
+                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                            </button>
+                        </div>
 
-                        <h3 className="text-2xl font-bold text-white mb-2">Live Class Stream</h3>
-                        <p className="text-sm text-gray-400 mb-6 border-b border-white/10 pb-4">
-                            Streaming to Camera #{streamingCameraId}. The AI is automatically detecting faces and marking attendance for registered students.
-                        </p>
-
-                        <div className="w-full max-w-2xl mx-auto">
-                            <DeviceCameraStreamer
-                                cameraId={streamingCameraId}
-                                sessionId={streamingSessionId ?? undefined}
-                            />
+                        <div className="flex-1 w-full p-4 sm:p-6 overflow-y-auto custom-scrollbar">
+                            <div className="w-full h-full min-h-[500px]">
+                                <DeviceCameraStreamer
+                                    cameraId={streamingCameraId}
+                                    sessionId={streamingSessionId ?? undefined}
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -328,3 +364,4 @@ export default function TeacherDashboard() {
         </div>
     );
 }
+

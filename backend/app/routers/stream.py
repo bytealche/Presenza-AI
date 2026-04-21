@@ -238,7 +238,12 @@ async def websocket_endpoint(
             if camera_id in _ai_tasks and not _ai_tasks[camera_id].done():
                 _ai_tasks[camera_id].cancel()
             _frame_buffer.pop(camera_id, None)
-            _session_map.pop(camera_id, None)
+            ended_session = _session_map.pop(camera_id, None)
+            if ended_session:
+                from app.ai_engine.attendance_bridge import _clear_session_cache
+                from app.ai_engine.decision_engine import presence_tracker
+                _clear_session_cache(ended_session)
+                presence_tracker.reset_all()
             logger.info(f"[CAM {camera_id}] Sender disconnected")
 
     else:
