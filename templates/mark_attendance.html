@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Classroom Attendance</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="container my-4">
+  <div class="card p-4 shadow-sm">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div>
+        <h4 class="mb-1">Classroom Attendance Scanner</h4>
+        <div class="text-muted small">Use a classroom browser camera or a CCTV/IP camera source to detect multiple students in one scan.</div>
+      </div>
+      <a href="/" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <div class="row mt-4 g-4">
+      <div class="col-lg-6">
+        <div class="border rounded p-3 h-100">
+          <h5>Browser Camera Scan</h5>
+          <div class="text-muted small mb-3">Best for testing with a laptop facing the class.</div>
+          <div class="d-flex gap-2 mb-3">
+            <button id="startMarkBtn" class="btn btn-primary">Start Camera</button>
+            <button id="stopMarkBtn" class="btn btn-danger" disabled>Stop Camera</button>
+          </div>
+          <video id="markVideo" width="560" height="420" autoplay muted class="w-100" style="border-radius:10px;border:2px solid #e2e8f0;background:#111;"></video>
+          <div id="markStatus" class="mt-2 small text-muted">Waiting for classroom camera...</div>
+          <div id="scanSummary" class="small mt-1"></div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="border rounded p-3 mb-4">
+          <h5>CCTV / IP Camera Scan</h5>
+          <div class="text-muted small mb-3">Enter `0` for the local webcam, or provide a camera URL if OpenCV can read it on the server.</div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">Source</span>
+            <input id="cctvSource" class="form-control" value="0" placeholder="0 or rtsp://...">
+          </div>
+          <div class="d-flex gap-2">
+            <button id="startCctvBtn" class="btn btn-success">Start CCTV Scan</button>
+            <button id="stopCctvBtn" class="btn btn-outline-danger" disabled>Stop CCTV Scan</button>
+          </div>
+          <div id="cctvStatus" class="mt-3 small text-muted">Scanner idle.</div>
+        </div>
+
+        <div class="border rounded p-3">
+          <h5>Attendance Results</h5>
+          <div class="text-muted small mb-3">Students are only marked once per day to reduce duplicate entries.</div>
+          <ul id="recognizedList" class="list-group"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="{{ url_for('static', filename='js/camera_mark.js') }}"></script>
+</body>
+</html>
