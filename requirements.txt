@@ -1,3 +1,9 @@
 fastapi
 uvicorn[standard]
 python-multipart
+numpy
+pandas
+opencv-python-headless
+scikit-learn
+insightface
+onnxruntime
