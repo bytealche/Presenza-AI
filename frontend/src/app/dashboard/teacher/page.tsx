@@ -88,13 +88,13 @@ export default function TeacherDashboard() {
                 style={{ animationDelay: `${index * 100}ms` }}
             >
                 <div className="flex justify-between items-start mb-6">
-                    <h4 className="text-xl font-semibold text-foreground tracking-tight line-clamp-2">{cls.session_name}</h4>
+                        <h4 className="text-xl font-semibold text-foreground tracking-tight line-clamp-2">{cls.session_name}</h4>
                     <span className={`text-xs px-3 py-1.5 rounded-full font-medium tracking-wide shadow-sm flex items-center gap-1.5 transition-all whitespace-nowrap ml-3 ${
                             isEnded
-                                ? 'bg-white/5 text-white/50 border border-white/10'
+                                ? 'bg-[var(--glass-highlight)] text-muted border border-[var(--glass-border)]'
                                 : isLive
                                 ? 'bg-red-500/10 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)] animate-pulse'
-                                : 'bg-accent/10 text-accent font-semibold border border-accent/30 shadow-[0_0_10px_rgba(189,244,255,0.15)]'
+                                : 'bg-accent/10 text-accent font-semibold border border-[var(--glass-border)]'
                         }`}>
                         {isLive && <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>}
                         {isEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
@@ -128,7 +128,7 @@ export default function TeacherDashboard() {
                 {isEnded ? (
                     <button
                         onClick={() => window.location.href = `/dashboard/attendance?sessionId=${cls.session_id}`}
-                        className="w-full bg-secondary text-foreground hover:text-accent border border-white/10 hover:border-accent/30 font-medium py-3 rounded-lg transition-all flex items-center justify-center gap-2 group"
+                        className="w-full bg-secondary text-foreground hover:text-accent border border-[var(--glass-border)] hover:border-accent/30 font-medium py-3 rounded-lg transition-all flex items-center justify-center gap-2 group"
                     >
                         <Calendar className="w-4 h-4 group-hover:scale-110 transition-transform" /> Attendance Report
                     </button>
@@ -145,7 +145,7 @@ export default function TeacherDashboard() {
                 ) : (
                     <button
                         disabled
-                        className="w-full bg-secondary/50 text-white/30 border border-white/5 font-medium py-3 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
+                        className="w-full bg-[var(--glass-bg)] text-muted border border-[var(--glass-border)] font-medium py-3 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
                     >
                         <VideoOff className="w-4 h-4" /> No Camera Assigned
                     </button>
@@ -158,7 +158,7 @@ export default function TeacherDashboard() {
         <div className={`space-y-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 transition-all duration-700 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                 <div>
-                    <h2 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-accent via-white to-violet drop-shadow-md tracking-tight">
+                    <h2 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-accent via-foreground to-violet drop-shadow-md tracking-tight">
                         Teacher Dashboard
                     </h2>
                     <p className="text-muted-bright mt-2 text-sm md:text-base">Manage your scheduled sessions, cameras, and attendance tracking.</p>
@@ -179,7 +179,7 @@ export default function TeacherDashboard() {
                         <dt className="text-sm font-medium text-muted-bright tracking-wider uppercase flex items-center justify-center md:justify-start gap-2">
                             <Sparkles className="w-4 h-4 text-accent" /> Total Classes
                         </dt>
-                        <dd className="mt-4 text-5xl font-extrabold text-white tracking-tighter">{stats.total_classes}</dd>
+                        <dd className="mt-4 text-5xl font-extrabold text-foreground tracking-tighter">{stats.total_classes}</dd>
                     </div>
                     <div className="glass-card p-6 flex flex-col justify-center border-l-4 border-l-violet text-center md:text-left">
                         <dt className="text-sm font-medium text-muted-bright tracking-wider uppercase flex items-center justify-center md:justify-start gap-2">
@@ -198,15 +198,15 @@ export default function TeacherDashboard() {
 
             {/* Active Classes List */}
             <div className="space-y-6">
-                <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-                    <div className="w-2 h-6 bg-accent rounded-full shadow-[0_0_10px_rgba(189,244,255,0.5)]"></div>
-                    <h3 className="text-2xl font-bold text-white tracking-tight">Active & Upcoming</h3>
+                <div className="flex items-center gap-3 border-b border-[var(--glass-border)] pb-4">
+                    <div className="w-2 h-6 bg-accent rounded-full shadow-[0_0_10px_var(--color-accent)]"></div>
+                    <h3 className="text-2xl font-bold text-foreground tracking-tight">Active & Upcoming</h3>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {activeClasses.map((cls, idx) => renderClassCard(cls, idx))}
                     {activeClasses.length === 0 && (
-                        <div className="col-span-full text-center py-16 glass-card border-[1px] border-dashed border-white/10">
+                        <div className="col-span-full text-center py-16 glass-card border-[1px] border-dashed border-[var(--glass-border)]">
                             <p className="text-muted-bright text-lg">No active or scheduled classes at the moment.</p>
                         </div>
                     )}
@@ -216,9 +216,9 @@ export default function TeacherDashboard() {
             {/* Past Classes List */}
             {pastClasses.length > 0 && (
                 <div className="space-y-6 pt-6">
-                    <div className="flex items-center gap-3 border-b border-white/10 pb-4 opacity-75">
-                        <div className="w-2 h-6 bg-white/20 rounded-full"></div>
-                        <h3 className="text-2xl font-bold text-white/70 tracking-tight">Past Classes</h3>
+                    <div className="flex items-center gap-3 border-b border-[var(--glass-border)] pb-4 opacity-75">
+                        <div className="w-2 h-6 bg-[var(--glass-highlight)] rounded-full"></div>
+                        <h3 className="text-2xl font-bold text-foreground/70 tracking-tight">Past Classes</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 opacity-60 hover:opacity-100 transition-opacity duration-500">
                         {pastClasses.map((cls, idx) => renderClassCard(cls, idx))}
@@ -229,15 +229,15 @@ export default function TeacherDashboard() {
             {/* Create Class Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 bg-background/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
-                    <div className="bg-secondary/90 border border-white/10 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] w-full max-w-md p-8 relative animate-in zoom-in-95 duration-300">
+                    <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-2xl shadow-xl w-full max-w-md p-8 relative animate-in zoom-in-95 duration-300">
                         <button
                             onClick={() => setIsModalOpen(false)}
-                            className="absolute top-5 right-5 text-muted-bright hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-2 rounded-full"
+                            className="absolute top-5 right-5 text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 rounded-full"
                         >
                             <X className="w-5 h-5" />
                         </button>
 
-                        <h3 className="text-2xl font-bold text-white mb-6 tracking-tight">Schedule Session</h3>
+                        <h3 className="text-2xl font-bold text-foreground mb-6 tracking-tight">Schedule Session</h3>
 
                         <form onSubmit={handleCreateClass} className="space-y-5">
                             <div>
@@ -245,7 +245,7 @@ export default function TeacherDashboard() {
                                 <input
                                     type="text"
                                     required
-                                    className="w-full px-4 py-3 bg-background/50 text-white rounded-xl border border-white/10 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all placeholder:text-white/20"
+                                    className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all placeholder:text-muted"
                                     placeholder="e.g. CS101 - Intro to AI"
                                     value={newClass.session_name}
                                     onChange={(e) => setNewClass({ ...newClass, session_name: e.target.value })}
@@ -258,8 +258,7 @@ export default function TeacherDashboard() {
                                     <input
                                         type="datetime-local"
                                         required
-                                        style={{ colorScheme: 'dark' }}
-                                        className="w-full px-4 py-3 bg-background/50 text-white rounded-xl border border-white/10 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                                        className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all"
                                         value={newClass.start_time}
                                         onChange={(e) => setNewClass({ ...newClass, start_time: e.target.value })}
                                     />
@@ -269,8 +268,7 @@ export default function TeacherDashboard() {
                                     <input
                                         type="datetime-local"
                                         required
-                                        style={{ colorScheme: 'dark' }}
-                                        className="w-full px-4 py-3 bg-background/50 text-white rounded-xl border border-white/10 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                                        className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all"
                                         value={newClass.end_time}
                                         onChange={(e) => setNewClass({ ...newClass, end_time: e.target.value })}
                                     />
@@ -281,7 +279,7 @@ export default function TeacherDashboard() {
                                 <label className="block text-sm font-medium text-muted-bright mb-2">Location</label>
                                 <input
                                     type="text"
-                                    className="w-full px-4 py-3 bg-background/50 text-white rounded-xl border border-white/10 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all placeholder:text-white/20"
+                                    className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all placeholder:text-muted"
                                     placeholder="e.g. Room 304 or Zoom Link"
                                     value={newClass.location}
                                     onChange={(e) => setNewClass({ ...newClass, location: e.target.value })}
@@ -291,13 +289,13 @@ export default function TeacherDashboard() {
                             <div>
                                 <label className="block text-sm font-medium text-muted-bright mb-2">Camera Integration</label>
                                 <select
-                                    className="w-full px-4 py-3 bg-background/50 text-white rounded-xl border border-white/10 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all appearance-none"
+                                    className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all appearance-none"
                                     value={newClass.camera_id}
                                     onChange={(e) => setNewClass({ ...newClass, camera_id: e.target.value })}
                                 >
-                                    <option value="" className="bg-secondary text-white">No camera tracking</option>
+                                    <option value="" className="bg-secondary text-foreground">No camera tracking</option>
                                     {cameras.map(cam => (
-                                        <option key={cam.camera_id} value={cam.camera_id} className="bg-secondary text-white">
+                                        <option key={cam.camera_id} value={cam.camera_id} className="bg-secondary text-foreground">
                                             {cam.location} - {cam.description || cam.camera_type} {cam.connection_url ? `(${cam.connection_url.substring(0,20)}...)` : ''}
                                         </option>
                                     ))}
@@ -329,9 +327,9 @@ export default function TeacherDashboard() {
             {streamingCameraId && (
                 <div className="fixed inset-0 bg-background/90 backdrop-blur-xl z-[100] flex items-center justify-center p-2 sm:p-8">
                     <div className="glass-card shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-6xl overflow-hidden relative animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-                        <div className="p-4 sm:p-6 border-b border-white/10 flex justify-between items-center bg-secondary/30">
+                        <div className="p-4 sm:p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-highlight)]">
                             <div>
-                                <h3 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-3 tracking-tight">
+                                <h3 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-3 tracking-tight">
                                     <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
                                     Live Analysis Stream
                                 </h3>
@@ -344,7 +342,7 @@ export default function TeacherDashboard() {
                                     setStreamingCameraId(null);
                                     setStreamingSessionId(null);
                                 }}
-                                className="text-muted-bright hover:text-white transition-colors bg-white/5 hover:bg-white/10 p-2 sm:p-2.5 rounded-full"
+                                className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 sm:p-2.5 rounded-full"
                             >
                                 <X className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>

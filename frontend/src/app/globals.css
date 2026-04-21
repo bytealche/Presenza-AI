@@ -1,16 +1,45 @@
 @import "tailwindcss";
 
 :root {
-  /* Indigo Monolith Theme */
+  /* LIGHT: Nexus Ether (Clinical Teal) */
+  --background: #E0F7FA;
+  --secondary: #FFFFFF;
+  --accent: #00BFAE;     /* Vibrant Teal */
+  --accent-dark: #0097A7; /* Deep Teal */
+  --accent-light: #A7FFEB; /* Light Mint */
+  --violet: #80DEEA;     /* Mapped to cyan/teal */
+  --foreground: #004D40;  /* Dark Teal */
+  --muted: #4DB6AC;       /* Readable teal for sub-text */
+  --muted-bright: #00796B; 
+  --placeholder: #80CBC4;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(167, 255, 235, 0.5);
+  --glass-highlight: rgba(0, 151, 167, 0.1);
+  --sidebar-bg: #004D40;  /* Deep Teal sidebar for strong contrast */
+  --sidebar-text: #FFFFFF;
+  --mesh-1: rgba(0, 191, 174, 0.15);
+  --mesh-2: rgba(167, 255, 235, 0.3);
+}
+
+.dark {
+  /* DARK: Indigo Monolith */
   --background: #0c0e1a;
   --secondary: #191b27;
   --accent: #bdf4ff; /* cyan */
   --accent-dark: #9cf0ff;
+  --accent-light: rgba(189, 244, 255, 0.2);
   --violet: #d0bcff;
   --foreground: #f0f0ff;        /* brighter near-white for primary text */
   --muted: #a8a6b8;             /* was #c7c5cc — now higher contrast on dark bg */
   --muted-bright: #cccada;      /* for secondary labels that need to be readable */
   --placeholder: #6e6c7e;       /* placeholder text — intentionally dimmer */
+  --glass-bg: rgba(25, 27, 39, 0.4);
+  --glass-border: rgba(145, 144, 150, 0.15);
+  --glass-highlight: rgba(208, 188, 255, 0.08);
+  --sidebar-bg: rgba(25, 27, 39, 0.4);
+  --sidebar-text: #f0f0ff;
+  --mesh-1: rgba(189, 244, 255, 0.08);
+  --mesh-2: rgba(208, 188, 255, 0.08);
 }
 
 @theme inline {
@@ -18,11 +47,17 @@
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
   --color-accent-dark: var(--accent-dark);
+  --color-accent-light: var(--accent-light);
   --color-violet: var(--violet);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-muted-bright: var(--muted-bright);
   --color-placeholder: var(--placeholder);
+  --color-glass-bg: var(--glass-bg);
+  --color-glass-border: var(--glass-border);
+  --color-glass-highlight: var(--glass-highlight);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-text: var(--sidebar-text);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -38,7 +73,7 @@ body {
 
 /* Ensure typed text is always visible inside inputs */
 input, textarea, select {
-  color: #f0f0ff;
+  color: var(--foreground);
   caret-color: var(--accent);
 }
 
@@ -52,8 +87,8 @@ textarea::placeholder {
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-text-fill-color: #f0f0ff;
-  -webkit-box-shadow: 0 0 0px 1000px #1a1c2a inset;
+  -webkit-text-fill-color: var(--foreground);
+  -webkit-box-shadow: 0 0 0px 1000px transparent inset;
   transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -67,27 +102,26 @@ html {
 }
 
 /* Glassmorphism Utilities */
-/* Glassmorphism Utilities */
 .glass {
-  background-color: rgba(25, 27, 39, 0.4);
+  background-color: var(--glass-bg);
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(145, 144, 150, 0.15);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
 }
 
 .glass-card {
-  background-color: rgba(25, 27, 39, 0.6);
+  background-color: var(--glass-bg);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(145, 144, 150, 0.1);
+  border: 1px solid var(--glass-border);
   border-radius: 0.75rem;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-  transition: all 500ms ease-out;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  transition: all 400ms ease-out;
 }
 
 .glass-card:hover {
-  background-color: rgba(39, 41, 54, 0.8);
-  border-color: rgba(145, 144, 150, 0.25);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 30px rgba(208, 188, 255, 0.08);
+  background-color: var(--secondary);
+  border-color: var(--accent);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1), 0 0 30px var(--glass-highlight);
   transform: translateY(-4px);
 }
 
@@ -113,7 +147,7 @@ body::before {
   height: 100vh;
   z-index: -1;
   background:
-    radial-gradient(circle at 15% 50%, rgba(189, 244, 255, 0.08), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(208, 188, 255, 0.08), transparent 25%);
+    radial-gradient(circle at 15% 50%, var(--mesh-1), transparent 25%),
+    radial-gradient(circle at 85% 30%, var(--mesh-2), transparent 25%);
   pointer-events: none;
 }

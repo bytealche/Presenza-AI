@@ -82,14 +82,14 @@ export default function RegisterFacultyPage() {
         } finally { setLoading(false); }
     };
 
-    const inputClass = "w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all";
+    const inputClass = "w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all";
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
             <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-accent/20 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-purple-900/20 rounded-full blur-[100px] pointer-events-none" />
 
-            <div className="max-w-md w-full space-y-8 bg-secondary/30 backdrop-blur-xl p-8 rounded-2xl border border-white/5 shadow-2xl relative z-10 transition-all">
+            <div className="max-w-md w-full space-y-8 bg-[var(--glass-bg)] backdrop-blur-xl p-8 rounded-2xl border border-[var(--glass-border)] shadow-2xl relative z-10 transition-all">
 
                 {/* Step Indicator */}
                 <div className="flex items-center justify-center gap-3 mb-2">
@@ -105,7 +105,7 @@ export default function RegisterFacultyPage() {
                 </div>
 
                 <div className="text-center">
-                    <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                    <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted">
                         {step === 1 ? "Faculty Register" : "Join Organisation"}
                     </h2>
                     <p className="mt-2 text-sm text-muted">
@@ -140,7 +140,7 @@ export default function RegisterFacultyPage() {
                                     value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                             </div>
                             <button type="button" onClick={handleSendOTP} disabled={loading || resendCooldown > 0}
-                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-white/10 transition-colors min-w-[72px] text-center">
+                                className="bg-[var(--glass-highlight)] hover:bg-[var(--glass-highlight)]/80 text-foreground px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-[var(--glass-border)] transition-colors min-w-[72px] text-center">
                                 {resendCooldown > 0 ? `${resendCooldown}s` : otpSent ? "Resend" : "Get OTP"}
                             </button>
                         </div>
@@ -161,7 +161,7 @@ export default function RegisterFacultyPage() {
 
                         <button type="submit" disabled={!otpSent}
                             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${!otpSent
-                                ? "bg-white/5 text-muted cursor-not-allowed"
+                                ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
                                 : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"}`}>
                             Continue <ArrowRight className="w-5 h-5" />
                         </button>
@@ -176,11 +176,11 @@ export default function RegisterFacultyPage() {
                                 <label key={org.org_id}
                                     className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${formData.org_id === String(org.org_id)
                                         ? "border-accent bg-accent/10 shadow-[0_0_20px_-5px_var(--color-accent)]"
-                                        : "border-white/10 bg-white/5 hover:border-white/20"}`}>
+                                        : "border-[var(--glass-border)] bg-[var(--glass-highlight)] hover:border-[var(--glass-highlight)]"}`}>
                                     <input type="radio" name="org_id" value={org.org_id} className="hidden"
                                         checked={formData.org_id === String(org.org_id)}
                                         onChange={() => setFormData({ ...formData, org_id: String(org.org_id) })} />
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData.org_id === String(org.org_id) ? "border-accent" : "border-white/30"}`}>
+                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${formData.org_id === String(org.org_id) ? "border-accent" : "border-[var(--glass-highlight)]"}`}>
                                         {formData.org_id === String(org.org_id) && <div className="w-2.5 h-2.5 rounded-full bg-accent" />}
                                     </div>
                                     <div className="flex items-center gap-3 flex-1">
@@ -188,7 +188,7 @@ export default function RegisterFacultyPage() {
                                             <Building className="w-5 h-5 text-accent" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold text-white text-sm">{org.org_name}</p>
+                                            <p className="font-semibold text-foreground text-sm">{org.org_name}</p>
                                             <p className="text-xs text-muted capitalize">{org.org_type}</p>
                                         </div>
                                     </div>
@@ -198,12 +198,12 @@ export default function RegisterFacultyPage() {
 
                         <div className="flex gap-3">
                             <button type="button" onClick={() => setStep(1)}
-                                className="flex-1 py-3 rounded-lg border border-white/10 text-muted hover:text-white hover:border-white/20 transition-all text-sm">
+                                className="flex-1 py-3 rounded-lg border border-[var(--glass-border)] text-muted hover:text-foreground hover:border-[var(--glass-highlight)] transition-all text-sm">
                                 ← Back
                             </button>
                             <button type="submit" disabled={loading || !formData.org_id}
                                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold transition-all ${loading || !formData.org_id
-                                    ? "bg-white/5 text-muted cursor-not-allowed"
+                                    ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
                                     : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"}`}>
                                 {loading ? "Registering..." : "Complete Registration"}
                                 {!loading && <CheckCircle className="w-5 h-5" />}
@@ -213,7 +213,7 @@ export default function RegisterFacultyPage() {
                 )}
 
                 <div className="text-center mt-4">
-                    <Link href="/register" className="text-sm text-gray-400 hover:text-white transition-colors">
+                    <Link href="/register" className="text-sm text-muted hover:text-foreground transition-colors">
                         ← Back to Role Selection
                     </Link>
                 </div>

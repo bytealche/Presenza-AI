@@ -141,15 +141,15 @@ export default function ActiveFaceEnrollment({ userId, userName, onSuccess }: Pr
   }, []);
 
   return (
-    <div className="bg-black/30 p-6 rounded-xl border border-white/10 space-y-6">
+    <div className="bg-[var(--glass-bg)] backdrop-blur-xl p-6 rounded-xl border border-[var(--glass-border)] space-y-6">
       <div className="text-center">
-        <h3 className="text-xl font-bold text-white mb-2">Enroll Face Profile for {userName}</h3>
+        <h3 className="text-xl font-bold text-foreground mb-2">Enroll Face Profile for {userName}</h3>
         <p className="text-sm text-muted">
           We need to record a short 10-second video of the user's face. Please ensure the user looks directly at the camera, then slowly moves their head left, right, up, and down.
         </p>
       </div>
 
-      <div className="relative aspect-video max-w-2xl mx-auto rounded-xl overflow-hidden bg-black border border-white/20 shadow-[0_0_20px_-5px_rgba(16,185,129,0.2)]">
+      <div className="relative aspect-video max-w-2xl mx-auto rounded-xl overflow-hidden bg-black border border-[var(--glass-border)] shadow-[0_0_20px_-5px_rgba(16,185,129,0.2)]">
         {!recordingComplete ? (
           <video
             ref={videoRef}
@@ -183,13 +183,13 @@ export default function ActiveFaceEnrollment({ userId, userName, onSuccess }: Pr
 
         {capturing && (
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-3/4 max-w-sm">
-            <div className="h-2 bg-black/50 rounded-full overflow-hidden border border-white/20">
+            <div className="h-2 bg-[var(--glass-highlight)] rounded-full overflow-hidden border border-[var(--glass-border)]">
               <div 
                 className="h-full bg-red-500 transition-all duration-200" 
                 style={{ width: `${progress}%` }} 
               />
             </div>
-            <p className="text-center text-xs text-white mt-2 drop-shadow-md font-medium">
+            <p className="text-center text-xs text-foreground mt-2 drop-shadow-md font-medium">
               Look left and right slowly...
             </p>
           </div>
@@ -234,7 +234,7 @@ export default function ActiveFaceEnrollment({ userId, userName, onSuccess }: Pr
             <button
               onClick={retry}
               disabled={uploading}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full font-semibold transition-all disabled:opacity-50"
+              className="flex items-center gap-2 bg-[var(--glass-highlight)] hover:bg-[var(--glass-border)] text-foreground px-6 py-3 rounded-full font-semibold transition-all disabled:opacity-50"
             >
               <RefreshCw className="w-5 h-5" /> Retake
             </button>
@@ -255,7 +255,7 @@ export default function ActiveFaceEnrollment({ userId, userName, onSuccess }: Pr
         {success && (
             <button
               onClick={retry}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full font-semibold transition-all"
+              className="flex items-center gap-2 bg-[var(--glass-highlight)] hover:bg-[var(--glass-border)] text-foreground px-6 py-3 rounded-full font-semibold transition-all"
             >
               <Camera className="w-5 h-5" /> Enroll Another Device / Retake
             </button>

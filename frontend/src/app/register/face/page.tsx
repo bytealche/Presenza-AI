@@ -124,9 +124,9 @@ export default function FaceRegistrationPage() {
             <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-accent/20 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-purple-900/20 rounded-full blur-[100px] pointer-events-none" />
 
-            <div className="max-w-2xl w-full space-y-8 bg-secondary/30 backdrop-blur-xl p-8 rounded-2xl border border-white/5 shadow-2xl relative z-10 transition-all">
+            <div className="max-w-2xl w-full space-y-8 bg-[var(--glass-bg)] backdrop-blur-xl p-8 rounded-2xl border border-[var(--glass-border)] shadow-2xl relative z-10 transition-all">
                 <div className="text-center">
-                    <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                    <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted">
                         Biometric Registration
                     </h2>
                     <p className="mt-2 text-sm text-muted">
@@ -168,7 +168,7 @@ export default function FaceRegistrationPage() {
                             )}
 
                             {/* Overlay UI */}
-                            <div className="absolute inset-0 pointer-events-none border-[1px] border-white/10 rounded-lg">
+                            <div className="absolute inset-0 pointer-events-none border-[1px] border-[var(--glass-border)] rounded-lg">
                                 <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-accent"></div>
                                 <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-accent"></div>
                                 <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-accent"></div>
@@ -189,7 +189,7 @@ export default function FaceRegistrationPage() {
                                 <button
                                     type="button"
                                     onClick={handleRetake}
-                                    className="flex-1 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2.5 rounded-lg border border-white/10 transition-all font-medium"
+                                    className="flex-1 flex items-center justify-center gap-2 bg-[var(--glass-highlight)] hover:bg-[var(--glass-bg)] text-foreground px-4 py-2.5 rounded-lg border border-[var(--glass-border)] transition-all font-medium"
                                 >
                                     <RefreshCw className="w-4 h-4" /> Retake
                                 </button>
@@ -207,7 +207,7 @@ export default function FaceRegistrationPage() {
                                     name="full_name"
                                     type="text"
                                     required
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                     placeholder="Full Name"
                                     value={formData.full_name}
                                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
@@ -219,7 +219,7 @@ export default function FaceRegistrationPage() {
                                     name="email"
                                     type="email"
                                     required
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                     placeholder="Email Address"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -231,13 +231,13 @@ export default function FaceRegistrationPage() {
                                 <select
                                     name="role"
                                     required
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all appearance-none"
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all appearance-none"
                                     value={formData.role_id}
                                     onChange={(e) => setFormData({ ...formData, role_id: Number(e.target.value) })}
                                 >
-                                    <option value={1} className="bg-secondary">Admin</option>
-                                    <option value={2} className="bg-secondary">Teacher</option>
-                                    <option value={3} className="bg-secondary">Student</option>
+                                    <option value={1} className="bg-background text-foreground">Admin</option>
+                                    <option value={2} className="bg-background text-foreground">Teacher</option>
+                                    <option value={3} className="bg-background text-foreground">Student</option>
                                 </select>
                             </div>
 
@@ -247,7 +247,7 @@ export default function FaceRegistrationPage() {
                                     name="password"
                                     type="password"
                                     required
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                     placeholder="Password"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -259,7 +259,7 @@ export default function FaceRegistrationPage() {
                             type="submit"
                             disabled={loading || !capturedImage}
                             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${loading || !capturedImage
-                                    ? "bg-white/5 text-muted cursor-not-allowed"
+                                    ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
                                     : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"
                                 }`}
                         >

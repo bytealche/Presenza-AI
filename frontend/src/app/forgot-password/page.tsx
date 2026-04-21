@@ -80,9 +80,9 @@ export default function ForgotPasswordPage() {
             <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-accent/20 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-purple-900/20 rounded-full blur-[100px] pointer-events-none" />
 
-            <div className="max-w-md w-full space-y-8 bg-secondary/30 backdrop-blur-xl p-8 rounded-2xl border border-white/5 shadow-2xl relative z-10 transition-all">
+            <div className="max-w-md w-full space-y-8 bg-[var(--glass-bg)] backdrop-blur-xl p-8 rounded-2xl border border-[var(--glass-border)] shadow-2xl relative z-10 transition-all">
                 <div className="text-center">
-                    <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                    <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted">
                         {step === 1 ? "Forgot Password" : "Reset Password"}
                     </h2>
                     <p className="mt-2 text-sm text-muted">
@@ -110,7 +110,7 @@ export default function ForgotPasswordPage() {
                             <input
                                 type="email"
                                 required
-                                className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                 placeholder="Email Address"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
@@ -121,7 +121,7 @@ export default function ForgotPasswordPage() {
                             type="submit"
                             disabled={loading || !email}
                             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${loading || !email
-                                ? "bg-white/5 text-muted cursor-not-allowed"
+                                ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
                                 : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"
                                 }`}
                         >
@@ -135,14 +135,14 @@ export default function ForgotPasswordPage() {
                             <div className="relative">
                                 <ShieldCheck className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
                                 <input type="text" required
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                     placeholder="Enter 6-digit OTP" value={otp}
                                     onChange={(e) => setOtp(e.target.value)} />
                             </div>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
                                 <input type="password" required
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                     placeholder="New Password" value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)} />
                             </div>
@@ -167,15 +167,15 @@ export default function ForgotPasswordPage() {
 
                         <button type="submit" disabled={loading || !otp || !newPassword}
                             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${loading || !otp || !newPassword
-                                ? "bg-white/5 text-muted cursor-not-allowed"
+                                ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
                                 : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"}`}>
                             {loading ? "Resetting..." : "Reset Password"}
                         </button>
                     </form>
                 )}
 
-                <div className="text-center mt-4 pt-4 border-t border-white/10">
-                    <Link href="/login" className="flex items-center justify-center text-sm text-gray-400 hover:text-white transition-colors">
+                <div className="text-center mt-4 pt-4 border-t border-[var(--glass-border)]">
+                    <Link href="/login" className="flex items-center justify-center text-sm text-muted hover:text-foreground transition-colors">
                         <ArrowLeft className="w-4 h-4 mr-1" />
                         Back to Login
                     </Link>

@@ -230,7 +230,7 @@ export default function RegisterStudentPage() {
         } finally { setLoading(false); }
     };
 
-    const inputClass = "w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all";
+    const inputClass = "w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all";
 
     const currentDir = DIRECTIONS[currentDirection] ?? DIRECTIONS[DIRECTIONS.length - 1];
     const progress = Math.min((totalCaptured / TOTAL_FRAMES) * 100, 100);
@@ -240,7 +240,7 @@ export default function RegisterStudentPage() {
             <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-accent/20 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-purple-900/20 rounded-full blur-[100px] pointer-events-none" />
 
-            <div className="max-w-md w-full space-y-6 bg-secondary/30 backdrop-blur-xl p-8 rounded-2xl border border-white/5 shadow-2xl relative z-10">
+            <div className="max-w-md w-full space-y-6 bg-[var(--glass-bg)] backdrop-blur-xl p-8 rounded-2xl border border-[var(--glass-border)] shadow-2xl relative z-10">
 
                 {/* Step Indicator */}
                 <div className="flex items-center justify-center gap-3">
@@ -256,7 +256,7 @@ export default function RegisterStudentPage() {
                 </div>
 
                 <div className="text-center">
-                    <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                    <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted">
                         {step === 1 ? "Student Register" : "Join Organisation"}
                     </h2>
                     <p className="mt-1 text-sm text-muted">
@@ -279,9 +279,9 @@ export default function RegisterStudentPage() {
                         {/* ── Face Capture Section ── */}
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium text-gray-300">Face Registration (50 frames)</label>
+                                <label className="text-sm font-medium text-muted">Face Registration (50 frames)</label>
                                 {cameraDevices.length > 1 && (
-                                    <select className="bg-black/30 border border-white/10 rounded px-2 py-1 text-xs text-white focus:border-accent outline-none"
+                                    <select className="bg-background border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-foreground focus:border-accent outline-none"
                                         value={selectedCamera || ""}
                                         onChange={e => { setSelectedCamera(e.target.value); resetCapture(); }}
                                         disabled={capturePhase === "capturing"}>
@@ -293,7 +293,7 @@ export default function RegisterStudentPage() {
                             </div>
 
                             {/* Video preview */}
-                            <div className="relative rounded-lg overflow-hidden border border-white/10 bg-black aspect-video">
+                            <div className="relative rounded-lg overflow-hidden border border-[var(--glass-border)] bg-black aspect-video">
                                 <video ref={videoRef} className="w-full h-full object-cover scale-x-[-1]" muted playsInline />
                                 <canvas ref={canvasRef} className="hidden" />
 
@@ -301,18 +301,18 @@ export default function RegisterStudentPage() {
                                 {capturePhase === "capturing" && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-between p-3 pointer-events-none">
                                         {/* Direction banner */}
-                                        <div className="bg-black/70 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-medium flex items-center gap-2">
+                                        <div className="bg-[var(--glass-bg)] backdrop-blur-sm px-4 py-2 rounded-full text-foreground text-sm font-medium flex items-center gap-2">
                                             <span className="text-lg">{currentDir.icon}</span>
                                             {currentDir.label}
                                         </div>
 
                                         {/* Frame counter */}
                                         <div className="w-full space-y-1">
-                                            <div className="flex justify-between text-xs text-white/70 px-1">
+                                            <div className="flex justify-between text-xs text-muted px-1">
                                                 <span>Capturing frames...</span>
                                                 <span className="font-mono font-bold text-accent">{totalCaptured}/{TOTAL_FRAMES}</span>
                                             </div>
-                                            <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                                            <div className="w-full h-2 bg-[var(--glass-highlight)] rounded-full overflow-hidden">
                                                 <div
                                                     className="h-full bg-gradient-to-r from-accent to-purple-500 transition-all duration-200"
                                                     style={{ width: `${progress}%` }}
@@ -326,9 +326,9 @@ export default function RegisterStudentPage() {
                                 {capturePhase === "done" && (
                                     <div className="absolute inset-0 bg-green-900/60 flex flex-col items-center justify-center gap-2">
                                         <CheckCircle className="w-12 h-12 text-green-400" />
-                                        <p className="text-white font-semibold">50 frames captured!</p>
+                                        <p className="text-foreground font-semibold">50 frames captured!</p>
                                         <button type="button" onClick={resetCapture}
-                                            className="flex items-center gap-1 text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-full transition-colors">
+                                            className="flex items-center gap-1 text-xs bg-[var(--glass-highlight)] hover:bg-[var(--glass-highlight)]/80 text-foreground px-3 py-1.5 rounded-full transition-colors">
                                             <RotateCcw className="w-3 h-3" /> Retake
                                         </button>
                                     </div>
@@ -337,7 +337,7 @@ export default function RegisterStudentPage() {
                                 {/* Idle overlay */}
                                 {capturePhase === "idle" && (
                                     <div className="absolute inset-0 flex items-end justify-center pb-3">
-                                        <div className="text-xs text-white/50 bg-black/40 px-3 py-1 rounded-full">
+                                        <div className="text-xs text-muted bg-[var(--glass-highlight)] px-3 py-1 rounded-full">
                                             Position your face in the frame
                                         </div>
                                     </div>
@@ -352,7 +352,7 @@ export default function RegisterStudentPage() {
                                         ? i < currentDirection
                                         : capturePhase === "done";
                                     return (
-                                        <div key={i} className={`flex flex-col items-center gap-0.5 p-1.5 rounded-lg border text-center transition-all ${isActive ? "border-accent bg-accent/10" : isDone ? "border-green-500/30 bg-green-500/10" : "border-white/5 bg-white/3"}`}>
+                                        <div key={i} className={`flex flex-col items-center gap-0.5 p-1.5 rounded-lg border text-center transition-all ${isActive ? "border-accent bg-accent/10" : isDone ? "border-green-500/30 bg-green-500/10" : "border-[var(--glass-border)] bg-[var(--glass-highlight)]"}`}>
                                             <span className="text-base">{isDone ? "✅" : dir.icon}</span>
                                             <span className={`text-[9px] leading-tight ${isActive ? "text-accent" : isDone ? "text-green-400" : "text-muted"}`}>
                                                 {dir.frames}f
@@ -384,7 +384,7 @@ export default function RegisterStudentPage() {
                                     value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
                             </div>
                             <button type="button" onClick={handleSendOTP} disabled={loading || resendCooldown > 0}
-                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-white/10 transition-colors min-w-[72px] text-center">
+                                className="bg-[var(--glass-highlight)] hover:bg-[var(--glass-highlight)]/80 text-foreground px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-[var(--glass-border)] transition-colors min-w-[72px] text-center">
                                 {resendCooldown > 0 ? `${resendCooldown}s` : otpSent ? "Resend" : "Get OTP"}
                             </button>
                         </div>
@@ -405,7 +405,7 @@ export default function RegisterStudentPage() {
 
                         <button type="submit" disabled={!otpSent || capturePhase !== "done"}
                             className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${!otpSent || capturePhase !== "done"
-                                ? "bg-white/5 text-muted cursor-not-allowed"
+                                ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
                                 : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"}`}>
                             Continue to Organisation <ArrowRight className="w-5 h-5" />
                         </button>
@@ -420,7 +420,7 @@ export default function RegisterStudentPage() {
                                 <label key={org.org_id}
                                     className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${formData.org_id === String(org.org_id)
                                         ? "border-accent bg-accent/10 shadow-[0_0_20px_-5px_var(--color-accent)]"
-                                        : "border-white/10 bg-white/5 hover:border-white/20"}`}>
+                                        : "border-[var(--glass-border)] bg-[var(--glass-highlight)] hover:border-[var(--glass-highlight)]"}`}>
                                     <input type="radio" name="org_id" value={org.org_id} className="hidden"
                                         checked={formData.org_id === String(org.org_id)}
                                         onChange={() => setFormData({ ...formData, org_id: String(org.org_id) })} />
@@ -432,7 +432,7 @@ export default function RegisterStudentPage() {
                                             <Building className="w-5 h-5 text-accent" />
                                         </div>
                                         <div>
-                                            <p className="font-semibold text-white text-sm">{org.org_name}</p>
+                                            <p className="font-semibold text-foreground text-sm">{org.org_name}</p>
                                             <p className="text-xs text-muted capitalize">{org.org_type}</p>
                                         </div>
                                     </div>
@@ -442,12 +442,12 @@ export default function RegisterStudentPage() {
 
                         <div className="flex gap-3">
                             <button type="button" onClick={() => { setStep(1); startCamera(); }}
-                                className="flex-1 py-3 rounded-lg border border-white/10 text-muted hover:text-white hover:border-white/20 transition-all text-sm">
+                                className="flex-1 py-3 rounded-lg border border-[var(--glass-border)] text-muted hover:text-foreground hover:border-[var(--glass-highlight)] transition-all text-sm">
                                 ← Back
                             </button>
                             <button type="submit" disabled={loading || !formData.org_id}
                                 className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold transition-all ${loading || !formData.org_id
-                                    ? "bg-white/5 text-muted cursor-not-allowed"
+                                    ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
                                     : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"}`}>
                                 {loading ? "Registering..." : "Complete Registration"}
                                 {!loading && <CheckCircle className="w-5 h-5" />}
@@ -457,7 +457,7 @@ export default function RegisterStudentPage() {
                 )}
 
                 <div className="text-center">
-                    <Link href="/register" className="text-sm text-gray-400 hover:text-white transition-colors">← Back to Role Selection</Link>
+                    <Link href="/register" className="text-sm text-muted hover:text-foreground transition-colors">← Back to Role Selection</Link>
                 </div>
             </div>
         </div>

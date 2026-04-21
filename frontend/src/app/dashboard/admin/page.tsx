@@ -52,7 +52,7 @@ export default function AdminDashboard() {
         <div className="p-8 space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
+                    <h1 className="text-3xl font-bold text-foreground">Admin Dashboard</h1>
                     <p className="text-muted">Manage your organization and view reports.</p>
                 </div>
                 <div className="bg-accent/10 p-3 rounded-lg border border-accent/20">
@@ -61,10 +61,10 @@ export default function AdminDashboard() {
             </div>
 
             {/* Tabs */}
-            <div className="flex space-x-1 bg-secondary/30 p-1 rounded-xl backdrop-blur-md border border-white/5 w-fit">
+            <div className="flex space-x-1 bg-[var(--glass-bg)] p-1 rounded-xl backdrop-blur-md border border-[var(--glass-border)] w-fit">
                 <button
                     onClick={() => setActiveTab("users")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "users" ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-muted hover:text-white"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "users" ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-muted hover:text-foreground"
                         }`}
                 >
                     <div className="flex items-center gap-2">
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
                 </button>
                 <button
                     onClick={() => setActiveTab("reports")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "reports" ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-muted hover:text-white"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "reports" ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-muted hover:text-foreground"
                         }`}
                 >
                     <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export default function AdminDashboard() {
                 </button>
                 <button
                     onClick={() => setActiveTab("cameras")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "cameras" ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-muted hover:text-white"
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "cameras" ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-muted hover:text-foreground"
                         }`}
                 >
                     <div className="flex items-center gap-2">
@@ -95,14 +95,14 @@ export default function AdminDashboard() {
             </div>
 
             {activeTab === "users" && (
-                <div className="bg-secondary/30 backdrop-blur-xl rounded-xl border border-white/5 overflow-hidden">
-                    <div className="p-6 border-b border-white/5">
-                        <h2 className="text-xl font-semibold text-white">User Management</h2>
+                <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-xl border border-[var(--glass-border)] overflow-hidden">
+                    <div className="p-6 border-b border-[var(--glass-border)]">
+                        <h2 className="text-xl font-semibold text-foreground">User Management</h2>
                     </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-black/20">
+                            <thead className="bg-[var(--glass-highlight)]">
                                 <tr>
                                     <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase tracking-wider">User</th>
                                     <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase tracking-wider">Role</th>
@@ -110,24 +110,24 @@ export default function AdminDashboard() {
                                     <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/5">
+                            <tbody className="divide-y divide-[var(--glass-border)]">
                                 {users.map((user) => (
-                                    <tr key={user.user_id} className="hover:bg-white/5 transition-colors">
+                                    <tr key={user.user_id} className="hover:bg-[var(--glass-highlight)] transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg">
                                                     {user.full_name.charAt(0)}
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div className="text-sm font-medium text-white">{user.full_name}</div>
+                                                    <div className="text-sm font-medium text-foreground">{user.full_name}</div>
                                                     <div className="text-sm text-muted">{user.email}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                ${user.role_id === 1 ? 'bg-red-100 text-red-800' :
-                                                    user.role_id === 2 ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                                                ${user.role_id === 1 ? 'bg-red-500/15 text-red-600 dark:text-red-400' :
+                                                    user.role_id === 2 ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400' : 'bg-green-500/15 text-green-600 dark:text-green-400'}`}>
                                                 {user.role_id === 1 ? 'Admin' : user.role_id === 2 ? 'Faculty' : 'Student'}
                                             </span>
                                         </td>
@@ -205,11 +205,11 @@ export default function AdminDashboard() {
 
             {/* Enrollment Modal */}
             {enrollUser && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
                     <div className="relative w-full max-w-2xl">
                         <button 
                             onClick={() => setEnrollUser(null)}
-                            className="absolute -top-10 right-0 bg-white/10 hover:bg-white/20 text-white rounded-full p-2 transition-colors"
+                            className="absolute -top-10 right-0 bg-[var(--glass-highlight)] hover:bg-[var(--glass-border)] text-foreground rounded-full p-2 transition-colors"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -257,13 +257,13 @@ function ActiveCameras() {
     if (loading) return <div className="text-muted">Loading cameras...</div>;
 
     return (
-        <div className="bg-secondary/30 backdrop-blur-xl rounded-xl border border-white/5 overflow-hidden">
-            <div className="p-6 border-b border-white/5 flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-white">Active Cameras</h2>
+        <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-xl border border-[var(--glass-border)] overflow-hidden">
+            <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-foreground">Active Cameras</h2>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full">
-                    <thead className="bg-black/20">
+                    <thead className="bg-[var(--glass-highlight)]">
                         <tr>
                             <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase">ID</th>
                             <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase">Location</th>
@@ -272,12 +272,12 @@ function ActiveCameras() {
                             <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase">Connection URL</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/5">
+                    <tbody className="divide-y divide-[var(--glass-border)]">
                         {cameras.map((cam) => (
-                            <tr key={cam.camera_id} className="hover:bg-white/5 transition-colors">
-                                <td className="px-6 py-4 text-white text-sm">#{cam.camera_id}</td>
-                                <td className="px-6 py-4 text-white text-sm">{cam.location}</td>
-                                <td className="px-6 py-4 text-white text-sm">{cam.camera_type}</td>
+                            <tr key={cam.camera_id} className="hover:bg-[var(--glass-highlight)] transition-colors">
+                                <td className="px-6 py-4 text-foreground text-sm">#{cam.camera_id}</td>
+                                <td className="px-6 py-4 text-foreground text-sm">{cam.location}</td>
+                                <td className="px-6 py-4 text-foreground text-sm">{cam.camera_type}</td>
                                 <td className="px-6 py-4">
                                     <span className={`px-2 py-1 text-xs rounded-full font-medium ${cam.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
                                         }`}>

@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import { useAuth } from "@/context/AuthContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -40,24 +41,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Sidebar Wrapper */}
       <div className={`fixed inset-y-0 left-0 z-50 transform ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out`}>
-        <Sidebar className="w-64" />
+        <Sidebar />
       </div>
 
       <div className="flex-1 flex flex-col relative z-10 w-full min-w-0 overflow-hidden">
         {/* Glassmorphic Header */}
-        <header className="flex items-center justify-between px-4 sm:px-6 py-4 bg-secondary/30 backdrop-blur-xl border-b border-white/5 sticky top-0 z-30">
+        <header className="flex items-center justify-between px-4 sm:px-6 py-4 bg-secondary/30 backdrop-blur-xl border-b border-glass-border sticky top-0 z-30">
           <div className="flex items-center gap-3 w-full">
             <button 
-                className="md:hidden p-2 -ml-2 text-muted hover:text-white transition-colors"
+                className="md:hidden p-2 -ml-2 text-muted hover:text-foreground transition-colors"
                 onClick={() => setIsMobileMenuOpen(true)}
             >
                 <Menu className="w-6 h-6" />
             </button>
-            <h2 className="text-lg sm:text-xl font-semibold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400 truncate">
+            <h2 className="text-lg sm:text-xl font-semibold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted">
                Analysis Dashboard
             </h2>
           </div>
-          {/* Add User Profile or other controls here later */}
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* content area */}

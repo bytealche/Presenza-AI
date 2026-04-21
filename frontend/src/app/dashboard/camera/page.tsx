@@ -79,9 +79,9 @@ export default function CameraPage() {
     };
 
     const typeBadgeClass = (type: string) => {
-        if (type === "mobile") return "bg-purple-500/10 border-purple-500/20 text-purple-300";
-        if (type === "device") return "bg-blue-500/10 border-blue-500/20 text-blue-300";
-        return "bg-orange-500/10 border-orange-500/20 text-orange-300";
+        if (type === "mobile") return "bg-purple-500/15 border-purple-500/30 text-purple-600 dark:text-purple-300";
+        if (type === "device") return "bg-blue-500/15 border-blue-500/30 text-blue-600 dark:text-blue-300";
+        return "bg-orange-500/15 border-orange-500/30 text-orange-600 dark:text-orange-300";
     };
 
     return (
@@ -108,8 +108,8 @@ export default function CameraPage() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {cameras.map((cam) => (
-                        <div key={cam.camera_id} className="bg-secondary/30 backdrop-blur-md rounded-lg border border-white/5 overflow-hidden transition-hover hover:border-accent/30">
-                            <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                        <div key={cam.camera_id} className="bg-[var(--glass-bg)] backdrop-blur-md rounded-lg border border-[var(--glass-border)] overflow-hidden transition-hover hover:border-accent/30">
+                            <div className="p-4 border-b border-[var(--glass-border)] bg-[var(--glass-highlight)] flex justify-between items-center">
                                 <h3 className="font-semibold text-foreground">{cam.location}</h3>
                                 <span className={`flex items-center gap-1 text-xs px-2 py-1 rounded border ${typeBadgeClass(cam.camera_type)}`}>
                                     {typeIcon(cam.camera_type)}
@@ -126,20 +126,20 @@ export default function CameraPage() {
                                 {/* MOBILE CAMERA */}
                                 {cam.camera_type === "mobile" && (
                                     <div className="flex flex-col items-center space-y-4">
-                                        <div className="w-full text-center space-y-2 pb-2 border-b border-white/10">
-                                            <label className="text-sm text-gray-200 font-medium block">Server URL for Mobile</label>
+                                        <div className="w-full text-center space-y-2 pb-2 border-b border-[var(--glass-border)]">
+                                            <label className="text-sm text-foreground font-medium block">Server URL for Mobile</label>
                                             <input
-                                                className="bg-black/20 border border-white/10 rounded px-2 py-1 text-xs text-center text-white w-full focus:border-accent outline-none"
+                                                className="bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded px-2 py-1 text-xs text-center text-foreground w-full focus:border-accent outline-none"
                                                 value={hostUrl}
                                                 onChange={(e) => setHostUrl(e.target.value)}
                                                 placeholder="https://your-frontend.vercel.app"
                                             />
                                         </div>
-                                        <div className="w-full aspect-video bg-black rounded relative overflow-hidden ring-1 ring-white/10">
+                                        <div className="w-full aspect-video bg-black rounded relative overflow-hidden ring-1 ring-[var(--glass-border)]">
                                             <StreamViewer cameraId={cam.camera_id.toString()} />
                                         </div>
                                         <div className="text-center space-y-2">
-                                            <p className="text-sm text-gray-200 font-medium">Scan to Stream from Phone</p>
+                                            <p className="text-sm text-foreground font-medium">Scan to Stream from Phone</p>
                                             <div className="bg-white p-2 inline-block border rounded">
                                                 <QRCode
                                                     value={`${hostUrl.startsWith("http") ? hostUrl : "http://" + hostUrl}/broadcast/${cam.camera_id}`}
@@ -160,7 +160,7 @@ export default function CameraPage() {
                                 {/* IP CAMERA */}
                                 {cam.camera_type === "ip" && (
                                     <div className="space-y-2">
-                                        <div className="w-full aspect-video bg-black rounded relative overflow-hidden ring-1 ring-white/10">
+                                        <div className="w-full aspect-video bg-black rounded relative overflow-hidden ring-1 ring-[var(--glass-border)]">
                                             <StreamViewer cameraId={cam.camera_id.toString()} />
                                         </div>
                                         <p className="text-xs text-muted truncate">URL: {cam.connection_url}</p>
@@ -185,8 +185,8 @@ export default function CameraPage() {
 
             {/* Add Camera Modal */}
             {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-                    <div className="bg-secondary p-6 rounded-xl w-full max-w-md border border-white/10 shadow-2xl">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+                    <div className="bg-[var(--glass-bg)] p-6 rounded-xl w-full max-w-md border border-[var(--glass-border)] shadow-2xl">
                         <h3 className="text-lg font-bold mb-4 text-foreground">Add Camera Source</h3>
 
                         {/* Camera Type Selector */}
@@ -202,7 +202,7 @@ export default function CameraPage() {
                                     onClick={() => setNewCam({ ...newCam, camera_type: value })}
                                     className={`flex flex-col items-center gap-2 p-3 rounded-lg border text-center transition-all ${newCam.camera_type === value
                                         ? "border-accent bg-accent/10 text-accent"
-                                        : "border-white/10 bg-white/5 text-muted hover:border-white/20"}`}
+                                        : "border-[var(--glass-border)] bg-[var(--glass-highlight)] text-muted hover:border-accent/50"}`}
                                 >
                                     <Icon className="w-6 h-6" />
                                     <span className="text-xs font-medium">{label}</span>
@@ -215,7 +215,7 @@ export default function CameraPage() {
                             <div>
                                 <label className="block text-sm font-medium text-muted mb-1">Location Name</label>
                                 <input
-                                    className="w-full bg-background border border-white/10 p-2 rounded text-foreground focus:border-accent outline-none"
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] p-2 rounded text-foreground focus:border-accent outline-none"
                                     value={newCam.location}
                                     onChange={e => setNewCam({ ...newCam, location: e.target.value })}
                                     placeholder="e.g. Classroom A"
@@ -225,7 +225,7 @@ export default function CameraPage() {
                             <div>
                                 <label className="block text-sm font-medium text-muted mb-1">Description (optional)</label>
                                 <input
-                                    className="w-full bg-background border border-white/10 p-2 rounded text-foreground focus:border-accent outline-none"
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] p-2 rounded text-foreground focus:border-accent outline-none"
                                     value={newCam.description}
                                     onChange={e => setNewCam({ ...newCam, description: e.target.value })}
                                     placeholder="e.g. Front-facing camera"
@@ -235,7 +235,7 @@ export default function CameraPage() {
                                 <div>
                                     <label className="block text-sm font-medium text-muted mb-1">Stream URL</label>
                                     <input
-                                        className="w-full bg-background border border-white/10 p-2 rounded text-foreground focus:border-accent outline-none"
+                                        className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] p-2 rounded text-foreground focus:border-accent outline-none"
                                         value={newCam.connection_url}
                                         onChange={e => setNewCam({ ...newCam, connection_url: e.target.value })}
                                         placeholder="rtsp:// or http://..."
@@ -243,7 +243,7 @@ export default function CameraPage() {
                                 </div>
                             )}
                             <div className="flex justify-end space-x-2 pt-2">
-                                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-foreground rounded transition-colors">Cancel</button>
+                                <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 bg-[var(--glass-highlight)] hover:bg-[var(--glass-border)] text-foreground rounded transition-colors">Cancel</button>
                                 <button type="submit" className="px-4 py-2 bg-accent hover:bg-accent/80 text-white rounded shadow-lg shadow-accent/20">Create</button>
                             </div>
                         </form>

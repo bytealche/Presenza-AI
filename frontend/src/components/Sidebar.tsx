@@ -42,9 +42,9 @@ export default function Sidebar() {
     ];
 
     return (
-        <div className="flex flex-col w-64 h-screen glass border-r-0 border-white/5 text-foreground relative z-20">
-            <div className="flex items-center justify-center h-20 border-b border-white/5 bg-white/5 backdrop-blur-sm">
-                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-accent to-teal-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
+        <div className="flex flex-col w-64 h-screen bg-[var(--sidebar-bg)] border-r-0 border-[var(--glass-border)] text-[var(--sidebar-text)] relative z-20 transition-colors duration-300">
+            <div className="flex items-center justify-center h-20 border-b border-[var(--glass-border)] bg-[var(--glass-highlight)] backdrop-blur-sm">
+                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-accent to-accent-dark drop-shadow-sm">
                     Presenza AI
                 </h1>
             </div>
@@ -56,7 +56,7 @@ export default function Sidebar() {
                             href={link.href}
                             className={`block px-4 py-3 rounded-xl transition-all duration-300 font-medium ${pathname === link.href
                                 ? "bg-accent/20 text-accent border border-accent/20 shadow-[0_0_20px_-5px_var(--color-accent)] backdrop-blur-lg"
-                                : "text-muted hover:bg-white/10 hover:text-white hover:pl-5"
+                                : "text-[var(--muted-bright)] hover:bg-[var(--glass-highlight)] hover:text-[var(--sidebar-text)] hover:pl-5"
                                 }`}
                         >
                             {link.name}
@@ -64,13 +64,13 @@ export default function Sidebar() {
                     ))}
                 </nav>
             </div>
-            <div className="p-4 border-t border-white/5 bg-black/20 backdrop-blur-md">
-                <div className="mb-4 text-sm text-muted">
-                    Logged in as: <span className="font-semibold text-white block truncate">{user.full_name || role}</span>
+            <div className="p-4 border-t border-[var(--glass-border)] bg-[var(--glass-highlight)] backdrop-blur-md">
+                <div className="mb-4 text-sm text-[var(--muted-bright)]">
+                    Logged in as: <span className="font-semibold text-[var(--sidebar-text)] block truncate">{user.full_name || role}</span>
                 </div>
                 <button
                     onClick={logout}
-                    className="w-full px-4 py-2 text-sm font-medium text-white bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 hover:border-red-500/40 transition-all focus:outline-none shadow-lg shadow-red-500/5"
+                    className="w-full px-4 py-2 text-sm font-medium text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg hover:bg-red-500/20 hover:border-red-500/40 transition-all focus:outline-none shadow-lg shadow-red-500/5"
                 >
                     Logout
                 </button>

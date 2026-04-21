@@ -2,10 +2,15 @@
 
 import { Hero } from "@/components/ui/Hero";
 import { MonitorPlay, ShieldCheck, Users } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background text-foreground selection:bg-accent selection:text-[#0c0e1a]">
+    <main className="min-h-screen bg-background text-foreground selection:bg-accent selection:text-background">
+      {/* Floating Theme Toggle */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <Hero />
 
       {/* Elite Capabilities Section */}
@@ -22,10 +27,10 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Card 1 */}
           <div className="glass-card p-10 group cursor-default">
-            <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-xl bg-secondary text-accent group-hover:shadow-[0_0_15px_rgba(189,244,255,0.2)] transition-shadow">
+            <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--glass-bg)] text-accent border border-[var(--glass-border)] group-hover:shadow-[0_0_15px_rgba(189,244,255,0.2)] transition-shadow">
                 <Users className="w-7 h-7" />
             </div>
-            <h3 className="text-2xl font-bold mb-4 text-white">Real-Time Face Recognition</h3>
+            <h3 className="text-2xl font-bold mb-4 text-foreground">Real-Time Face Recognition</h3>
             <p className="text-muted leading-relaxed">
                 Instant and accurate face recognition for seamless attendance tracking, eliminating bottlenecks at entry points with surgical precision.
             </p>
@@ -33,10 +38,10 @@ export default function Home() {
 
           {/* Card 2 */}
           <div className="glass-card p-10 group cursor-default">
-            <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-xl bg-secondary text-violet group-hover:shadow-[0_0_15px_rgba(208,188,255,0.2)] transition-shadow">
+            <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--glass-bg)] text-violet border border-[var(--glass-border)] group-hover:shadow-[0_0_15px_rgba(208,188,255,0.2)] transition-shadow">
                 <MonitorPlay className="w-7 h-7" />
             </div>
-            <h3 className="text-2xl font-bold mb-4 text-white">AI Behavior Analysis</h3>
+            <h3 className="text-2xl font-bold mb-4 text-foreground">AI Behavior Analysis</h3>
             <p className="text-muted leading-relaxed">
                 Advanced AI algorithms continuously analyze behavior patterns to detect anomalies or unusual activity, functioning like a high-end sensory instrument.
             </p>
@@ -44,10 +49,10 @@ export default function Home() {
 
           {/* Card 3 */}
           <div className="glass-card p-10 group cursor-default">
-            <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-xl bg-secondary text-accent group-hover:shadow-[0_0_15px_rgba(189,244,255,0.2)] transition-shadow">
+            <div className="mb-8 flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--glass-bg)] text-accent border border-[var(--glass-border)] group-hover:shadow-[0_0_15px_rgba(189,244,255,0.2)] transition-shadow">
                 <ShieldCheck className="w-7 h-7" />
             </div>
-            <h3 className="text-2xl font-bold mb-4 text-white">Secure Cloud Database</h3>
+            <h3 className="text-2xl font-bold mb-4 text-foreground">Secure Cloud Database</h3>
             <p className="text-muted leading-relaxed">
                 Military-grade encryption ensures your biometric data and records are securely stored, compliant, and submerged safely in our secure architecture.
             </p>

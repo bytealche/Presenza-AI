@@ -41,7 +41,7 @@ export default function StudentDashboard() {
         return start > now;
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading dashboard...</div>;
+    if (loading) return <div className="p-8 text-center text-muted">Loading dashboard...</div>;
 
     // Sort classes: Active first, then upcoming by date
     const activeClasses = classes.filter(isActive);
@@ -49,14 +49,14 @@ export default function StudentDashboard() {
 
     return (
         <div className="space-y-8">
-            <h2 className="text-3xl font-bold text-white">
+            <h2 className="text-3xl font-bold text-foreground">
                 Student Dashboard
             </h2>
 
             {/* Active Classes Section */}
             {activeClasses.length > 0 && (
                 <div className="space-y-4">
-                    <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                    <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
                         <span className="relative flex h-3 w-3">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
@@ -71,7 +71,7 @@ export default function StudentDashboard() {
                                 </div>
                                 <div className="relative z-10">
                                     <h4 className="text-2xl font-bold text-white mb-2">{cls.session_name}</h4>
-                                    <div className="space-y-2 text-sm text-gray-300 mb-6">
+                                    <div className="space-y-2 text-sm text-foreground mb-6">
                                         <div className="flex items-center gap-2">
                                             <Clock className="w-4 h-4 text-green-400" />
                                             <span>
@@ -97,12 +97,12 @@ export default function StudentDashboard() {
             {/* Stats Overview */}
             {stats && (
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <div className="bg-secondary/30 backdrop-blur-md overflow-hidden shadow-sm rounded-xl border border-white/10 p-6">
-                        <dt className="text-sm font-medium text-gray-400 truncate">My Attendance Rate</dt>
+                    <div className="bg-[var(--glass-bg)] backdrop-blur-md overflow-hidden shadow-sm rounded-xl border border-[var(--glass-border)] p-6">
+                        <dt className="text-sm font-medium text-muted truncate">My Attendance Rate</dt>
                         <dd className="mt-2 text-3xl font-bold text-green-400">{stats.attendance_rate}%</dd>
                     </div>
-                    <div className="bg-secondary/30 backdrop-blur-md overflow-hidden shadow-sm rounded-xl border border-white/10 p-6">
-                        <dt className="text-sm font-medium text-gray-400 truncate">Classes Missed</dt>
+                    <div className="bg-[var(--glass-bg)] backdrop-blur-md overflow-hidden shadow-sm rounded-xl border border-[var(--glass-border)] p-6">
+                        <dt className="text-sm font-medium text-muted truncate">Classes Missed</dt>
                         <dd className="mt-2 text-3xl font-bold text-red-400">{stats.classes_missed}</dd>
                     </div>
                 </div>
@@ -110,31 +110,31 @@ export default function StudentDashboard() {
 
             {/* Upcoming Classes */}
             <div className="space-y-4">
-                <h3 className="text-xl font-semibold text-white">Upcoming Classes</h3>
+                <h3 className="text-xl font-semibold text-foreground">Upcoming Classes</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {upcomingClasses.map((cls) => (
-                        <div key={cls.session_id} className="bg-secondary/30 backdrop-blur-md rounded-xl shadow-sm border border-white/10 p-6 hover:shadow-md transition-shadow hover:border-accent/30">
-                            <h4 className="text-lg font-bold text-white mb-2">{cls.session_name}</h4>
-                            <div className="space-y-2 text-sm text-gray-300">
+                        <div key={cls.session_id} className="bg-[var(--glass-bg)] backdrop-blur-md rounded-xl shadow-sm border border-[var(--glass-border)] p-6 hover:shadow-md transition-shadow hover:border-accent/30">
+                            <h4 className="text-lg font-bold text-foreground mb-2">{cls.session_name}</h4>
+                            <div className="space-y-2 text-sm text-muted">
                                 <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-gray-500" />
+                                    <Calendar className="w-4 h-4 text-muted" />
                                     <span>{new Date(cls.start_time).toLocaleDateString()}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4 text-gray-500" />
+                                    <Clock className="w-4 h-4 text-muted" />
                                     <span>
                                         {new Date(cls.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-gray-500" />
+                                    <MapPin className="w-4 h-4 text-muted" />
                                     <span>{cls.location || "Online"}</span>
                                 </div>
                             </div>
                         </div>
                     ))}
                     {upcomingClasses.length === 0 && (
-                        <div className="col-span-full py-8 text-center text-gray-400 bg-white/5 rounded-xl border border-white/10">
+                        <div className="col-span-full py-8 text-center text-muted bg-[var(--glass-highlight)] rounded-xl border border-[var(--glass-border)]">
                             No upcoming classes scheduled.
                         </div>
                     )}
@@ -143,19 +143,19 @@ export default function StudentDashboard() {
 
             {/* Recent Attendance (Existing) */}
             {stats && (
-                <div className="bg-secondary/30 backdrop-blur-md shadow-sm border border-white/10 rounded-xl overflow-hidden">
-                    <div className="px-6 py-5 border-b border-white/10 bg-white/5">
-                        <h3 className="text-lg leading-6 font-semibold text-white">Recent History</h3>
+                <div className="bg-[var(--glass-bg)] backdrop-blur-md shadow-sm border border-[var(--glass-border)] rounded-xl overflow-hidden">
+                    <div className="px-6 py-5 border-b border-[var(--glass-border)] bg-[var(--glass-highlight)]">
+                        <h3 className="text-lg leading-6 font-semibold text-foreground">Recent History</h3>
                     </div>
-                    <div className="divide-y divide-white/10">
+                    <div className="divide-y divide-[var(--glass-border)]">
                         {stats.recent_history.length === 0 ? (
-                            <div className="px-6 py-8 text-center text-gray-400">No attendance records found.</div>
+                            <div className="px-6 py-8 text-center text-muted">No attendance records found.</div>
                         ) : (
                             stats.recent_history.map((record) => (
-                                <div key={record.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                <div key={record.id} className="px-6 py-4 flex items-center justify-between hover:bg-[var(--glass-highlight)] transition-colors">
                                     <div className="flex flex-col">
-                                        <span className="text-sm font-medium text-white">{record.date}</span>
-                                        <span className="text-xs text-gray-400">{record.time}</span>
+                                        <span className="text-sm font-medium text-foreground">{record.date}</span>
+                                        <span className="text-xs text-muted">{record.time}</span>
                                     </div>
                                     <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${record.status === 'Present'
                                         ? 'bg-green-500/10 text-green-400 border-green-500/20'

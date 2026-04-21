@@ -85,9 +85,9 @@ export default function FacultyReports() {
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-white flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
                     {view !== "list" && (
-                        <button onClick={goBack} className="mr-2 p-1 hover:bg-white/10 rounded-full transition-colors">
+                        <button onClick={goBack} className="mr-2 p-1 hover:bg-[var(--glass-highlight)] rounded-full transition-colors">
                             <ArrowLeft className="w-5 h-5" />
                         </button>
                     )}
@@ -105,19 +105,19 @@ export default function FacultyReports() {
                         <div
                             key={user.user_id}
                             onClick={() => handleSelectFaculty(user)}
-                            className="bg-secondary/30 border border-white/5 p-4 rounded-xl cursor-pointer hover:bg-white/5 transition-all group"
+                            className="bg-[var(--glass-bg)] border border-[var(--glass-border)] p-4 rounded-xl cursor-pointer hover:bg-[var(--glass-highlight)] transition-all group"
                         >
                             <div className="flex items-center gap-4">
                                 <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
                                     {user.full_name.charAt(0)}
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="font-semibold text-white group-hover:text-blue-400 transition-colors">{user.full_name}</h3>
+                                    <h3 className="font-semibold text-foreground group-hover:text-blue-400 transition-colors">{user.full_name}</h3>
                                     <p className="text-sm text-muted flex items-center gap-1">
                                         <Mail className="w-3 h-3" /> {user.email}
                                     </p>
                                 </div>
-                                <ChevronRight className="w-5 h-5 text-muted group-hover:text-white" />
+                                <ChevronRight className="w-5 h-5 text-muted group-hover:text-foreground" />
                             </div>
                         </div>
                     ))}
@@ -131,20 +131,20 @@ export default function FacultyReports() {
                         <div
                             key={cls.session_id}
                             onClick={() => handleSelectClass(cls)}
-                            className="bg-secondary/30 border border-white/5 p-4 rounded-xl cursor-pointer hover:bg-white/5 transition-all flex items-center justify-between group"
+                            className="bg-[var(--glass-bg)] border border-[var(--glass-border)] p-4 rounded-xl cursor-pointer hover:bg-[var(--glass-highlight)] transition-all flex items-center justify-between group"
                         >
                             <div>
-                                <h3 className="font-semibold text-white text-lg group-hover:text-blue-400 transition-colors">{cls.session_name}</h3>
+                                <h3 className="font-semibold text-foreground text-lg group-hover:text-blue-400 transition-colors">{cls.session_name}</h3>
                                 <div className="flex gap-4 text-sm text-muted mt-1">
                                     <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {new Date(cls.start_time).toLocaleString()}</span>
                                     <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {cls.location}</span>
                                 </div>
                             </div>
-                            <ChevronRight className="w-5 h-5 text-muted group-hover:text-white" />
+                            <ChevronRight className="w-5 h-5 text-muted group-hover:text-foreground" />
                         </div>
                     ))}
                     {classes.length === 0 && (
-                        <div className="text-center p-8 text-muted bg-white/5 rounded-xl border border-white/5 border-dashed">
+                        <div className="text-center p-8 text-muted bg-[var(--glass-highlight)] rounded-xl border border-[var(--glass-border)] border-dashed">
                             No classes found for this faculty member.
                         </div>
                     )}
@@ -152,25 +152,25 @@ export default function FacultyReports() {
             )}
 
             {!loading && view === "attendance" && (
-                <div className="bg-secondary/30 border border-white/5 rounded-xl overflow-hidden">
+                <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-xl overflow-hidden">
                     <table className="w-full">
-                        <thead className="bg-black/20">
+                        <thead className="bg-[var(--glass-highlight)]">
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase">Student</th>
                                 <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase">Status</th>
                                 <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase">Time</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-white/5">
+                        <tbody className="divide-y divide-[var(--glass-border)]">
                             {attendance.map((record, idx) => (
-                                <tr key={idx} className="hover:bg-white/5 transition-colors">
+                                <tr key={idx} className="hover:bg-[var(--glass-highlight)] transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center">
                                             <div className="h-8 w-8 rounded-full bg-gray-700 flex items-center justify-center text-xs text-white mr-3">
                                                 {record.full_name.charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="text-sm font-medium text-white">{record.full_name}</div>
+                                                <div className="text-sm font-medium text-foreground">{record.full_name}</div>
                                                 <div className="text-xs text-muted">{record.email}</div>
                                             </div>
                                         </div>

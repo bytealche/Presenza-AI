@@ -72,9 +72,9 @@ export default function RegisterOrganizationPage() {
             <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] bg-accent/20 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute bottom-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-purple-900/20 rounded-full blur-[100px] pointer-events-none" />
 
-            <div className="max-w-md w-full space-y-8 bg-secondary/30 backdrop-blur-xl p-8 rounded-2xl border border-white/5 shadow-2xl relative z-10 transition-all">
+            <div className="max-w-md w-full space-y-8 bg-[var(--glass-bg)] backdrop-blur-xl p-8 rounded-2xl border border-[var(--glass-border)] shadow-2xl relative z-10 transition-all">
                 <div className="text-center">
-                    <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                    <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted">
                         Organization Register
                     </h2>
                     <p className="mt-2 text-sm text-muted">
@@ -103,7 +103,7 @@ export default function RegisterOrganizationPage() {
                                 name="org_name"
                                 type="text"
                                 required
-                                className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                 placeholder="Organization Name"
                                 value={formData.org_name}
                                 onChange={(e) => setFormData({ ...formData, org_name: e.target.value })}
@@ -117,7 +117,7 @@ export default function RegisterOrganizationPage() {
                                     name="email"
                                     type="email"
                                     required
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                     placeholder="Email Address"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -127,7 +127,7 @@ export default function RegisterOrganizationPage() {
                                 type="button"
                                 onClick={handleSendOTP}
                                 disabled={loading || otpSent}
-                                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-white/10 transition-colors"
+                                className="bg-[var(--glass-highlight)] hover:bg-[var(--glass-highlight)]/80 text-foreground px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-[var(--glass-border)] transition-colors"
                             >
                                 {otpSent ? "Resend" : "Get OTP"}
                             </button>
@@ -140,7 +140,7 @@ export default function RegisterOrganizationPage() {
                                     name="otp"
                                     type="text"
                                     required
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                     placeholder="Enter 6-digit OTP"
                                     value={formData.otp}
                                     onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
@@ -154,7 +154,7 @@ export default function RegisterOrganizationPage() {
                                 name="password"
                                 type="password"
                                 required
-                                className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                 placeholder="Password"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -166,7 +166,7 @@ export default function RegisterOrganizationPage() {
                         type="submit"
                         disabled={loading || !otpSent}
                         className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${loading || !otpSent
-                            ? "bg-white/5 text-muted cursor-not-allowed"
+                            ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
                             : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"
                             }`}
                     >
@@ -175,7 +175,7 @@ export default function RegisterOrganizationPage() {
                     </button>
                 </form>
                 <div className="text-center mt-4">
-                    <Link href="/register" className="text-sm text-gray-400 hover:text-white transition-colors">
+                    <Link href="/register" className="text-sm text-muted hover:text-foreground transition-colors">
                         &larr; Back to Role Selection
                     </Link>
                 </div>
