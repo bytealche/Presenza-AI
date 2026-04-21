@@ -32,16 +32,6 @@ export function Hero() {
             {/* --- Main Content --- */}
             <div className="relative z-10 max-w-7xl mx-auto px-6 text-center flex flex-col items-center">
 
-                {/* Project Logo */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.5 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3, duration: 0.8 }}
-                    className="mb-8"
-                >
-                    <img src="/logo.png" alt="Presenza AI Logo" className="w-28 h-28 object-contain drop-shadow-[0_0_30px_rgba(189,244,255,0.3)] hover:scale-105 transition-transform duration-500 cursor-pointer" />
-                </motion.div>
-
                 {/* Elite Badge */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}

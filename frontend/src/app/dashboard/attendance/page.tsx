@@ -89,6 +89,19 @@ export default function AttendancePage() {
     const fraudCount = attendance.filter(r => r.status?.toLowerCase() === "fraud").length;
     const totalCount = attendance.length;
 
+    const groupedSessions = sessions.reduce((acc, session) => {
+        const dateStr = session.start_time ? new Date(session.start_time).toLocaleDateString() : "Unknown Date";
+        if (!acc[dateStr]) acc[dateStr] = [];
+        acc[dateStr].push(session);
+        return acc;
+    }, {} as Record<string, Session[]>);
+
+    const sortedDates = Object.keys(groupedSessions).sort((a, b) => {
+        if (a === "Unknown Date") return 1;
+        if (b === "Unknown Date") return -1;
+        return new Date(b).getTime() - new Date(a).getTime();
+    });
+
     // Student view
     if (user?.role_id === 3) {
         return (
@@ -170,10 +183,14 @@ export default function AttendancePage() {
                         onChange={(e) => handleSessionChange(Number(e.target.value))}
                     >
                         <option value="" className="bg-[#0c0e1a] text-white">Select a Class to View Attendance</option>
-                        {sessions.map(session => (
-                            <option key={session.session_id} value={session.session_id} className="bg-[#0c0e1a] text-white">
-                                {session.session_name} ({new Date(session.start_time).toLocaleDateString()})
-                            </option>
+                        {sortedDates.map(date => (
+                            <optgroup key={date} label={`📅 ${date}`} className="bg-[#0c0e1a] text-accent font-bold">
+                                {groupedSessions[date].map(session => (
+                                    <option key={session.session_id} value={session.session_id} className="bg-[#0c0e1a] text-white font-normal">
+                                        {session.session_name}
+                                    </option>
+                                ))}
+                            </optgroup>
                         ))}
                     </select>
                 </div>

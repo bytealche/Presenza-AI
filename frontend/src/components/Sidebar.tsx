@@ -44,9 +44,8 @@ export default function Sidebar() {
     return (
         <div className="flex flex-col w-64 h-screen glass border-r-0 border-white/5 text-foreground relative z-20">
             <div className="flex items-center justify-center h-20 border-b border-white/5 bg-white/5 backdrop-blur-sm">
-                <img src="/logo.png" alt="Presenza AI" className="w-8 h-8 mr-3 object-contain drop-shadow-[0_0_10px_rgba(189,244,255,0.4)]" />
                 <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-accent to-teal-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]">
-                    Presenza
+                    Presenza AI
                 </h1>
             </div>
             <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent py-4">

@@ -62,9 +62,14 @@ export default function CameraPage() {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("Are you sure?")) return;
-        await deleteCamera(id);
-        loadCameras();
+        if (!confirm("Are you sure you want to delete this camera?")) return;
+        try {
+            await deleteCamera(id);
+            loadCameras();
+        } catch (error: any) {
+            console.error(error);
+            alert("Delete failed! This camera might be linked to an active class session.");
+        }
     };
 
     const typeIcon = (type: string) => {
