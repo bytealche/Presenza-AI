@@ -7,16 +7,16 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-<div class="container my-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
+<div class="container my-4 page-container">
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h4>Attendance Records</h4>
-    <div>
+    <div class="d-flex gap-2 flex-wrap">
       <a class="btn btn-outline-primary" href="/download_csv">Download CSV</a>
       <a class="btn btn-outline-secondary" href="/">Back</a>
     </div>
   </div>
 
-  <div class="mb-3">
+  <div class="mb-3 d-flex gap-2 flex-wrap">
     <a href="/attendance_record?period=all" class="btn btn-sm btn-light">All</a>
     <a href="/attendance_record?period=daily" class="btn btn-sm btn-light">Daily</a>
     <a href="/attendance_record?period=weekly" class="btn btn-sm btn-light">Weekly</a>

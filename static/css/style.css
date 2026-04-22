@@ -100,6 +100,19 @@ body {
   font-weight: 600;
 }
 
+.page-container {
+  max-width: 1100px;
+}
+
+.responsive-video {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  display: block;
+  margin: 0 auto;
+}
+
 @keyframes scan {
   0% {
     top: 0%;
@@ -107,5 +120,19 @@ body {
 
   100% {
     top: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .responsive-btn {
+    flex: 1 1 100%;
+  }
+
+  #studentsList > * {
+    padding: 0.75rem;
+  }
+
+  #recognizedList li {
+    padding: 0.75rem;
   }
 }
