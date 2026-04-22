@@ -56,3 +56,34 @@ def add_user(user_id: int, embedding: np.ndarray, path: str) -> None:
     os.makedirs(os.path.dirname(path), exist_ok=True)
     np.save(path, embedding)
     print(f"DEBUG: Saved embedding for user {user_id} to {path}")
+
+
+async def update_user_embedding_incremental(db: AsyncSession, user_id: int, new_embedding: np.ndarray, weight: float = 0.1):
+    """
+    Incremental Learning: Averages the new embedding into the existing stored embedding.
+    weight 0.1 means the new embedding contributes 10%, the old contributes 90%.
+    """
+    # Force new embedding into a 1D array of shape (512,) since pgvector expects a flat list
+    new_embedding_flat = new_embedding.flatten()
+    new_embedding_norm = normalize_vector(new_embedding_flat)
+    
+    # fetch existing embedding from DB
+    result = await db.execute(select(FaceProfile).where(FaceProfile.user_id == user_id))
+    profile = result.scalars().first()
+    
+    if profile and profile.embedding:
+        existing_embedding = np.array(profile.embedding)
+        
+        # Calculate new average
+        averaged_embedding = (existing_embedding * (1.0 - weight)) + (new_embedding_norm * weight)
+        averaged_embedding = normalize_vector(averaged_embedding)
+        
+        # update DB
+        profile.embedding = averaged_embedding.tolist()
+        db.add(profile)
+        try:
+            await db.commit()
+            print(f"DEBUG: Incrementally updated embedding for user {user_id} (weight={weight})")
+        except Exception as e:
+            await db.rollback()
+            print(f"DEBUG: Error incrementally updating embedding for user {user_id}: {e}")

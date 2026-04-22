@@ -8,11 +8,14 @@ from app.ai_engine.config import BASE_THRESHOLD
 from app.ai_engine.presence_tracker import PresenceTracker
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai_engine.engagement_analyzer import EngagementAnalyzer
+from app.ai_engine.vector_store import update_user_embedding_incremental
 liveness_detector = LivenessDetector()
 
 engagement_analyzer = EngagementAnalyzer()
 presence_tracker = PresenceTracker()
 import asyncio
+
+_incremental_cache: set[int] = set()
 
 async def process_frame(db: AsyncSession, frame):
     decisions = []
@@ -53,6 +56,12 @@ async def process_frame(db: AsyncSession, frame):
 
         threshold = adjust_threshold(BASE_THRESHOLD, confidence)
         is_fraud, reason = detect_fraud(live, confidence, threshold)
+
+        # Incremental Learning (Option A)
+        if user_id and confidence > 0.95 and live and not is_fraud:
+            if user_id not in _incremental_cache:
+                await update_user_embedding_incremental(db, user_id, embedding)
+                _incremental_cache.add(user_id)
 
         decision = {
             "user_id": user_id,
