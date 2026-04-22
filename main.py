@@ -924,7 +924,7 @@ def startup_event():
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(name="index.html", context={"request": request})
 
 
 @app.get("/attendance_stats")
@@ -946,7 +946,7 @@ def attendance_stats():
 
 @app.get("/add_student", response_class=HTMLResponse)
 def add_student_page(request: Request):
-    return templates.TemplateResponse("add_student.html", {"request": request})
+    return templates.TemplateResponse(name="add_student.html", context={"request": request})
 
 
 @app.post("/add_student")
@@ -1211,7 +1211,7 @@ def train_status():
 
 @app.get("/mark_attendance", response_class=HTMLResponse)
 def mark_attendance_page(request: Request):
-    return templates.TemplateResponse("mark_attendance.html", {"request": request})
+    return templates.TemplateResponse(name="mark_attendance.html", context={"request": request})
 
 
 @app.post("/recognize_faces")
@@ -1299,8 +1299,8 @@ def cctv_status():
 def attendance_record(request: Request, period: str = "all"):
     rows = build_attendance_rows(period)
     return templates.TemplateResponse(
-        "attendance_record.html",
-        {"request": request, "records": rows, "period": period},
+        name="attendance_record.html",
+        context={"request": request, "records": rows, "period": period},
     )
 
 
