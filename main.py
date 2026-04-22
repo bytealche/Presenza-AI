@@ -1,5 +1,6 @@
 import csv
 import datetime
+import inspect
 import io
 import json
 import os
@@ -105,6 +106,7 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=str(PROJECT_ROOT / "static")), name="static")
 templates = Jinja2Templates(directory=str(PROJECT_ROOT / "templates"))
 app.include_router(build_auth_router(DB_PATH))
+_TEMPLATE_RESPONSE_ACCEPTS_REQUEST = "request" in inspect.signature(templates.TemplateResponse).parameters
 
 
 @pass_context
@@ -123,6 +125,19 @@ def flask_compatible_url_for(context, name, **path_params):
 
 
 templates.env.globals["url_for"] = flask_compatible_url_for
+
+
+def render_template(request: Request, name: str, context=None, **kwargs):
+    template_context = dict(context or {})
+    template_context.setdefault("request", request)
+    if _TEMPLATE_RESPONSE_ACCEPTS_REQUEST:
+        return templates.TemplateResponse(
+            request=request,
+            name=name,
+            context=template_context,
+            **kwargs,
+        )
+    return templates.TemplateResponse(name=name, context=template_context, **kwargs)
 
 cctv_state = {
     "running": False,
@@ -924,7 +939,7 @@ def startup_event():
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    return templates.TemplateResponse(name="index.html", context={"request": request})
+    return render_template(request, "index.html")
 
 
 @app.get("/attendance_stats")
@@ -946,7 +961,7 @@ def attendance_stats():
 
 @app.get("/add_student", response_class=HTMLResponse)
 def add_student_page(request: Request):
-    return templates.TemplateResponse(name="add_student.html", context={"request": request})
+    return render_template(request, "add_student.html")
 
 
 @app.post("/add_student")
@@ -1211,7 +1226,7 @@ def train_status():
 
 @app.get("/mark_attendance", response_class=HTMLResponse)
 def mark_attendance_page(request: Request):
-    return templates.TemplateResponse(name="mark_attendance.html", context={"request": request})
+    return render_template(request, "mark_attendance.html")
 
 
 @app.post("/recognize_faces")
@@ -1298,10 +1313,7 @@ def cctv_status():
 @app.get("/attendance_record", response_class=HTMLResponse)
 def attendance_record(request: Request, period: str = "all"):
     rows = build_attendance_rows(period)
-    return templates.TemplateResponse(
-        name="attendance_record.html",
-        context={"request": request, "records": rows, "period": period},
-    )
+    return render_template(request, "attendance_record.html", {"records": rows, "period": period})
 
 
 @app.get("/attendance_records")
