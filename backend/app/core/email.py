@@ -7,7 +7,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-def send_email_sync(to_email: str, subject: str, body: str):
+def send_email_sync(to_email: str, subject: str, body: str, html_content: str = None):
     """
     Sends an email using standard smtplib (blocking), but uses 
     Brevo's HTTP API (port 443) preferentially to bypass HF firewalls.
@@ -34,6 +34,9 @@ def send_email_sync(to_email: str, subject: str, body: str):
                 "subject": subject,
                 "textContent": body
             }
+            if html_content:
+                payload["htmlContent"] = html_content
+
             req = urllib.request.Request(
                 url, 
                 data=json.dumps(payload).encode('utf-8'), 
@@ -58,6 +61,9 @@ def send_email_sync(to_email: str, subject: str, body: str):
     msg["To"] = to_email
     msg["Subject"] = subject
     msg.set_content(body)
+
+    if html_content:
+        msg.add_alternative(html_content, subtype='html')
 
     try:
         with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as server:

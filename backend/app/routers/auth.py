@@ -82,11 +82,65 @@ async def send_otp(
 
     vc = VerificationCode(email=data.email, code=code, expires_at=expires_at)
     db.add(vc)
+    
+    # Try to find user name for personalization
+    user_result = await db.execute(select(User).where(User.email == data.email))
+    user = user_result.scalars().first()
+    name = user.full_name if user else "there"
+
     await db.commit()
 
     subject = "Verify your Presenza AI Account"
-    body = f"Your verification code is: {code}\n\nThis code will expire in 10 minutes."
-    background_tasks.add_task(send_email_sync, data.email, subject, body)
+    
+    # Simple plain text fallback
+    body = f"""Hi {name},
+
+Welcome to Presenza 👋
+
+Your One-Time Password (OTP) for verification is:
+
+🔐 {code}
+
+This OTP is valid for 10 minutes. Please do not share it with anyone for security reasons.
+
+If you did not request this code, you can safely ignore this email.
+
+Need help? Feel free to reach out to our support team anytime.
+
+Best regards,
+Team Presenza"""
+
+    # Premium HTML template
+    html_body = f"""
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; color: #1e293b; line-height: 1.6;">
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h1 style="color: #4f46e5; margin: 0; font-size: 28px;">Presenza</h1>
+        </div>
+        
+        <p style="font-size: 16px;">Hi <strong>{name}</strong>,</p>
+        
+        <p style="font-size: 16px;">Welcome to <strong>Presenza</strong> 👋</p>
+        
+        <p style="font-size: 16px;">Your One-Time Password (OTP) for verification is:</p>
+        
+        <div style="background-color: #f8fafc; border: 2px dashed #e2e8f0; padding: 20px; border-radius: 10px; text-align: center; margin: 25px 0;">
+            <span style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #111827;">{code}</span>
+            <div style="font-size: 24px; margin-top: 10px;">🔐</div>
+        </div>
+        
+        <p style="font-size: 15px; background: #fffbeb; border-left: 4px solid #f59e0b; padding: 10px 15px; border-radius: 4px;">
+            This OTP is valid for <strong>10 minutes</strong>. Please do not share it with anyone for security reasons.
+        </p>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b;">
+            <p>If you did not request this code, you can safely ignore this email.</p>
+            <p>Need help? Feel free to reach out to our support team anytime.</p>
+            <p style="margin-top: 20px;">Best regards,<br><strong style="color: #1e293b;">Team Presenza</strong></p>
+        </div>
+    </div>
+    """
+
+    background_tasks.add_task(send_email_sync, data.email, subject, body, html_body)
 
     logger.info(f"OTP sent to {data.email}")
     return {"message": "OTP sent. Please check your email (and spam folder)."}
