@@ -14,6 +14,7 @@ export default function AttendancePage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [autoRefresh, setAutoRefresh] = useState(false);
     const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
     useEffect(() => {
         if (user) loadSessions();
@@ -44,7 +45,16 @@ export default function AttendancePage() {
                     const sId = parseInt(initialSessionId, 10);
                     if (data.some(s => s.session_id === sId)) {
                         handleSessionChange(sId);
+                        const session = data.find(s => s.session_id === sId);
+                        if (session) {
+                            setSelectedDate(session.start_time ? new Date(session.start_time).toLocaleDateString() : "Unknown Date");
+                        }
                     }
+                } else if (data.length > 0) {
+                    // Try to group and select the most recent date
+                    const dates = data.map(s => s.start_time ? new Date(s.start_time).toLocaleDateString() : "Unknown Date");
+                    const uniqueDates = Array.from(new Set(dates));
+                    if (uniqueDates.length > 0) setSelectedDate(uniqueDates[0]);
                 }
             }
         } catch (error) {
@@ -174,27 +184,39 @@ export default function AttendancePage() {
             )}
 
             {/* Controls */}
-            <div className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center">
-                <div className="relative flex-1 w-full md:w-auto">
-                    <Filter className="absolute left-3 top-3 h-5 w-5 text-muted" />
-                    <select
-                        className="w-full pl-10 pr-4 py-2 bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg text-foreground appearance-none focus:ring-2 focus:ring-accent/50 outline-none"
-                        value={selectedSession || ""}
-                        onChange={(e) => handleSessionChange(Number(e.target.value))}
-                    >
-                        <option value="" className="bg-secondary text-foreground">Select a Class to View Attendance</option>
-                        {sortedDates.map(date => (
-                            <optgroup key={date} label={`📅 ${date}`} className="bg-secondary text-accent font-bold">
-                                {groupedSessions[date].map(session => (
-                                    <option key={session.session_id} value={session.session_id} className="bg-secondary text-foreground font-normal">
-                                        {session.session_name}
-                                    </option>
-                                ))}
-                            </optgroup>
-                        ))}
-                    </select>
+            <div className="bg-[var(--glass-bg)] backdrop-blur-md border border-[var(--glass-border)] rounded-xl p-4 flex flex-col gap-4">
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-white/10 snap-x">
+                    {sortedDates.map(date => (
+                        <button
+                            key={date}
+                            onClick={() => {
+                                setSelectedDate(date);
+                                setSelectedSession(null);
+                                setAttendance([]);
+                            }}
+                            className={`shrink-0 px-4 py-2 rounded-lg border transition-all snap-start font-medium text-sm ${selectedDate === date ? 'bg-accent/20 border-accent text-accent' : 'bg-[var(--glass-highlight)] border-[var(--glass-border)] text-muted-bright hover:border-accent/50'}`}
+                        >
+                            📅 {date}
+                        </button>
+                    ))}
+                    {sortedDates.length === 0 && <span className="text-muted text-sm">No classes scheduled yet.</span>}
                 </div>
-                <div className="relative flex-1 w-full md:w-auto">
+                
+                {selectedDate && groupedSessions[selectedDate] && (
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-[var(--glass-border)]">
+                        {groupedSessions[selectedDate].map(session => (
+                            <button
+                                key={session.session_id}
+                                onClick={() => handleSessionChange(session.session_id)}
+                                className={`px-4 py-2 rounded-lg border text-sm transition-all font-medium ${selectedSession === session.session_id ? 'bg-accent text-black border-accent' : 'bg-[var(--glass-highlight)] border-[var(--glass-border)] text-foreground hover:bg-white/10'}`}
+                            >
+                                {session.session_name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <div className="relative w-full mt-2">
                     <Search className="absolute left-3 top-3 h-5 w-5 text-muted" />
                     <input
                         type="text"

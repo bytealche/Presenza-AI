@@ -162,7 +162,7 @@ export function DeviceCameraStreamer({ cameraId, sessionId }: { cameraId: string
             )}
 
             {/* Two-column layout: video left, sidebar right */}
-            <div className={`flex gap-3 ${isStreaming ? "flex-row" : "flex-col"}`}>
+            <div className={`flex gap-3 flex-col ${isStreaming ? "md:flex-row" : ""}`}>
                 {/* Live preview */}
                 <div className="relative flex-1 aspect-video bg-black rounded overflow-hidden ring-1 ring-white/10 min-w-0">
                     <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
@@ -206,7 +206,7 @@ export function DeviceCameraStreamer({ cameraId, sessionId }: { cameraId: string
 
                 {/* Faces sidebar — only visible while streaming */}
                 {isStreaming && (
-                    <div className="w-64 shrink-0 flex flex-col bg-black/30 border border-white/10 rounded-lg overflow-hidden">
+                    <div className="w-full md:w-64 shrink-0 flex flex-col bg-black/30 border border-white/10 rounded-lg overflow-hidden md:max-h-[480px]">
                         {/* Sidebar header */}
                         <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-black/20">
                             <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">In Frame</span>

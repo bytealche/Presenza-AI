@@ -5,6 +5,8 @@ import { getSessions, createSession, Session } from "@/services/sessionService";
 import { getCameras, Camera } from "@/services/cameraService";
 import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2, Sparkles } from "lucide-react";
 import { DeviceCameraStreamer } from "@/components/CameraStream";
+import Portal from "@/components/Portal";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function TeacherDashboard() {
     const [stats, setStats] = useState<TeacherStats | null>(null);
@@ -82,74 +84,79 @@ export default function TeacherDashboard() {
         const isEnded = new Date(cls.end_time) < new Date();
         
         return (
-            <div 
-                key={cls.session_id} 
-                className="glass-card p-6 flex flex-col justify-between"
-                style={{ animationDelay: `${index * 100}ms` }}
-            >
-                <div className="flex justify-between items-start mb-6">
-                        <h4 className="text-xl font-semibold text-foreground tracking-tight line-clamp-2">{cls.session_name}</h4>
-                    <span className={`text-xs px-3 py-1.5 rounded-full font-medium tracking-wide shadow-sm flex items-center gap-1.5 transition-all whitespace-nowrap ml-3 ${
-                            isEnded
-                                ? 'bg-[var(--glass-highlight)] text-muted border border-[var(--glass-border)]'
-                                : isLive
-                                ? 'bg-red-500/10 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)] animate-pulse'
-                                : 'bg-accent/10 text-accent font-semibold border border-[var(--glass-border)]'
-                        }`}>
-                        {isLive && <span className="w-1.5 h-1.5 rounded-full bg-red-400"></span>}
-                        {isEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
-                    </span>
-                </div>
-
-                <div className="space-y-3 text-sm text-muted-bright mb-6">
-                    <div className="flex items-center gap-3">
-                        <Calendar className="w-4 h-4 text-accent/70" />
-                        <span>{new Date(cls.start_time).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <Clock className="w-4 h-4 text-accent/70" />
-                        <span>{new Date(cls.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(cls.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <MapPin className="w-4 h-4 text-accent/70" />
-                        <span className="truncate">{cls.location || "Online"}</span>
-                    </div>
-                    {cls.camera_id && (
-                        <div className="flex items-center gap-3">
-                            <Video className="w-4 h-4 text-accent/70" />
-                            <span className="truncate">
-                                {cameras.find(c => c.camera_id === cls.camera_id)?.location || `Cam ID: ${cls.camera_id}`}
-                            </span>
+            <div key={cls.session_id} className="uiverse-card flex flex-col" style={{ animationDelay: `${index * 100}ms` }}>
+                <div className="top-section">
+                    <div className="border"></div>
+                    <div className="icons">
+                        <div className="logo text-white font-bold text-sm">
+                           {isLive && <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse mr-2 inline-block"></span>}
+                           {isEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
                         </div>
-                    )}
+                        <div className="social-media">
+                           <Sparkles className="w-5 h-5 text-white/70" />
+                        </div>
+                    </div>
                 </div>
-
-                {/* Action Buttons */}
-                {isEnded ? (
-                    <button
-                        onClick={() => window.location.href = `/dashboard/attendance?sessionId=${cls.session_id}`}
-                        className="w-full bg-secondary text-foreground hover:text-accent border border-[var(--glass-border)] hover:border-accent/30 font-medium py-3 rounded-lg transition-all flex items-center justify-center gap-2 group"
-                    >
-                        <Calendar className="w-4 h-4 group-hover:scale-110 transition-transform" /> Attendance Report
-                    </button>
-                ) : cls.camera_id ? (
-                    <button
-                        onClick={() => {
-                        setStreamingCameraId(cls.camera_id!.toString());
-                        setStreamingSessionId(cls.session_id);
-                    }}
-                        className={`w-full font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 group ${isLive ? 'bg-gradient-to-r from-accent to-accent-dark text-black hover:shadow-[0_0_20px_rgba(189,244,255,0.4)]' : 'bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 hover:border-accent/50'}`}
-                    >
-                        <Video className={`w-4 h-4 group-hover:animate-bounce`} /> {isLive ? 'Join Stream' : 'Start Stream'}
-                    </button>
-                ) : (
-                    <button
-                        disabled
-                        className="w-full bg-[var(--glass-bg)] text-muted border border-[var(--glass-border)] font-medium py-3 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
-                    >
-                        <VideoOff className="w-4 h-4" /> No Camera Assigned
-                    </button>
-                )}
+                <div className="bottom-section flex-1 flex flex-col">
+                    <span className="title truncate px-2">{cls.session_name}</span>
+                    <div className="row row1">
+                        <div className="item">
+                            <span className="big-text">{new Date(cls.start_time).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
+                            <span className="regular-text">Date</span>
+                        </div>
+                        <div className="item">
+                            <span className="big-text">{new Date(cls.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <span className="regular-text">Start</span>
+                        </div>
+                        <div className="item">
+                            <span className="big-text">{new Date(cls.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <span className="regular-text">End</span>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-4 px-2 space-y-2">
+                        <div className="flex items-center gap-2 text-xs text-muted-bright">
+                            <MapPin className="w-3 h-3 text-accent" />
+                            <span className="truncate">{cls.location || "Online"}</span>
+                        </div>
+                        {cls.camera_id && (
+                            <div className="flex items-center gap-2 text-xs text-muted-bright">
+                                <Video className="w-3 h-3 text-accent" />
+                                <span className="truncate">
+                                    {cameras.find(c => c.camera_id === cls.camera_id)?.location || `Cam ID: ${cls.camera_id}`}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="mt-auto pt-4 px-2 pb-2">
+                        {isEnded ? (
+                            <button
+                                onClick={() => window.location.href = `/dashboard/attendance?sessionId=${cls.session_id}`}
+                                className="w-full bg-secondary text-foreground hover:text-accent border border-[var(--glass-border)] hover:border-accent/30 text-sm font-medium py-2 rounded-lg transition-all flex items-center justify-center gap-2"
+                            >
+                                <Calendar className="w-4 h-4" /> Report
+                            </button>
+                        ) : cls.camera_id ? (
+                            <button
+                                onClick={() => {
+                                    setStreamingCameraId(cls.camera_id!.toString());
+                                    setStreamingSessionId(cls.session_id);
+                                }}
+                                className={`w-full text-sm font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${isLive ? 'bg-gradient-to-r from-accent to-accent-dark text-black hover:shadow-[0_0_15px_rgba(189,244,255,0.4)]' : 'bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 hover:border-accent/50'}`}
+                            >
+                                <Video className="w-4 h-4" /> {isLive ? 'Join Stream' : 'Start Stream'}
+                            </button>
+                        ) : (
+                            <button
+                                disabled
+                                className="w-full bg-[var(--glass-bg)] text-muted border border-[var(--glass-border)] text-sm font-medium py-2 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                            >
+                                <VideoOff className="w-4 h-4" /> No Camera
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
         );
     }
@@ -226,139 +233,185 @@ export default function TeacherDashboard() {
                 </div>
             )}
 
-            {/* Create Class Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
-                    <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-2xl shadow-xl w-full max-w-md p-8 relative animate-in zoom-in-95 duration-300">
-                        <button
-                            onClick={() => setIsModalOpen(false)}
-                            className="absolute top-5 right-5 text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 rounded-full"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-
-                        <h3 className="text-2xl font-bold text-foreground mb-6 tracking-tight">Schedule Session</h3>
-
-                        <form onSubmit={handleCreateClass} className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-medium text-muted-bright mb-2">Class Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all placeholder:text-muted"
-                                    placeholder="e.g. CS101 - Intro to AI"
-                                    value={newClass.session_name}
-                                    onChange={(e) => setNewClass({ ...newClass, session_name: e.target.value })}
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-muted-bright mb-2">Start</label>
-                                    <input
-                                        type="datetime-local"
-                                        required
-                                        className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all"
-                                        value={newClass.start_time}
-                                        onChange={(e) => setNewClass({ ...newClass, start_time: e.target.value })}
-                                    />
+            {/* Create Class Sidebar Drawer */}
+            <Portal>
+                <AnimatePresence>
+                    {isModalOpen && (
+                        <>
+                            {/* Backdrop */}
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsModalOpen(false)}
+                                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+                            />
+                            
+                            {/* Drawer -> Centered Modal */}
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-2xl z-[101] flex flex-col backdrop-blur-2xl rounded-2xl max-h-[90vh]"
+                            >
+                                <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-highlight)]">
+                                    <h3 className="text-2xl font-bold text-foreground tracking-tight">Schedule Session</h3>
+                                    <button
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 rounded-full"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-muted-bright mb-2">End</label>
-                                    <input
-                                        type="datetime-local"
-                                        required
-                                        className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all"
-                                        value={newClass.end_time}
-                                        onChange={(e) => setNewClass({ ...newClass, end_time: e.target.value })}
-                                    />
+
+                                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                                    <form onSubmit={handleCreateClass} className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-muted-bright mb-2">Class Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all placeholder:text-muted"
+                                                placeholder="e.g. CS101 - Intro to AI"
+                                                value={newClass.session_name}
+                                                onChange={(e) => setNewClass({ ...newClass, session_name: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-muted-bright mb-2">Start</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    required
+                                                    className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all"
+                                                    value={newClass.start_time}
+                                                    onChange={(e) => setNewClass({ ...newClass, start_time: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-muted-bright mb-2">End</label>
+                                                <input
+                                                    type="datetime-local"
+                                                    required
+                                                    className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all"
+                                                    value={newClass.end_time}
+                                                    onChange={(e) => setNewClass({ ...newClass, end_time: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-muted-bright mb-2">Location</label>
+                                            <input
+                                                type="text"
+                                                className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all placeholder:text-muted"
+                                                placeholder="e.g. Room 304 or Zoom Link"
+                                                value={newClass.location}
+                                                onChange={(e) => setNewClass({ ...newClass, location: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-muted-bright mb-2">Camera Integration</label>
+                                            <select
+                                                className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all appearance-none"
+                                                value={newClass.camera_id}
+                                                onChange={(e) => setNewClass({ ...newClass, camera_id: e.target.value })}
+                                            >
+                                                <option value="" className="bg-secondary text-foreground">No camera tracking</option>
+                                                {cameras.map(cam => (
+                                                    <option key={cam.camera_id} value={cam.camera_id} className="bg-secondary text-foreground">
+                                                        {cam.location} - {cam.description || cam.camera_type}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div className="pt-4 mt-auto">
+                                            <button
+                                                type="submit"
+                                                disabled={creating}
+                                                className="w-full bg-gradient-to-r from-accent to-accent-dark hover:from-accent-dark hover:to-accent text-secondary shadow-[0_0_15px_rgba(189,244,255,0.3)] hover:shadow-[0_0_25px_rgba(189,244,255,0.5)] font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {creating ? (
+                                                    <>
+                                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                                        Initializing...
+                                                    </>
+                                                ) : (
+                                                    "Confirm Schedule"
+                                                )}
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
-                            </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+            </Portal>
 
-                            <div>
-                                <label className="block text-sm font-medium text-muted-bright mb-2">Location</label>
-                                <input
-                                    type="text"
-                                    className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all placeholder:text-muted"
-                                    placeholder="e.g. Room 304 or Zoom Link"
-                                    value={newClass.location}
-                                    onChange={(e) => setNewClass({ ...newClass, location: e.target.value })}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-muted-bright mb-2">Camera Integration</label>
-                                <select
-                                    className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all appearance-none"
-                                    value={newClass.camera_id}
-                                    onChange={(e) => setNewClass({ ...newClass, camera_id: e.target.value })}
-                                >
-                                    <option value="" className="bg-secondary text-foreground">No camera tracking</option>
-                                    {cameras.map(cam => (
-                                        <option key={cam.camera_id} value={cam.camera_id} className="bg-secondary text-foreground">
-                                            {cam.location} - {cam.description || cam.camera_type} {cam.connection_url ? `(${cam.connection_url.substring(0,20)}...)` : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div className="pt-4">
-                                <button
-                                    type="submit"
-                                    disabled={creating}
-                                    className="w-full bg-gradient-to-r from-accent to-accent-dark hover:from-accent-dark hover:to-accent text-secondary shadow-[0_0_15px_rgba(189,244,255,0.3)] hover:shadow-[0_0_25px_rgba(189,244,255,0.5)] font-bold py-3.5 rounded-xl transition-all flex justify-center items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {creating ? (
-                                        <>
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                            Initializing...
-                                        </>
-                                    ) : (
-                                        "Confirm Schedule"
-                                    )}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Stream Class Modal */}
-            {streamingCameraId && (
-                <div className="fixed inset-0 bg-background/90 backdrop-blur-xl z-[100] flex items-center justify-center p-2 sm:p-8">
-                    <div className="glass-card shadow-[0_0_50px_rgba(0,0,0,0.8)] w-full max-w-6xl overflow-hidden relative animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-                        <div className="p-4 sm:p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-highlight)]">
-                            <div>
-                                <h3 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-3 tracking-tight">
-                                    <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
-                                    Live Analysis Stream
-                                </h3>
-                                <p className="text-xs sm:text-sm text-muted-bright mt-1">
-                                    AI-powered real-time tracking for Camera #{streamingCameraId}.
-                                </p>
-                            </div>
-                            <button
+            {/* Stream Class Sidebar Drawer */}
+            <Portal>
+                <AnimatePresence>
+                    {streamingCameraId && (
+                        <>
+                            {/* Backdrop */}
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
                                 onClick={() => {
                                     setStreamingCameraId(null);
                                     setStreamingSessionId(null);
                                 }}
-                                className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 sm:p-2.5 rounded-full"
+                                className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100]"
+                            />
+                            
+                            {/* Large Stream Modal */}
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ type: "spring", damping: 30, stiffness: 200 }}
+                                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full lg:w-[85%] xl:w-[75%] bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-2xl z-[101] flex flex-col backdrop-blur-2xl rounded-2xl max-h-[95vh]"
                             >
-                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                            </button>
-                        </div>
+                                <div className="p-4 sm:p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-highlight)]">
+                                    <div>
+                                        <h3 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-3 tracking-tight">
+                                            <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
+                                            Live Analysis Stream
+                                        </h3>
+                                        <p className="text-xs sm:text-sm text-muted-bright mt-1">
+                                            AI-powered real-time tracking for Camera #{streamingCameraId}.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setStreamingCameraId(null);
+                                            setStreamingSessionId(null);
+                                        }}
+                                        className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 sm:p-2.5 rounded-full"
+                                    >
+                                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                                    </button>
+                                </div>
 
-                        <div className="flex-1 w-full p-4 sm:p-6 overflow-y-auto custom-scrollbar">
-                            <div className="w-full h-full min-h-[500px]">
-                                <DeviceCameraStreamer
-                                    cameraId={streamingCameraId}
-                                    sessionId={streamingSessionId ?? undefined}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                                <div className="flex-1 w-full p-2 sm:p-6 overflow-hidden">
+                                    <div className="w-full h-full glass-card border-none rounded-none sm:rounded-xl overflow-hidden shadow-inner">
+                                        <DeviceCameraStreamer
+                                            cameraId={streamingCameraId}
+                                            sessionId={streamingSessionId ?? undefined}
+                                        />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+            </Portal>
         </div>
     );
 }

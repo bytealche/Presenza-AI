@@ -151,3 +151,131 @@ body::before {
     radial-gradient(circle at 85% 30%, var(--mesh-2), transparent 25%);
   pointer-events: none;
 }
+
+/* Custom Class Card derived from Uiverse */
+.uiverse-card {
+  width: 100%;
+  border-radius: 20px;
+  background: var(--glass-bg);
+  padding: 5px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 1px solid var(--glass-border);
+}
+
+.uiverse-card:hover {
+  transform: scale(1.02);
+  border-color: var(--accent);
+}
+
+.uiverse-card .top-section {
+  height: 150px;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(45deg, var(--accent-dark) 0%, var(--accent) 100%);
+  position: relative;
+}
+
+.uiverse-card .top-section .border {
+  border-bottom-right-radius: 10px;
+  height: 30px;
+  width: 130px;
+  background: var(--glass-bg);
+  position: relative;
+  transform: skew(-40deg);
+  box-shadow: -10px -10px 0 0 var(--glass-bg);
+}
+
+.uiverse-card .top-section .border::before {
+  content: "";
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  top: 0;
+  right: -15px;
+  background: rgba(255, 255, 255, 0);
+  border-top-left-radius: 10px;
+  box-shadow: -5px -5px 0 2px var(--glass-bg);
+}
+
+.uiverse-card .top-section::before {
+  content: "";
+  position: absolute;
+  top: 30px;
+  left: 0;
+  background: rgba(255, 255, 255, 0);
+  height: 15px;
+  width: 15px;
+  border-top-left-radius: 15px;
+  box-shadow: -5px -5px 0 2px var(--glass-bg);
+}
+
+.uiverse-card .top-section .icons {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 30px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.uiverse-card .top-section .icons .logo {
+  height: 100%;
+  aspect-ratio: 1;
+  padding: 7px 0 7px 15px;
+  display: flex;
+  align-items: center;
+}
+
+.uiverse-card .top-section .icons .social-media {
+  height: 100%;
+  padding: 8px 15px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+
+.uiverse-card .bottom-section {
+  margin-top: 15px;
+  padding: 10px 5px;
+}
+
+.uiverse-card .bottom-section .title {
+  display: block;
+  font-size: 18px;
+  font-weight: bolder;
+  color: var(--foreground);
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.uiverse-card .bottom-section .row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.uiverse-card .bottom-section .row .item {
+  flex: 30%;
+  text-align: center;
+  padding: 5px;
+  color: var(--muted-bright);
+}
+
+.uiverse-card .bottom-section .row .item .big-text {
+  font-size: 14px;
+  display: block;
+  font-weight: bold;
+  color: var(--foreground);
+}
+
+.uiverse-card .bottom-section .row .item .regular-text {
+  font-size: 11px;
+}
+
+.uiverse-card .bottom-section .row .item:nth-child(2) {
+  border-left: 1px solid var(--glass-border);
+  border-right: 1px solid var(--glass-border);
+}
