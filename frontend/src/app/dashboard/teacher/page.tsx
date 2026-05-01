@@ -399,8 +399,8 @@ export default function TeacherDashboard() {
                                     </button>
                                 </div>
 
-                                <div className="flex-1 w-full p-2 sm:p-6 overflow-hidden">
-                                    <div className="w-full h-full glass-card border-none rounded-none sm:rounded-xl overflow-hidden shadow-inner">
+                                <div className="flex-1 w-full p-2 sm:p-6 overflow-y-auto custom-scrollbar">
+                                    <div className="w-full min-h-full glass-card border-none rounded-none sm:rounded-xl overflow-hidden shadow-inner">
                                         <DeviceCameraStreamer
                                             cameraId={streamingCameraId}
                                             sessionId={streamingSessionId ?? undefined}

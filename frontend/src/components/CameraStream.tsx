@@ -164,8 +164,8 @@ export function DeviceCameraStreamer({ cameraId, sessionId }: { cameraId: string
             {/* Two-column layout: video left, sidebar right */}
             <div className={`flex gap-3 flex-col ${isStreaming ? "md:flex-row" : ""}`}>
                 {/* Live preview */}
-                <div className="relative flex-1 aspect-video bg-black rounded overflow-hidden ring-1 ring-white/10 min-w-0">
-                    <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+                <div className="relative flex-1 aspect-video md:aspect-auto md:min-h-[480px] md:max-h-[70vh] bg-black rounded overflow-hidden ring-1 ring-white/10 min-w-0">
+                    <video ref={videoRef} className="w-full h-full object-contain" muted playsInline />
                     <canvas ref={canvasRef} className="hidden" />
 
                     {/* AI bounding box overlays */}
