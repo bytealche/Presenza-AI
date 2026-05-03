@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Presenza AI",
   description: "AI-powered live attendance tracking and insights",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 import { ThemeProvider } from "@/components/ThemeProvider";
