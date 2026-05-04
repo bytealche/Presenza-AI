@@ -153,29 +153,30 @@ export default function FacultyReports() {
 
             {!loading && view === "attendance" && (
                 <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-xl overflow-hidden">
-                    <table className="w-full">
-                        <thead className="bg-[var(--glass-highlight)]">
-                            <tr>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase">Student</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase">Status</th>
-                                <th className="px-6 py-4 text-left text-xs font-medium text-muted uppercase">Time</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[var(--glass-border)]">
+                    <div className="overflow-x-auto w-full">
+                        <table className="w-full min-w-[600px] sm:min-w-full">
+                            <thead className="bg-[var(--glass-highlight)]">
+                                <tr>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted uppercase">Student</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted uppercase">Status</th>
+                                    <th className="px-4 sm:px-6 py-3 sm:py-4 text-left text-xs font-medium text-muted uppercase">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[var(--glass-border)]">
                             {attendance.map((record, idx) => (
                                 <tr key={idx} className="hover:bg-[var(--glass-highlight)] transition-colors">
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap sm:whitespace-normal">
                                         <div className="flex items-center">
-                                            <div className="h-8 w-8 rounded-full bg-gray-700 flex items-center justify-center text-xs text-white mr-3">
+                                            <div className="h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 rounded-full bg-gray-700 flex items-center justify-center text-xs sm:text-sm text-white mr-3">
                                                 {record.full_name.charAt(0)}
                                             </div>
                                             <div>
-                                                <div className="text-sm font-medium text-foreground">{record.full_name}</div>
-                                                <div className="text-xs text-muted">{record.email}</div>
+                                                <div className="text-sm font-medium text-foreground line-clamp-1">{record.full_name}</div>
+                                                <div className="text-xs sm:text-sm text-muted line-clamp-1">{record.email}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                                         <span className={`px-2 py-1 text-xs rounded-full font-medium ${record.status === 'Present'
                                                 ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                                 : 'bg-red-500/20 text-red-400 border border-red-500/30'
@@ -183,18 +184,19 @@ export default function FacultyReports() {
                                             {record.status}
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-muted">
+                                    <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-muted whitespace-nowrap">
                                         {new Date(record.timestamp).toLocaleTimeString()}
                                     </td>
                                 </tr>
                             ))}
                             {attendance.length === 0 && (
                                 <tr>
-                                    <td colSpan={3} className="px-6 py-8 text-center text-muted">No attendance records found for this class.</td>
+                                    <td colSpan={3} className="px-4 sm:px-6 py-6 sm:py-8 text-center text-sm text-muted">No attendance records found for this class.</td>
                                 </tr>
                             )}
                         </tbody>
-                    </table>
+                        </table>
+                    </div>
                 </div>
             )}
         </div>
