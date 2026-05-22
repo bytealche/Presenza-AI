@@ -2,12 +2,17 @@
 import React, { useEffect, useState } from "react";
 import { getStudentStats, StudentStats } from "@/services/dashboardService";
 import { getSessions, Session } from "@/services/sessionService";
-import { Clock, MapPin, Video, LogIn, Calendar } from "lucide-react";
+import { Clock, MapPin, Video, LogIn, Calendar, X, Loader2, VideoOff } from "lucide-react";
+import { DeviceCameraStreamer } from "@/components/CameraStream";
+import Portal from "@/components/Portal";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function StudentDashboard() {
     const [stats, setStats] = useState<StudentStats | null>(null);
     const [classes, setClasses] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
+    const [streamingCameraId, setStreamingCameraId] = useState<string | null>(null);
+    const [streamingSessionId, setStreamingSessionId] = useState<number | null>(null);
 
     useEffect(() => {
         loadData();
@@ -83,10 +88,25 @@ export default function StudentDashboard() {
                                             <span>{cls.location || "Online"}</span>
                                         </div>
                                     </div>
-                                    <button className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-600/20 transition-all flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-[0.98]">
-                                        <LogIn className="w-5 h-5" />
-                                        Join Class
-                                    </button>
+                                    {cls.camera_id ? (
+                                        <button
+                                            onClick={() => {
+                                                setStreamingCameraId(cls.camera_id!.toString());
+                                                setStreamingSessionId(cls.session_id);
+                                            }}
+                                            className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-600/20 transition-all flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-[0.98]"
+                                        >
+                                            <LogIn className="w-5 h-5" />
+                                            Join Class
+                                        </button>
+                                    ) : (
+                                        <button
+                                            disabled
+                                            className="w-full bg-white/5 text-muted border border-glass-border text-sm font-medium py-3 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                                        >
+                                            <VideoOff className="w-4 h-4" /> No Camera Integration
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -169,6 +189,66 @@ export default function StudentDashboard() {
                     </div>
                 </div>
             )}
+
+            {/* Stream Class Sidebar Drawer / Modal */}
+            <Portal>
+                <AnimatePresence>
+                    {streamingCameraId && (
+                        <>
+                            {/* Backdrop */}
+                            <motion.div 
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => {
+                                    setStreamingCameraId(null);
+                                    setStreamingSessionId(null);
+                                }}
+                                className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100]"
+                            />
+                            
+                            {/* Large Stream Modal */}
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ type: "spring", damping: 30, stiffness: 200 }}
+                                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full lg:w-[85%] xl:w-[75%] bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-2xl z-[101] flex flex-col backdrop-blur-2xl rounded-2xl max-h-[95vh]"
+                            >
+                                <div className="p-4 sm:p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-highlight)]">
+                                    <div>
+                                        <h3 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-3 tracking-tight">
+                                            <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.8)]"></span>
+                                            Join Class & Check Attendance
+                                        </h3>
+                                        <p className="text-xs sm:text-sm text-muted-bright mt-1">
+                                            Keep your camera streaming. We will verify your face to automatically mark you present.
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setStreamingCameraId(null);
+                                            setStreamingSessionId(null);
+                                        }}
+                                        className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 sm:p-2.5 rounded-full"
+                                    >
+                                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                                    </button>
+                                </div>
+
+                                <div className="flex-1 w-full p-2 sm:p-6 overflow-y-auto custom-scrollbar">
+                                    <div className="w-full min-h-full glass-card border-none rounded-none sm:rounded-xl overflow-hidden shadow-inner">
+                                        <DeviceCameraStreamer
+                                            cameraId={streamingCameraId}
+                                            sessionId={streamingSessionId ?? undefined}
+                                        />
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+            </Portal>
         </div>
     );
 }
