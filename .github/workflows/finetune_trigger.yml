@@ -1,0 +1,43 @@
+name: Nightly Face Model Fine-Tuning
+
+on:
+  schedule:
+    # Runs at 00:00 (Midnight) every Sunday
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+    # Allows you to trigger this manually from the GitHub Actions UI
+
+jobs:
+  run-finetuning:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install System Dependencies (OpenCV & dlib)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libopenblas-dev liblapack-dev libx11-dev libgtk-3-dev
+          
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install supabase python-dotenv face_recognition opencv-python-headless numpy
+          
+      - name: Run Fine-Tuning Script
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          echo "Starting model fine-tuning process..."
+          python scripts/finetune_job.py
+          echo "Fine-tuning completed successfully."
+          
+      - name: Notify Failure (Optional)
+        if: failure()
+        run: echo "Finetuning pipeline failed. Check logs."

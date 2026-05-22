@@ -9,6 +9,7 @@ from app.ai_engine.presence_tracker import PresenceTracker
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai_engine.engagement_analyzer import EngagementAnalyzer
 from app.ai_engine.vector_store import update_user_embedding_incremental
+from app.core.supabase_client import upload_face_to_dataset
 liveness_detector = LivenessDetector()
 
 engagement_analyzer = EngagementAnalyzer()
@@ -61,6 +62,10 @@ async def process_frame(db: AsyncSession, frame):
         if user_id and confidence > 0.95 and live and not is_fraud:
             if user_id not in _incremental_cache:
                 await update_user_embedding_incremental(db, user_id, embedding)
+                
+                # Option B: Dataset Collection
+                asyncio.create_task(upload_face_to_dataset(user_id, face["face_image"]))
+                
                 _incremental_cache.add(user_id)
 
         decision = {
