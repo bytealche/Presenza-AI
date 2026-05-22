@@ -82,6 +82,20 @@ async def _ai_loop(camera_id: str):
                         session_id = active_session.session_id
                         logger.info(f"[CAM {camera_id}] DB-resolved session → {session_id}")
 
+                # Check if the class session has ended
+                if session_id is not None:
+                    stmt = select(SessionModel).where(SessionModel.session_id == session_id)
+                    res = await db.execute(stmt)
+                    session_record = res.scalars().first()
+                    if session_record and datetime.now() > session_record.end_time:
+                        logger.info(f"[CAM {camera_id}] Session {session_id} has reached its end_time ({session_record.end_time}). Ending stream.")
+                        payload = json.dumps({"type": "session_ended"})
+                        await manager.broadcast_to_receivers(camera_id, payload)
+                        await manager.send_to_sender(camera_id, payload)
+                        await manager.disconnect_all(camera_id)
+                        break
+
+
                 # ── 4. Two-stage attendance ───────────────────────────────
                 if session_id and decisions:
                     # Stage 1: write provisional immediately on first detection

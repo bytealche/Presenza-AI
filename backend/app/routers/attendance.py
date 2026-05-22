@@ -93,21 +93,26 @@ async def get_session_attendance(
          
     # 4. Get Enrollments (All students in this class)
     # We want User details too.
-    # Join with User
+    # Join with User, left outer join with Attendance
     result = await db.execute(
-        select(Attendance, User)
-        .join(User, Attendance.user_id == User.user_id)
-        .where(Attendance.session_id == session_id)
+        select(User, Attendance)
+        .select_from(Enrollment)
+        .join(User, Enrollment.user_id == User.user_id)
+        .outerjoin(
+            Attendance,
+            (Enrollment.user_id == Attendance.user_id) & (Enrollment.session_id == Attendance.session_id)
+        )
+        .where(Enrollment.session_id == session_id)
     )
     results = result.all()
     
     return [
         {
-            "user_id": r[1].user_id,
-            "full_name": r[1].full_name,
-            "email": r[1].email,
-            "status": r[0].final_status,
-            "timestamp": r[0].decision_time
+            "user_id": r[0].user_id,
+            "full_name": r[0].full_name,
+            "email": r[0].email,
+            "status": r[1].final_status if r[1] is not None else "Absent",
+            "timestamp": r[1].decision_time if r[1] is not None else None
         }
         for r in results
     ]

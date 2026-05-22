@@ -30,6 +30,19 @@ export function DeviceCameraStreamer({ cameraId, sessionId }: { cameraId: string
     const [unknownCount, setUnknownCount] = useState(0);
     const imgRef = useRef<HTMLImageElement>(null);
 
+    const stopStreaming = useCallback(() => {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (wsRef.current) {
+            wsRef.current.onclose = null;
+            wsRef.current.close();
+            wsRef.current = null;
+        }
+        if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+        if (videoRef.current) videoRef.current.srcObject = null;
+        setIsStreaming(false);
+        setStatus("Stopped");
+    }, []);
+
     // Load available video devices
     useEffect(() => {
         navigator.mediaDevices.enumerateDevices().then(devs => {
@@ -91,6 +104,12 @@ export function DeviceCameraStreamer({ cameraId, sessionId }: { cameraId: string
                     }
                     try {
                         const parsed = JSON.parse(event.data);
+                        if (parsed.type === "session_ended") {
+                            alert("This class session has ended. Stream terminated.");
+                            stopStreaming();
+                            setStatus("Class ended");
+                            return;
+                        }
                         if (parsed.type === "ai_analysis") {
                             setAiData(parsed.data ?? []);
                             if (parsed.faces) setFacesList(parsed.faces);
@@ -131,16 +150,7 @@ export function DeviceCameraStreamer({ cameraId, sessionId }: { cameraId: string
         } catch (err: any) {
             setStatus(`Error: ${err.message}`);
         }
-    }, [cameraId, selectedDevice, isStreaming]);
-
-    const stopStreaming = useCallback(() => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        if (wsRef.current) wsRef.current.close();
-        if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-        if (videoRef.current) videoRef.current.srcObject = null;
-        setIsStreaming(false);
-        setStatus("Stopped");
-    }, []);
+    }, [cameraId, selectedDevice, isStreaming, stopStreaming]);
 
     return (
         <div className="space-y-3">
@@ -303,6 +313,12 @@ export function StreamViewer({ cameraId }: { cameraId: string }) {
                     }
                     try {
                         const parsed = JSON.parse(event.data);
+                        if (parsed.type === "session_ended") {
+                            alert("The class session has ended.");
+                            ws.onclose = null;
+                            ws.close();
+                            return;
+                        }
                         if (parsed.type === "ai_analysis") setAiData(parsed.data);
                     } catch { }
                 } else if (imgRef.current) {

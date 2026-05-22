@@ -41,6 +41,28 @@ class ConnectionManager:
             del self.senders[camera_id]
             logger.info(f"Sender disconnected: {camera_id}")
 
+    async def disconnect_all(self, camera_id: str):
+        """Disconnect and close sender and all receivers for a camera_id"""
+        # Close receivers
+        if camera_id in self.receivers:
+            receivers_to_close = list(self.receivers[camera_id])
+            for ws in receivers_to_close:
+                try:
+                    await ws.close()
+                except Exception as e:
+                    logger.warning(f"Error closing receiver connection for {camera_id}: {e}")
+            self.receivers[camera_id] = []
+        
+        # Close sender
+        if camera_id in self.senders:
+            ws = self.senders[camera_id]
+            try:
+                await ws.close()
+            except Exception as e:
+                logger.warning(f"Error closing sender connection for {camera_id}: {e}")
+            del self.senders[camera_id]
+
+
     async def send_to_sender(self, camera_id: str, data):
         """Send JSON data back to the sender (e.g. AI analysis boxes for the source preview)"""
         if camera_id in self.senders:
