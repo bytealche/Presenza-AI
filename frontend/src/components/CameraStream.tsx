@@ -277,11 +277,23 @@ export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { camer
                         </div>
 
                         {/* Sidebar footer — confirmed total */}
-                        <div className="px-3 py-2 border-t border-white/10 bg-black/20">
-                            <div className="flex justify-between text-[10px] text-white/50">
-                                <span>Attendance marked</span>
-                                <span className="text-green-400 font-semibold">
-                                    {facesList.filter(f => f.status === "confirmed" || f.status === "provisional").length} / {facesList.filter(f => f.status !== "unknown").length}
+                        <div className="px-3 py-3 border-t border-white/10 bg-black/40 space-y-2.5">
+                            <div className="flex justify-between items-center text-[11px] text-white/60">
+                                <span>Total Students In Frame:</span>
+                                <span className="text-white font-bold bg-white/10 px-2 py-0.5 rounded">
+                                    {facesList.length}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center text-[11px] text-white/60">
+                                <span>Attendance Marked:</span>
+                                <span className="text-green-400 font-bold bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded">
+                                    {facesList.filter(f => f.status === "confirmed").length}
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center text-[11px] text-white/60">
+                                <span>No Attendance Marked:</span>
+                                <span className="text-yellow-400 font-bold bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded animate-pulse">
+                                    {facesList.filter(f => f.status !== "confirmed").length}
                                 </span>
                             </div>
                         </div>
@@ -305,6 +317,8 @@ export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { camer
 export function StreamViewer({ cameraId }: { cameraId: string }) {
     const imgRef = useRef<HTMLImageElement>(null);
     const [aiData, setAiData] = useState<any[]>([]);
+    const [facesList, setFacesList] = useState<any[]>([]);
+    const [unknownCount, setUnknownCount] = useState(0);
 
     useEffect(() => {
         const wsUrl = getWsUrl(`/ws/stream/${cameraId}?client_type=receiver`);
@@ -325,7 +339,11 @@ export function StreamViewer({ cameraId }: { cameraId: string }) {
                             ws.close();
                             return;
                         }
-                        if (parsed.type === "ai_analysis") setAiData(parsed.data);
+                        if (parsed.type === "ai_analysis") {
+                            setAiData(parsed.data ?? []);
+                            if (parsed.faces) setFacesList(parsed.faces);
+                            if (typeof parsed.unknown_count === "number") setUnknownCount(parsed.unknown_count);
+                        }
                     } catch { }
                 } else if (imgRef.current) {
                     const oldUrl = imgRef.current.src;
@@ -341,24 +359,50 @@ export function StreamViewer({ cameraId }: { cameraId: string }) {
         return () => ws?.close();
     }, [cameraId]);
 
+    const totalInFrame = facesList.length;
+    const unmarkedInFrame = facesList.filter(f => f.status !== "confirmed").length;
+    const markedInFrame = facesList.filter(f => f.status === "confirmed").length;
+
     return (
-        <div className="relative w-full h-full">
-            <img ref={imgRef} className="w-full h-full object-cover" alt="Live Stream"
-                onError={(e) => e.currentTarget.style.display = "none"}
-                onLoad={(e) => e.currentTarget.style.display = "block"} />
-            {aiData.map((data, idx) => {
-                if (!data.bbox) return null;
-                const [x, y, w, h] = data.bbox;
-                return (
-                    <div key={idx}
-                        className={`absolute border-2 ${data.is_fraud ? "border-red-500" : "border-green-500"}`}
-                        style={{ left: `${(x / 640) * 100}%`, top: `${(y / 480) * 100}%`, width: `${(w / 640) * 100}%`, height: `${(h / 480) * 100}%`, pointerEvents: "none" }}>
-                        <span className="absolute bottom-0 right-0 bg-black/70 text-white text-[9px] px-1 rounded-sm">
-                            {data.user_id || "Unknown"}
-                        </span>
+        <div className="relative w-full h-full min-h-[300px] flex flex-col justify-between">
+            <div className="relative flex-1 bg-black rounded-lg overflow-hidden">
+                <img ref={imgRef} className="w-full h-full object-cover" alt="Live Stream"
+                    onError={(e) => e.currentTarget.style.display = "none"}
+                    onLoad={(e) => e.currentTarget.style.display = "block"} />
+                {aiData.map((data, idx) => {
+                    if (!data.bbox) return null;
+                    const [x, y, w, h] = data.bbox;
+                    return (
+                        <div key={idx}
+                            className={`absolute border-2 ${data.is_fraud ? "border-red-500" : "border-green-500"}`}
+                            style={{ left: `${(x / 640) * 100}%`, top: `${(y / 480) * 100}%`, width: `${(w / 640) * 100}%`, height: `${(h / 480) * 100}%`, pointerEvents: "none" }}>
+                            <span className="absolute bottom-0 right-0 bg-black/70 text-white text-[9px] px-1 rounded-sm">
+                                {data.user_id || "Unknown"}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+            
+            {/* Floating Glassmorphic Statistics Bar */}
+            {facesList.length > 0 && (
+                <div className="absolute bottom-4 left-4 right-4 bg-slate-950/85 backdrop-blur-md rounded-xl border border-white/10 p-3.5 flex items-center justify-around gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 z-10">
+                    <div className="flex flex-col items-center">
+                        <span className="text-[9px] text-white/50 uppercase font-bold tracking-wider">In Frame</span>
+                        <span className="text-sm font-extrabold text-white mt-0.5">{totalInFrame}</span>
                     </div>
-                );
-            })}
+                    <div className="w-px h-6 bg-white/10" />
+                    <div className="flex flex-col items-center">
+                        <span className="text-[9px] text-green-400 uppercase font-bold tracking-wider">Attendance Marked</span>
+                        <span className="text-sm font-extrabold text-green-400 mt-0.5">{markedInFrame}</span>
+                    </div>
+                    <div className="w-px h-6 bg-white/10" />
+                    <div className="flex flex-col items-center">
+                        <span className="text-[9px] text-yellow-400 uppercase font-bold tracking-wider">No Attendance Marked</span>
+                        <span className="text-sm font-extrabold text-yellow-400 mt-0.5 animate-pulse">{unmarkedInFrame}</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
