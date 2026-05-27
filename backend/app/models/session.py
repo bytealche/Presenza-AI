@@ -15,6 +15,7 @@ class Session(Base):
     start_time = Column(DateTime)
     end_time = Column(DateTime)
     location = Column(String(255))
+    class_type = Column(String(50), default="online", nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 

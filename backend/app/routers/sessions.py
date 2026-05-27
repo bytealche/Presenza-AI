@@ -31,7 +31,8 @@ async def create_session(
         camera_id=data.camera_id,
         start_time=data.start_time,
         end_time=data.end_time,
-        location=data.location
+        location=data.location,
+        class_type=data.class_type
     )
 
     db.add(new_session)

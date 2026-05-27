@@ -5,7 +5,7 @@ import { Video, VideoOff } from "lucide-react";
 import { getWsUrl } from "@/utils/config";
 
 // Streams from the user's own webcam directly to the backend via WebSocket
-export function DeviceCameraStreamer({ cameraId, sessionId }: { cameraId: string; sessionId?: number }) {
+export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { cameraId: string; sessionId?: number; autoStart?: boolean }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const wsRef = useRef<WebSocket | null>(null);
@@ -151,6 +151,12 @@ export function DeviceCameraStreamer({ cameraId, sessionId }: { cameraId: string
             setStatus(`Error: ${err.message}`);
         }
     }, [cameraId, selectedDevice, isStreaming, stopStreaming]);
+
+    useEffect(() => {
+        if (autoStart && selectedDevice && !isStreaming && (status === "Ready" || status === "Stopped")) {
+            startStreaming();
+        }
+    }, [autoStart, selectedDevice, isStreaming, status, startStreaming]);
 
     return (
         <div className="space-y-3">

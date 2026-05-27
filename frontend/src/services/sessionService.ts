@@ -9,6 +9,7 @@ export interface Session {
   camera_id?: number;
   org_id?: number;
   created_by?: number;
+  class_type?: string;
 }
 
 export interface SessionCreate {
@@ -17,6 +18,7 @@ export interface SessionCreate {
   end_time: string;
   location?: string;
   camera_id?: number;
+  class_type?: string;
 }
 
 export const getSessions = async (teacher_id?: number): Promise<Session[]> => {

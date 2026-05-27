@@ -8,6 +8,7 @@ class SessionCreate(BaseModel):
     end_time: datetime
     location: Optional[str] = None
     camera_id: Optional[int] = None
+    class_type: Optional[str] = "online"
 
 class SessionResponse(BaseModel):
     session_id: int
@@ -18,6 +19,7 @@ class SessionResponse(BaseModel):
     location: Optional[str] = None
     camera_id: Optional[int] = None
     created_by: Optional[int] = None
+    class_type: Optional[str] = "online"
 
     class Config:
         from_attributes = True

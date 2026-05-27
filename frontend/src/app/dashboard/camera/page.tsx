@@ -19,6 +19,7 @@ export default function CameraPage() {
     const [showModal, setShowModal] = useState(false);
     const [hostUrl, setHostUrl] = useState("");
     const [expandedCams, setExpandedCams] = useState<Record<number, boolean>>({});
+    const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
         if (user?.role_id === 3) router.push("/dashboard/student");
@@ -49,6 +50,8 @@ export default function CameraPage() {
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (submitting) return;
+        setSubmitting(true);
         try {
             await addCamera({
                 camera_type: newCam.camera_type,
@@ -62,6 +65,8 @@ export default function CameraPage() {
         } catch (error: any) {
             const msg = error.response?.data?.detail || "Failed to add camera";
             alert(msg);
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -348,9 +353,17 @@ export default function CameraPage() {
                                 </button>
                                 <button 
                                     type="submit" 
-                                    className="px-5 py-2.5 bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 text-white text-sm font-semibold rounded-xl shadow-lg shadow-accent/20 transition-all cursor-pointer"
+                                    disabled={submitting}
+                                    className="px-5 py-2.5 bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 text-white text-sm font-semibold rounded-xl shadow-lg shadow-accent/20 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                                 >
-                                    Create Camera Slot
+                                    {submitting ? (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 animate-spin" />
+                                            Creating...
+                                        </>
+                                    ) : (
+                                        "Create Camera Slot"
+                                    )}
                                 </button>
                             </div>
                         </form>

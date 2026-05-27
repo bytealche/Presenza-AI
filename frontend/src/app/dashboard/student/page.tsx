@@ -87,8 +87,21 @@ export default function StudentDashboard() {
                                             <MapPin className="w-4 h-4 text-green-400" />
                                             <span>{cls.location || "Online"}</span>
                                         </div>
+                                        <div className="flex items-center gap-2 text-xs font-bold mt-1">
+                                            <span className={`px-2 py-0.5 rounded border uppercase tracking-wider text-[10px] ${
+                                                cls.class_type === "offline"
+                                                    ? "bg-purple-500/15 border-purple-500/30 text-purple-400"
+                                                    : "bg-green-500/15 border-green-500/30 text-green-400"
+                                            }`}>
+                                                {cls.class_type === "offline" ? "Offline" : "Online / Hybrid"}
+                                            </span>
+                                        </div>
                                     </div>
-                                    {cls.camera_id ? (
+                                    {cls.class_type === "offline" ? (
+                                        <div className="w-full text-center py-3 text-xs font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-lg uppercase tracking-wider">
+                                            Offline Session - Physical Attendance
+                                        </div>
+                                    ) : cls.camera_id ? (
                                         <button
                                             onClick={() => {
                                                 setStreamingCameraId(cls.camera_id!.toString());
@@ -102,7 +115,7 @@ export default function StudentDashboard() {
                                     ) : (
                                         <button
                                             disabled
-                                            className="w-full bg-white/5 text-muted border border-glass-border text-sm font-medium py-3 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                                            className="w-full bg-white/5 text-muted border border-[var(--glass-border)] text-sm font-medium py-3 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
                                         >
                                             <VideoOff className="w-4 h-4" /> No Camera Integration
                                         </button>

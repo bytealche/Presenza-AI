@@ -25,7 +25,8 @@ export default function TeacherDashboard() {
         start_time: "",
         end_time: "",
         location: "",
-        camera_id: ""
+        camera_id: "",
+        class_type: "online"
     });
 
     useEffect(() => {
@@ -54,13 +55,19 @@ export default function TeacherDashboard() {
         e.preventDefault();
         setCreating(true);
         try {
-            await createSession({
+            const createdSession = await createSession({
                 ...newClass,
                 camera_id: newClass.camera_id ? Number(newClass.camera_id) : undefined
             });
             await loadData(); // Refresh list
             setIsModalOpen(false);
-            setNewClass({ session_name: "", start_time: "", end_time: "", location: "", camera_id: "" });
+            setNewClass({ session_name: "", start_time: "", end_time: "", location: "", camera_id: "", class_type: "online" });
+            
+            // Auto start stream if camera_id is present
+            if (createdSession && createdSession.camera_id) {
+                setStreamingCameraId(createdSession.camera_id.toString());
+                setStreamingSessionId(createdSession.session_id);
+            }
         } catch (error: any) {
             console.error("Failed to create class", error);
             const msg = error.response?.data?.detail || "Failed to create class. Please check fields.";
@@ -119,6 +126,15 @@ export default function TeacherDashboard() {
                             <MapPin className="w-3 h-3 text-accent" />
                             <span className="truncate">{cls.location || "Online"}</span>
                         </div>
+                        <div className="flex items-center gap-2 text-[10px] font-bold">
+                            <span className={`px-2 py-0.5 rounded border uppercase tracking-wider ${
+                                cls.class_type === "offline"
+                                    ? "bg-purple-500/15 border-purple-500/30 text-purple-400"
+                                    : "bg-accent/15 border-accent/30 text-accent"
+                            }`}>
+                                {cls.class_type === "offline" ? "Offline Session" : "Online / Hybrid"}
+                            </span>
+                        </div>
                         {cls.camera_id && (
                             <div className="flex items-center gap-2 text-xs text-muted-bright">
                                 <Video className="w-3 h-3 text-accent" />
@@ -145,7 +161,7 @@ export default function TeacherDashboard() {
                                 }}
                                 className={`w-full text-sm font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${isLive ? 'bg-gradient-to-r from-accent to-accent-dark text-black hover:shadow-[0_0_15px_rgba(189,244,255,0.4)]' : 'bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 hover:border-accent/50'}`}
                             >
-                                <Video className="w-4 h-4" /> {isLive ? 'Join Stream' : 'Start Stream'}
+                                <Video className="w-4 h-4" /> {isLive ? 'Preview & Stream' : 'Preview / Start Stream'}
                             </button>
                         ) : (
                             <button
@@ -314,6 +330,34 @@ export default function TeacherDashboard() {
                                         </div>
 
                                         <div>
+                                            <label className="block text-sm font-medium text-muted-bright mb-2">Class Type</label>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewClass({ ...newClass, class_type: "online" })}
+                                                    className={`py-3 rounded-xl border font-bold text-sm text-center transition-all cursor-pointer ${
+                                                        newClass.class_type === "online"
+                                                            ? "bg-accent/15 border-accent text-accent shadow-[0_0_15px_-5px_var(--color-accent)]"
+                                                            : "bg-[var(--glass-highlight)] border-[var(--glass-border)] text-muted-bright hover:border-accent/40"
+                                                    }`}
+                                                >
+                                                    Online / Hybrid
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setNewClass({ ...newClass, class_type: "offline" })}
+                                                    className={`py-3 rounded-xl border font-bold text-sm text-center transition-all cursor-pointer ${
+                                                        newClass.class_type === "offline"
+                                                            ? "bg-purple-500/15 border-purple-500/50 text-purple-400 shadow-[0_0_15px_-5px_rgba(168,85,247,0.4)]"
+                                                            : "bg-[var(--glass-highlight)] border-[var(--glass-border)] text-muted-bright hover:border-accent/40"
+                                                    }`}
+                                                >
+                                                    Offline / Physical
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div>
                                             <label className="block text-sm font-medium text-muted-bright mb-2">Camera Integration</label>
                                             <select
                                                 className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all appearance-none"
@@ -404,6 +448,7 @@ export default function TeacherDashboard() {
                                         <DeviceCameraStreamer
                                             cameraId={streamingCameraId}
                                             sessionId={streamingSessionId ?? undefined}
+                                            autoStart={true}
                                         />
                                     </div>
                                 </div>
