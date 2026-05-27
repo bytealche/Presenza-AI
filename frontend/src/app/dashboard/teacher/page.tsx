@@ -4,9 +4,10 @@ import { getTeacherStats, TeacherStats } from "@/services/dashboardService";
 import { getSessions, createSession, Session } from "@/services/sessionService";
 import { getCameras, Camera } from "@/services/cameraService";
 import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2, Sparkles } from "lucide-react";
-import { DeviceCameraStreamer } from "@/components/CameraStream";
+import { DeviceCameraStreamer, StreamViewer } from "@/components/CameraStream";
 import Portal from "@/components/Portal";
 import { motion, AnimatePresence } from "framer-motion";
+import QRCode from "react-qr-code";
 
 export default function TeacherDashboard() {
     const [stats, setStats] = useState<TeacherStats | null>(null);
@@ -18,6 +19,7 @@ export default function TeacherDashboard() {
     const [streamingCameraId, setStreamingCameraId] = useState<string | null>(null);
     const [streamingSessionId, setStreamingSessionId] = useState<number | null>(null);
     const [mounted, setMounted] = useState(false);
+    const [hostUrl, setHostUrl] = useState("");
 
     // Form State
     const [newClass, setNewClass] = useState({
@@ -32,6 +34,7 @@ export default function TeacherDashboard() {
     useEffect(() => {
         setMounted(true);
         loadData();
+        if (typeof window !== "undefined") setHostUrl(window.location.origin);
     }, []);
 
     async function loadData() {
@@ -62,7 +65,7 @@ export default function TeacherDashboard() {
             await loadData(); // Refresh list
             setIsModalOpen(false);
             setNewClass({ session_name: "", start_time: "", end_time: "", location: "", camera_id: "", class_type: "online" });
-            
+
             // Auto start stream if camera_id is present
             if (createdSession && createdSession.camera_id) {
                 setStreamingCameraId(createdSession.camera_id.toString());
@@ -85,22 +88,22 @@ export default function TeacherDashboard() {
 
     const activeClasses = classes.filter(cls => new Date(cls.end_time) >= new Date());
     const pastClasses = classes.filter(cls => new Date(cls.end_time) < new Date());
-    
+
     const renderClassCard = (cls: Session, index: number) => {
         const isLive = new Date(cls.start_time) <= new Date() && new Date(cls.end_time) >= new Date();
         const isEnded = new Date(cls.end_time) < new Date();
-        
+
         return (
             <div key={cls.session_id} className="uiverse-card flex flex-col" style={{ animationDelay: `${index * 100}ms` }}>
                 <div className="top-section">
                     <div className="border"></div>
                     <div className="icons">
                         <div className="logo text-white font-bold text-sm">
-                           {isLive && <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse mr-2 inline-block"></span>}
-                           {isEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
+                            {isLive && <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse mr-2 inline-block"></span>}
+                            {isEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
                         </div>
                         <div className="social-media">
-                           <Sparkles className="w-5 h-5 text-white/70" />
+                            <Sparkles className="w-5 h-5 text-white/70" />
                         </div>
                     </div>
                 </div>
@@ -108,30 +111,29 @@ export default function TeacherDashboard() {
                     <span className="title truncate px-2">{cls.session_name}</span>
                     <div className="row row1">
                         <div className="item">
-                            <span className="big-text">{new Date(cls.start_time).toLocaleDateString(undefined, {month: 'short', day: 'numeric'})}</span>
+                            <span className="big-text">{new Date(cls.start_time).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                             <span className="regular-text">Date</span>
                         </div>
                         <div className="item">
-                            <span className="big-text">{new Date(cls.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <span className="big-text">{new Date(cls.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <span className="regular-text">Start</span>
                         </div>
                         <div className="item">
-                            <span className="big-text">{new Date(cls.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                            <span className="big-text">{new Date(cls.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                             <span className="regular-text">End</span>
                         </div>
                     </div>
-                    
+
                     <div className="mt-4 px-2 space-y-2">
                         <div className="flex items-center gap-2 text-xs text-muted-bright">
                             <MapPin className="w-3 h-3 text-accent" />
                             <span className="truncate">{cls.location || "Online"}</span>
                         </div>
                         <div className="flex items-center gap-2 text-[10px] font-bold">
-                            <span className={`px-2 py-0.5 rounded border uppercase tracking-wider ${
-                                cls.class_type === "offline"
+                            <span className={`px-2 py-0.5 rounded border uppercase tracking-wider ${cls.class_type === "offline"
                                     ? "bg-purple-500/15 border-purple-500/30 text-purple-400"
                                     : "bg-accent/15 border-accent/30 text-accent"
-                            }`}>
+                                }`}>
                                 {cls.class_type === "offline" ? "Offline Session" : "Online / Hybrid"}
                             </span>
                         </div>
@@ -144,7 +146,7 @@ export default function TeacherDashboard() {
                             </div>
                         )}
                     </div>
-                    
+
                     <div className="mt-auto pt-4 px-2 pb-2">
                         {isEnded ? (
                             <button
@@ -161,7 +163,7 @@ export default function TeacherDashboard() {
                                 }}
                                 className={`w-full text-sm font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2 ${isLive ? 'bg-gradient-to-r from-accent to-accent-dark text-black hover:shadow-[0_0_15px_rgba(189,244,255,0.4)]' : 'bg-accent/10 hover:bg-accent/20 text-accent border border-accent/20 hover:border-accent/50'}`}
                             >
-                                <Video className="w-4 h-4" /> {isLive ? 'Preview & Stream' : 'Preview / Start Stream'}
+                                <Video className="w-4 h-4" /> {isLive ? 'View Live Stream' : 'Preview Stream'}
                             </button>
                         ) : (
                             <button
@@ -225,7 +227,7 @@ export default function TeacherDashboard() {
                     <div className="w-2 h-6 bg-accent rounded-full shadow-[0_0_10px_var(--color-accent)]"></div>
                     <h3 className="text-2xl font-bold text-foreground tracking-tight">Active & Upcoming</h3>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {activeClasses.map((cls, idx) => renderClassCard(cls, idx))}
                     {activeClasses.length === 0 && (
@@ -255,16 +257,16 @@ export default function TeacherDashboard() {
                     {isModalOpen && (
                         <>
                             {/* Backdrop */}
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
                                 onClick={() => setIsModalOpen(false)}
                                 className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
                             />
-                            
+
                             {/* Drawer -> Centered Modal */}
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
@@ -335,22 +337,20 @@ export default function TeacherDashboard() {
                                                 <button
                                                     type="button"
                                                     onClick={() => setNewClass({ ...newClass, class_type: "online" })}
-                                                    className={`py-3 rounded-xl border font-bold text-sm text-center transition-all cursor-pointer ${
-                                                        newClass.class_type === "online"
+                                                    className={`py-3 rounded-xl border font-bold text-sm text-center transition-all cursor-pointer ${newClass.class_type === "online"
                                                             ? "bg-accent/15 border-accent text-accent shadow-[0_0_15px_-5px_var(--color-accent)]"
                                                             : "bg-[var(--glass-highlight)] border-[var(--glass-border)] text-muted-bright hover:border-accent/40"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     Online / Hybrid
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => setNewClass({ ...newClass, class_type: "offline" })}
-                                                    className={`py-3 rounded-xl border font-bold text-sm text-center transition-all cursor-pointer ${
-                                                        newClass.class_type === "offline"
+                                                    className={`py-3 rounded-xl border font-bold text-sm text-center transition-all cursor-pointer ${newClass.class_type === "offline"
                                                             ? "bg-purple-500/15 border-purple-500/50 text-purple-400 shadow-[0_0_15px_-5px_rgba(168,85,247,0.4)]"
                                                             : "bg-[var(--glass-highlight)] border-[var(--glass-border)] text-muted-bright hover:border-accent/40"
-                                                    }`}
+                                                        }`}
                                                 >
                                                     Offline / Physical
                                                 </button>
@@ -403,7 +403,7 @@ export default function TeacherDashboard() {
                     {streamingCameraId && (
                         <>
                             {/* Backdrop */}
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
@@ -413,9 +413,9 @@ export default function TeacherDashboard() {
                                 }}
                                 className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100]"
                             />
-                            
+
                             {/* Large Stream Modal */}
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
@@ -445,11 +445,73 @@ export default function TeacherDashboard() {
 
                                 <div className="flex-1 w-full p-2 sm:p-6 overflow-y-auto custom-scrollbar">
                                     <div className="w-full min-h-full glass-card border-none rounded-none sm:rounded-xl overflow-hidden shadow-inner">
-                                        <DeviceCameraStreamer
-                                            cameraId={streamingCameraId}
-                                            sessionId={streamingSessionId ?? undefined}
-                                            autoStart={true}
-                                        />
+                                       {(() => {
+                                           const activeCamera = cameras.find(c => c.camera_id === Number(streamingCameraId));
+                                           
+                                           if (activeCamera?.camera_type === "device") {
+                                               return (
+                                                   <DeviceCameraStreamer
+                                                       cameraId={streamingCameraId!}
+                                                       sessionId={streamingSessionId ?? undefined}
+                                                       autoStart={true}
+                                                   />
+                                               );
+                                           } else if (activeCamera?.camera_type === "mobile") {
+                                               return (
+                                                   <div className="space-y-6">
+                                                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                           {/* Left: Stream preview */}
+                                                           <div className="md:col-span-2 space-y-3">
+                                                               <div className="w-full aspect-video bg-black rounded-xl overflow-hidden relative shadow-inner ring-1 ring-white/10 min-h-[320px]">
+                                                                   <StreamViewer cameraId={streamingCameraId!} />
+                                                               </div>
+                                                               <div className="flex items-center gap-2 text-xs font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg w-fit">
+                                                                   <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping"></span>
+                                                                   MOBILE BROADCAST PREVIEW
+                                                               </div>
+                                                           </div>
+                                                           
+                                                           {/* Right: Setup instructions with QR code */}
+                                                           <div className="bg-slate-900/40 p-5 rounded-xl border border-[var(--glass-border)] flex flex-col justify-between space-y-4">
+                                                               <div className="space-y-2">
+                                                                   <h4 className="text-sm font-bold text-foreground">Phone Broadcaster Setup</h4>
+                                                                   <p className="text-[11px] text-muted-bright leading-relaxed">
+                                                                       Scan the QR code below using your mobile device to open the phone broadcaster. This will stream your phone camera live to mark attendance.
+                                                                   </p>
+                                                               </div>
+                                                               
+                                                               <div className="flex flex-col items-center gap-3 py-2">
+                                                                   <div className="bg-white p-3 rounded-lg shadow-lg ring-4 ring-white/5">
+                                                                       <QRCode
+                                                                           value={`${hostUrl}/broadcast/${streamingCameraId}`}
+                                                                           size={120}
+                                                                       />
+                                                                   </div>
+                                                                   <a
+                                                                       href={`${hostUrl}/broadcast/${streamingCameraId}`}
+                                                                       target="_blank"
+                                                                       className="text-[11px] font-bold text-accent hover:underline flex items-center gap-1 mt-1"
+                                                                   >
+                                                                       Open Broadcaster Link ↗
+                                                                   </a>
+                                                               </div>
+                                                           </div>
+                                                       </div>
+                                                   </div>
+                                               );
+                                           } else {
+                                               return (
+                                                   <div className="w-full min-h-[400px] flex flex-col items-center justify-center bg-black/40 rounded-xl relative p-4 border border-[var(--glass-border)]">
+                                                       <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative shadow-inner ring-1 ring-white/10">
+                                                           <StreamViewer cameraId={streamingCameraId!} />
+                                                       </div>
+                                                       <p className="text-xs text-muted-bright mt-4 text-center">
+                                                           Viewing live physical classroom IP stream for Camera #{streamingCameraId}.
+                                                       </p>
+                                                   </div>
+                                               );
+                                           }
+                                       })()}
                                     </div>
                                 </div>
                             </motion.div>

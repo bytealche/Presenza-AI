@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { getStudentStats, StudentStats } from "@/services/dashboardService";
 import { getSessions, Session } from "@/services/sessionService";
 import { Clock, MapPin, Video, LogIn, Calendar, X, Loader2, VideoOff } from "lucide-react";
-import { DeviceCameraStreamer } from "@/components/CameraStream";
+import { StreamViewer } from "@/components/CameraStream";
 import Portal from "@/components/Portal";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -251,10 +251,14 @@ export default function StudentDashboard() {
 
                                 <div className="flex-1 w-full p-2 sm:p-6 overflow-y-auto custom-scrollbar">
                                     <div className="w-full min-h-full glass-card border-none rounded-none sm:rounded-xl overflow-hidden shadow-inner">
-                                        <DeviceCameraStreamer
-                                            cameraId={streamingCameraId}
-                                            sessionId={streamingSessionId ?? undefined}
-                                        />
+                                        <div className="w-full min-h-[400px] flex flex-col items-center justify-center bg-black/40 rounded-xl relative p-4 border border-[var(--glass-border)]">
+                                            <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative shadow-inner ring-1 ring-white/10">
+                                                <StreamViewer cameraId={streamingCameraId} />
+                                            </div>
+                                            <p className="text-xs text-muted-bright mt-4 text-center">
+                                                Viewing live class stream for Camera #{streamingCameraId}.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </motion.div>
