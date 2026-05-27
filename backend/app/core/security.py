@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 ALGORITHM = settings.ALGORITHM
 
 
+import asyncio
+
 def hash_password(password: str) -> str:
     pwd_bytes = password.encode("utf-8")
     if len(pwd_bytes) > 72:
@@ -27,6 +29,17 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         )
     except Exception:
         return False
+
+
+async def hash_password_async(password: str) -> str:
+    """Async non-blocking version of hash_password."""
+    return await asyncio.to_thread(hash_password, password)
+
+
+async def verify_password_async(plain_password: str, hashed_password: str) -> bool:
+    """Async non-blocking version of verify_password."""
+    return await asyncio.to_thread(verify_password, plain_password, hashed_password)
+
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:

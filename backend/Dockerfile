@@ -30,8 +30,11 @@ WORKDIR $HOME/app
 # Copy the application code configuring owner as user
 COPY --chown=user . $HOME/app
 
+# Pre-download DeepFace Facenet512 model weights inside the Docker image to make cold starts instant
+RUN python -c "from deepface import DeepFace; DeepFace.build_model('Facenet512')"
+
 # Hugging face spaces open port 7860 by default
 EXPOSE 7860
 
-# Start the app using gunicorn to manage uvicorn workers for production stability
-CMD ["gunicorn", "app.main:app", "-w", "2", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:7860", "--timeout", "120"]
+# Start the app using gunicorn (1 worker is optimal for limited CPU/RAM spaces to prevent context switching & OOM restarts)
+CMD ["gunicorn", "app.main:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:7860", "--timeout", "120"]

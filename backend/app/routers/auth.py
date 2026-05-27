@@ -17,7 +17,7 @@ from app.models.verification_code import VerificationCode
 from app.models.role import Role
 from app.schemas.auth_schema import LoginRequest, TokenResponse, RefreshRequest
 from app.schemas.auth_schema_extended import OTPRequest, OrganizationRegisterRequest, UserRegisterRequest, ResetPasswordRequest
-from app.core.security import verify_password, create_access_token, create_refresh_token, decode_token, hash_password
+from app.core.security import verify_password, create_access_token, create_refresh_token, decode_token, hash_password, verify_password_async, hash_password_async
 from app.ai_engine.face_detection import detect_faces
 from app.ai_engine.liveness_detection import LivenessDetector
 from app.ai_engine.face_embedding import generate_embedding
@@ -165,7 +165,7 @@ async def register_organization(
         db.add(new_org)
         await db.flush()
 
-        hashed = hash_password(data.password)
+        hashed = await hash_password_async(data.password)
         new_user = User(
             full_name=f"Admin - {data.org_name}",
             email=data.email,
@@ -200,7 +200,7 @@ async def register_user(
 
     user_status = "pending" if (data.role_id == 2 and data.org_id) else "active"
 
-    hashed = hash_password(data.password)
+    hashed = await hash_password_async(data.password)
     new_user = User(
         full_name=data.full_name,
         email=data.email,
@@ -236,7 +236,7 @@ async def login(
     if user.status != "active":
         raise HTTPException(status_code=403, detail="Account is pending approval or suspended.")
 
-    if not verify_password(data.password, user.password_hash):
+    if not await verify_password_async(data.password, user.password_hash):
         logger.warning(f"Failed login attempt for {data.email}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -308,7 +308,7 @@ async def reset_password(
         raise HTTPException(status_code=404, detail="User not found")
 
     # Hash new password and update
-    user.password_hash = hash_password(data.new_password)
+    user.password_hash = await hash_password_async(data.new_password)
     db.add(user)
     await db.commit()
     

@@ -11,7 +11,7 @@ from app.database.dependencies import get_db
 from app.models.user import User
 from app.core.auth_dependencies import get_current_user
 from app.schemas.user_schema import UserCreate, UserResponse
-from app.core.security import hash_password
+from app.core.security import hash_password, hash_password_async
 from app.ai_engine.face_detection import detect_faces
 from app.ai_engine.liveness_detection import LivenessDetector
 from app.ai_engine.face_embedding import generate_embedding, load_model
@@ -27,7 +27,7 @@ router = APIRouter(
 @router.post("", response_model=UserResponse)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     try:
-        hashed_password = hash_password(user.password)
+        hashed_password = await hash_password_async(user.password)
 
         new_user = User(
             full_name=user.full_name,
@@ -150,7 +150,7 @@ async def register_with_face(
         if len(password.encode('utf-8')) > 72:
              raise HTTPException(status_code=400, detail="Password too long (bytes)")
 
-        hashed_password = hash_password(password)
+        hashed_password = await hash_password_async(password)
         
         new_user = User(
             full_name=full_name,

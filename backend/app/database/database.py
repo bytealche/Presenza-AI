@@ -24,10 +24,21 @@ elif "postgresql" in SQLALCHEMY_DATABASE_URL:
     connect_args_dict["statement_cache_size"] = 0
     connect_args_dict["prepared_statement_cache_size"] = 0
 
+engine_args = {
+    "echo": False,
+    "connect_args": connect_args_dict,
+}
+
+# Configure robust connection pooling for PostgreSQL (Supabase)
+if "sqlite" not in SQLALCHEMY_DATABASE_URL:
+    engine_args["pool_size"] = 15
+    engine_args["max_overflow"] = 25
+    engine_args["pool_recycle"] = 300
+    engine_args["pool_pre_ping"] = True
+
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
-    echo=False,
-    connect_args=connect_args_dict
+    **engine_args
 )
 
 SessionLocal = sessionmaker(
