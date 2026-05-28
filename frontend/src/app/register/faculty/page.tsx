@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { registerUser, sendOTP, getOrganizations } from "@/services/authService";
+import { registerUser, sendOTP, verifyOTP, getOrganizations } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import { User, Mail, Lock, ArrowRight, ShieldCheck, Building, CheckCircle } from "lucide-react";
 import Link from "next/link";
@@ -19,6 +19,7 @@ export default function RegisterFacultyPage() {
         role_id: 2
     });
     const [otpSent, setOtpSent] = useState(false);
+    const [otpVerified, setOtpVerified] = useState(false);
     const [loading, setLoading] = useState(false);
     const [resendCooldown, setResendCooldown] = useState(0);
     const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -41,6 +42,7 @@ export default function RegisterFacultyPage() {
     };
 
     const handleSendOTP = async () => {
+        if (!formData.full_name) { setError("Please enter your full name first."); return; }
         if (!formData.email) { setError("Please enter an email address."); return; }
         setLoading(true); setError("");
         try {
@@ -51,6 +53,21 @@ export default function RegisterFacultyPage() {
         } catch (err: any) {
             setError(err.response?.data?.detail || "Failed to send OTP.");
         } finally { setLoading(false); }
+    };
+
+    const handleVerifyOTP = async () => {
+        if (!formData.otp) { setError("Please enter the OTP."); return; }
+        setLoading(true); setError(""); setSuccess("");
+        try {
+            await verifyOTP(formData.email, formData.otp);
+            setOtpVerified(true);
+            setSuccess("Email verified successfully! Now set your password.");
+        } catch (err: any) {
+            setError(err.response?.data?.detail || "Invalid or expired OTP.");
+        } finally {
+            setLoading(false);
+            setTimeout(() => setSuccess(""), 3000);
+        }
     };
 
     // Step 1: Validate account details, move to org step
@@ -74,7 +91,7 @@ export default function RegisterFacultyPage() {
                 org_id: formData.org_id ? Number(formData.org_id) : null
             };
             await registerUser(payload);
-            setSuccess("Registration successful! Redirecting...");
+            setSuccess("Registration successful! Redirecting to login...");
             setTimeout(() => router.push("/login"), 2000);
         } catch (err: any) {
             setError(err.response?.data?.detail || "Registration failed.");
@@ -82,7 +99,7 @@ export default function RegisterFacultyPage() {
         } finally { setLoading(false); }
     };
 
-    const inputClass = "w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all";
+    const inputClass = "w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all disabled:opacity-50";
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -109,18 +126,24 @@ export default function RegisterFacultyPage() {
                         {step === 1 ? "Faculty Register" : "Join Organisation"}
                     </h2>
                     <p className="mt-2 text-sm text-muted">
-                        {step === 1 ? "Create your faculty account." : "Select the organisation you belong to."}
+                        {step === 1 
+                            ? !otpSent 
+                                ? "Enter your faculty account details." 
+                                : !otpVerified 
+                                    ? "Verify email ownership with OTP." 
+                                    : "Complete your faculty profile."
+                            : "Select the organisation you belong to."}
                     </p>
                 </div>
 
                 {error && (
                     <div className="bg-red-500/10 border border-red-500/20 text-red-200 px-4 py-3 rounded-lg flex items-center gap-2 text-sm">
-                        <ShieldCheck className="w-4 h-4 text-red-400" /> {error}
+                        <ShieldCheck className="w-4 h-4 text-red-400shrink-0" /> {error}
                     </div>
                 )}
                 {success && (
                     <div className="bg-green-500/10 border border-green-500/20 text-green-200 px-4 py-3 rounded-lg flex items-center gap-2 text-sm">
-                        <CheckCircle className="w-4 h-4 text-green-400" /> {success}
+                        <CheckCircle className="w-4 h-4 text-green-400 shrink-0" /> {success}
                     </div>
                 )}
 
@@ -129,42 +152,81 @@ export default function RegisterFacultyPage() {
                     <form className="mt-4 space-y-4" onSubmit={handleStep1Submit}>
                         <div className="relative">
                             <User className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
-                            <input name="full_name" type="text" required className={inputClass} placeholder="Full Name"
+                            <input name="full_name" type="text" required disabled={otpSent} className={inputClass} placeholder="Full Name"
                                 value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} />
                         </div>
 
                         <div className="flex gap-2">
                             <div className="relative flex-1">
                                 <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
-                                <input name="email" type="email" required className={inputClass} placeholder="Email Address"
+                                <input name="email" type="email" required disabled={otpSent} className={inputClass} placeholder="Email Address"
                                     value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                             </div>
-                            <button type="button" onClick={handleSendOTP} disabled={loading || resendCooldown > 0}
-                                className="bg-[var(--glass-highlight)] hover:bg-[var(--glass-highlight)]/80 text-foreground px-3 py-2 rounded-lg text-xs disabled:opacity-50 whitespace-nowrap border border-[var(--glass-border)] transition-colors min-w-[72px] text-center">
-                                {resendCooldown > 0 ? `${resendCooldown}s` : otpSent ? "Resend" : "Get OTP"}
-                            </button>
+                            {!otpSent && (
+                                <button type="button" onClick={handleSendOTP} disabled={loading || !formData.email || !formData.full_name}
+                                    className="bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 text-white px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all shadow-lg shadow-accent/25 disabled:opacity-50 min-w-[72px] text-center">
+                                    Get OTP
+                                </button>
+                            )}
                         </div>
 
-                        {otpSent && (
-                            <div className="relative">
-                                <ShieldCheck className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
-                                <input name="otp" type="text" required className={inputClass} placeholder="Enter 6-digit OTP"
-                                    value={formData.otp} onChange={(e) => setFormData({ ...formData, otp: e.target.value })} />
+                        {otpSent && !otpVerified && (
+                            <div className="space-y-4">
+                                <div className="relative">
+                                    <ShieldCheck className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
+                                    <input name="otp" type="text" required className={inputClass} placeholder="Enter 6-digit OTP"
+                                        value={formData.otp} onChange={(e) => setFormData({ ...formData, otp: e.target.value })} />
+                                </div>
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="text-muted">Didn&apos;t receive OTP?</span>
+                                    <button type="button"
+                                        onClick={async () => {
+                                            if (resendCooldown > 0) return;
+                                            setLoading(true);
+                                            try { await sendOTP(formData.email); setSuccess("OTP resent!"); startCooldown(); }
+                                            catch (e: any) { setError(e.response?.data?.detail || "Failed to resend."); }
+                                            finally { setLoading(false); }
+                                        }}
+                                        disabled={resendCooldown > 0}
+                                        className="text-accent hover:underline disabled:opacity-50 disabled:no-underline">
+                                        {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
+                                    </button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => { setOtpSent(false); setFormData({ ...formData, otp: "" }); }}
+                                        className="flex-1 py-2.5 rounded-lg border border-[var(--glass-border)] text-muted hover:text-foreground hover:border-[var(--glass-highlight)] transition-all text-xs">
+                                        Edit Details
+                                    </button>
+                                    <button type="button" onClick={handleVerifyOTP} disabled={loading || !formData.otp}
+                                        className="flex-1 bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 text-white py-2.5 rounded-lg text-xs font-semibold transition-all shadow-lg">
+                                        {loading ? "Verifying..." : "Verify OTP"}
+                                    </button>
+                                </div>
                             </div>
                         )}
 
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
-                            <input name="password" type="password" required className={inputClass} placeholder="Password"
-                                value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
-                        </div>
+                        {otpVerified && (
+                            <div className="space-y-4">
+                                <div className="bg-green-500/10 border border-green-500/20 text-green-200 px-4 py-2.5 rounded-lg flex items-center gap-2 text-xs">
+                                    <CheckCircle className="w-4 h-4 text-green-400" />
+                                    Email verified successfully.
+                                </div>
+                                <div className="relative">
+                                    <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
+                                    <input name="password" type="password" required className={inputClass} placeholder="Password"
+                                        value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+                                </div>
+                            </div>
+                        )}
 
-                        <button type="submit" disabled={!otpSent}
-                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${!otpSent
-                                ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
-                                : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"}`}>
-                            Continue <ArrowRight className="w-5 h-5" />
-                        </button>
+                        {otpVerified && (
+                            <button type="submit" disabled={!formData.password}
+                                className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${!formData.password
+                                    ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
+                                    : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"}`}>
+                                Continue <ArrowRight className="w-5 h-5" />
+                            </button>
+                        )}
                     </form>
                 )}
 
@@ -221,3 +283,4 @@ export default function RegisterFacultyPage() {
         </div>
     );
 }
+

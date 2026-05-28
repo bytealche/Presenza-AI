@@ -16,7 +16,7 @@ from app.models.organization import Organization
 from app.models.verification_code import VerificationCode
 from app.models.role import Role
 from app.schemas.auth_schema import LoginRequest, TokenResponse, RefreshRequest
-from app.schemas.auth_schema_extended import OTPRequest, OrganizationRegisterRequest, UserRegisterRequest, ResetPasswordRequest
+from app.schemas.auth_schema_extended import OTPRequest, OrganizationRegisterRequest, UserRegisterRequest, ResetPasswordRequest, VerifyOTPRequest
 from app.core.security import verify_password, create_access_token, create_refresh_token, decode_token, hash_password, verify_password_async, hash_password_async
 from app.ai_engine.face_detection import detect_faces
 from app.ai_engine.liveness_detection import LivenessDetector
@@ -314,4 +314,27 @@ async def reset_password(
     
     logger.info(f"Password reset successfully for user: {data.email}")
     return {"message": "Password has been reset successfully."}
+
+@router.post("/verify-otp")
+@limiter.limit("5/minute")
+async def verify_otp(
+    request: Request,
+    data: VerifyOTPRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(VerificationCode).where(
+            VerificationCode.email == data.email,
+            VerificationCode.code == data.otp,
+        )
+    )
+    record = result.scalars().first()
+
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    if not record.is_valid():
+        raise HTTPException(status_code=400, detail="OTP expired")
+
+    return {"message": "OTP verified successfully."}
+
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, constr, Field
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
 class OTPRequest(BaseModel):
@@ -7,13 +7,13 @@ class OTPRequest(BaseModel):
 class OrganizationRegisterRequest(BaseModel):
     org_name: str
     email: EmailStr
-    password: constr(min_length=8, max_length=64)
+    password: str = Field(..., min_length=8, max_length=64)
     otp: str
 
 class UserRegisterRequest(BaseModel):
     full_name: str
     email: EmailStr
-    password: constr(min_length=8, max_length=64)
+    password: str = Field(..., min_length=8, max_length=64)
     otp: str
     role_id: int
     org_id: Optional[int] = None
@@ -21,4 +21,10 @@ class UserRegisterRequest(BaseModel):
 class ResetPasswordRequest(BaseModel):
     email: EmailStr
     otp: str
-    new_password: constr(min_length=8, max_length=64)
+    new_password: str = Field(..., min_length=8, max_length=64)
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp: str
+
+

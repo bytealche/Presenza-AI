@@ -131,3 +131,76 @@ async def test_health_liveness(client: AsyncClient):
     response = await client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+
+# ── /auth/verify-otp ──────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_verify_otp_invalid_code(client: AsyncClient):
+    """Verifying an OTP that doesn't exist should return 400."""
+    # The default overridden get_db returns a mock session returning None for any first() result
+    response = await client.post(
+        "/auth/verify-otp", json={"email": "nobody@example.com", "otp": "000000"}
+    )
+    assert response.status_code == 400
+    assert "Invalid OTP" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_verify_otp_expired_code(client: AsyncClient):
+    """Verifying an OTP that is expired should return 400."""
+    from app.database.dependencies import get_db
+
+    mock_vc = MagicMock()
+    mock_vc.is_valid = MagicMock(return_value=False)
+
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.first.return_value = mock_vc
+
+    mock_session = AsyncMock()
+    mock_session.execute = AsyncMock(return_value=mock_result)
+
+    async def override_get_db_mock():
+        yield mock_session
+
+    app.dependency_overrides[get_db] = override_get_db_mock
+    try:
+        response = await client.post(
+            "/auth/verify-otp", json={"email": "nobody@example.com", "otp": "123456"}
+        )
+        assert response.status_code == 400
+        assert "OTP expired" in response.json()["detail"]
+    finally:
+        from app.tests.conftest import _override_get_db
+        app.dependency_overrides[get_db] = _override_get_db
+
+
+@pytest.mark.asyncio
+async def test_verify_otp_success(client: AsyncClient):
+    """Verifying a valid, non-expired OTP should return 200."""
+    from app.database.dependencies import get_db
+
+    mock_vc = MagicMock()
+    mock_vc.is_valid = MagicMock(return_value=True)
+
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.first.return_value = mock_vc
+
+    mock_session = AsyncMock()
+    mock_session.execute = AsyncMock(return_value=mock_result)
+
+    async def override_get_db_mock():
+        yield mock_session
+
+    app.dependency_overrides[get_db] = override_get_db_mock
+    try:
+        response = await client.post(
+            "/auth/verify-otp", json={"email": "nobody@example.com", "otp": "123456"}
+        )
+        assert response.status_code == 200
+        assert "OTP verified successfully." in response.json()["message"]
+    finally:
+        from app.tests.conftest import _override_get_db
+        app.dependency_overrides[get_db] = _override_get_db
+
+

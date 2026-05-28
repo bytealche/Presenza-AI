@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { sendOTP, resetPassword } from "@/services/authService";
+import { sendOTP, verifyOTP, resetPassword } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
-    const [step, setStep] = useState<1 | 2>(1);
+    const [step, setStep] = useState<1 | 2 | 3>(1);
     const [email, setEmail] = useState("");
     const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -50,6 +50,26 @@ export default function ForgotPasswordPage() {
         }
     };
 
+    const handleVerifyOTP = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!otp) {
+            setError("Please enter the OTP.");
+            return;
+        }
+        setLoading(true);
+        setError("");
+        try {
+            await verifyOTP(email, otp);
+            setSuccess("OTP verified successfully! Now set your new password.");
+            setStep(3);
+        } catch (err: any) {
+            setError(err.response?.data?.detail || "Invalid or expired OTP.");
+        } finally {
+            setLoading(false);
+            setTimeout(() => setSuccess(""), 3000);
+        }
+    };
+
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
         if (newPassword.length < 8) {
@@ -83,10 +103,14 @@ export default function ForgotPasswordPage() {
             <div className="max-w-md w-full space-y-8 bg-[var(--glass-bg)] backdrop-blur-xl p-8 rounded-2xl border border-[var(--glass-border)] shadow-2xl relative z-10 transition-all">
                 <div className="text-center">
                     <h2 className="text-3xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-foreground to-muted">
-                        {step === 1 ? "Forgot Password" : "Reset Password"}
+                        {step === 1 ? "Forgot Password" : step === 2 ? "Verify OTP" : "Reset Password"}
                     </h2>
                     <p className="mt-2 text-sm text-muted">
-                        {step === 1 ? "Enter your email to receive a secure recovery code." : "Enter your recovery code and new password."}
+                        {step === 1 
+                            ? "Enter your email to receive a secure recovery code." 
+                            : step === 2 
+                                ? "Enter the 6-digit recovery code sent to your email." 
+                                : "Enter your new premium password."}
                     </p>
                 </div>
 
@@ -103,7 +127,7 @@ export default function ForgotPasswordPage() {
                     </div>
                 )}
 
-                {step === 1 ? (
+                {step === 1 && (
                     <form className="mt-8 space-y-6" onSubmit={handleSendOTP}>
                         <div className="relative">
                             <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
@@ -129,23 +153,16 @@ export default function ForgotPasswordPage() {
                             {!loading && <ArrowRight className="w-5 h-5" />}
                         </button>
                     </form>
-                ) : (
-                    <form className="mt-8 space-y-6" onSubmit={handleResetPassword}>
-                        <div className="space-y-4">
-                            <div className="relative">
-                                <ShieldCheck className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
-                                <input type="text" required
-                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
-                                    placeholder="Enter 6-digit OTP" value={otp}
-                                    onChange={(e) => setOtp(e.target.value)} />
-                            </div>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
-                                <input type="password" required
-                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
-                                    placeholder="New Password" value={newPassword}
-                                    onChange={(e) => setNewPassword(e.target.value)} />
-                            </div>
+                )}
+
+                {step === 2 && (
+                    <form className="mt-8 space-y-6" onSubmit={handleVerifyOTP}>
+                        <div className="relative">
+                            <ShieldCheck className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
+                            <input type="text" required
+                                className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                placeholder="Enter 6-digit OTP" value={otp}
+                                onChange={(e) => setOtp(e.target.value)} />
                         </div>
 
                         {/* Resend OTP row */}
@@ -165,8 +182,28 @@ export default function ForgotPasswordPage() {
                             </button>
                         </div>
 
-                        <button type="submit" disabled={loading || !otp || !newPassword}
-                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${loading || !otp || !newPassword
+                        <button type="submit" disabled={loading || !otp}
+                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${loading || !otp
+                                ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
+                                : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"}`}>
+                            {loading ? "Verifying..." : "Verify OTP"}
+                            {!loading && <ArrowRight className="w-5 h-5" />}
+                        </button>
+                    </form>
+                )}
+
+                {step === 3 && (
+                    <form className="mt-8 space-y-6" onSubmit={handleResetPassword}>
+                        <div className="relative">
+                            <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
+                            <input type="password" required
+                                className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                placeholder="New Password" value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)} />
+                        </div>
+
+                        <button type="submit" disabled={loading || !newPassword}
+                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${loading || !newPassword
                                 ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
                                 : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"}`}>
                             {loading ? "Resetting..." : "Reset Password"}
@@ -184,3 +221,4 @@ export default function ForgotPasswordPage() {
         </div>
     );
 }
+

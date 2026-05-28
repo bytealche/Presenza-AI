@@ -65,9 +65,15 @@ async def register_with_face(
     org_id: int = Form(...),
     role_id: int = Form(...),
     file: UploadFile = File(...),
+    otp: str = Form(...),
     db: AsyncSession = Depends(get_db)
 ):
     print(f"DEBUG: REGISTER FACE - Email: {repr(email)}, Password: {repr(password)}")
+    
+    # Verify OTP
+    from app.routers.auth import verify_otp_logic
+    await verify_otp_logic(email, otp, db)
+
     
     if len(password) < 8:
         raise HTTPException(status_code=400, detail="Password must be at least 8 characters long")
