@@ -3,9 +3,14 @@ import React, { useEffect, useState } from "react";
 import { getStudentStats, StudentStats } from "@/services/dashboardService";
 import { getSessions, Session } from "@/services/sessionService";
 import { Clock, MapPin, Video, LogIn, Calendar, X, Loader2, VideoOff } from "lucide-react";
-import { StreamViewer } from "@/components/CameraStream";
 import Portal from "@/components/Portal";
 import { motion, AnimatePresence } from "framer-motion";
+import dynamic from "next/dynamic";
+
+const StreamViewer = dynamic(
+    () => import("@/components/CameraStream").then((mod) => mod.StreamViewer),
+    { ssr: false, loading: () => <div className="text-center py-10 text-xs text-muted flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-accent" /> Loading live stream viewer...</div> }
+);
 
 export default function StudentDashboard() {
     const [stats, setStats] = useState<StudentStats | null>(null);
@@ -253,7 +258,13 @@ export default function StudentDashboard() {
                                     <div className="w-full min-h-full glass-card border-none rounded-none sm:rounded-xl overflow-hidden shadow-inner">
                                         <div className="w-full min-h-[400px] flex flex-col items-center justify-center bg-black/40 rounded-xl relative p-4 border border-[var(--glass-border)]">
                                             <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative shadow-inner ring-1 ring-white/10">
-                                                <StreamViewer cameraId={streamingCameraId} />
+                                                <StreamViewer 
+                                                    cameraId={streamingCameraId} 
+                                                    onClose={() => {
+                                                        setStreamingCameraId(null);
+                                                        setStreamingSessionId(null);
+                                                    }}
+                                                />
                                             </div>
                                             <p className="text-xs text-muted-bright mt-4 text-center">
                                                 Viewing live class stream for Camera #{streamingCameraId}.

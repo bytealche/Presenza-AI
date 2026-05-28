@@ -4,10 +4,21 @@ import { getTeacherStats, TeacherStats } from "@/services/dashboardService";
 import { getSessions, createSession, Session } from "@/services/sessionService";
 import { getCameras, Camera } from "@/services/cameraService";
 import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2, Sparkles } from "lucide-react";
-import { DeviceCameraStreamer, StreamViewer } from "@/components/CameraStream";
 import Portal from "@/components/Portal";
 import { motion, AnimatePresence } from "framer-motion";
-import QRCode from "react-qr-code";
+import dynamic from "next/dynamic";
+
+const DeviceCameraStreamer = dynamic(
+    () => import("@/components/CameraStream").then((mod) => mod.DeviceCameraStreamer),
+    { ssr: false, loading: () => <div className="text-center py-10 text-xs text-muted flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-accent" /> Loading camera streamer...</div> }
+);
+
+const StreamViewer = dynamic(
+    () => import("@/components/CameraStream").then((mod) => mod.StreamViewer),
+    { ssr: false, loading: () => <div className="text-center py-10 text-xs text-muted flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-accent" /> Loading live stream viewer...</div> }
+);
+
+const QRCode = dynamic(() => import("react-qr-code"), { ssr: false });
 
 export default function TeacherDashboard() {
     const [stats, setStats] = useState<TeacherStats | null>(null);
@@ -454,6 +465,10 @@ export default function TeacherDashboard() {
                                                        cameraId={streamingCameraId!}
                                                        sessionId={streamingSessionId ?? undefined}
                                                        autoStart={true}
+                                                       onClose={() => {
+                                                           setStreamingCameraId(null);
+                                                           setStreamingSessionId(null);
+                                                       }}
                                                    />
                                                );
                                            } else if (activeCamera?.camera_type === "mobile") {
@@ -463,7 +478,13 @@ export default function TeacherDashboard() {
                                                            {/* Left: Stream preview */}
                                                            <div className="md:col-span-2 space-y-3">
                                                                <div className="w-full aspect-video bg-black rounded-xl overflow-hidden relative shadow-inner ring-1 ring-white/10 min-h-[320px]">
-                                                                   <StreamViewer cameraId={streamingCameraId!} />
+                                                                   <StreamViewer 
+                                                                       cameraId={streamingCameraId!} 
+                                                                       onClose={() => {
+                                                                           setStreamingCameraId(null);
+                                                                           setStreamingSessionId(null);
+                                                                       }}
+                                                                   />
                                                                </div>
                                                                <div className="flex items-center gap-2 text-xs font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-3 py-1.5 rounded-lg w-fit">
                                                                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-ping"></span>
@@ -503,7 +524,13 @@ export default function TeacherDashboard() {
                                                return (
                                                    <div className="w-full min-h-[400px] flex flex-col items-center justify-center bg-black/40 rounded-xl relative p-4 border border-[var(--glass-border)]">
                                                        <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative shadow-inner ring-1 ring-white/10">
-                                                           <StreamViewer cameraId={streamingCameraId!} />
+                                                           <StreamViewer 
+                                                                cameraId={streamingCameraId!} 
+                                                                onClose={() => {
+                                                                    setStreamingCameraId(null);
+                                                                    setStreamingSessionId(null);
+                                                                }}
+                                                            />
                                                        </div>
                                                        <p className="text-xs text-muted-bright mt-4 text-center">
                                                            Viewing live physical classroom IP stream for Camera #{streamingCameraId}.

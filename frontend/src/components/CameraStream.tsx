@@ -5,7 +5,7 @@ import { Video, VideoOff } from "lucide-react";
 import { getWsUrl } from "@/utils/config";
 
 // Streams from the user's own webcam directly to the backend via WebSocket
-export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { cameraId: string; sessionId?: number; autoStart?: boolean }) {
+export function DeviceCameraStreamer({ cameraId, sessionId, autoStart, onClose }: { cameraId: string; sessionId?: number; autoStart?: boolean; onClose?: () => void }) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const wsRef = useRef<WebSocket | null>(null);
@@ -114,7 +114,11 @@ export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { camer
                             setStatus("Class ended");
                             setLectureCompleted(true);
                             setTimeout(() => {
-                                window.location.href = "/";
+                                if (onClose) {
+                                    onClose();
+                                } else {
+                                    window.location.href = "/";
+                                }
                             }, 4000);
                             return;
                         }
@@ -158,7 +162,7 @@ export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { camer
         } catch (err: any) {
             setStatus(`Error: ${err.message}`);
         }
-    }, [cameraId, selectedDevice, isStreaming, stopStreaming]);
+    }, [cameraId, selectedDevice, isStreaming, stopStreaming, onClose]);
 
     useEffect(() => {
         if (autoStart && selectedDevice && !isStreaming && (status === "Ready" || status === "Stopped")) {
@@ -332,7 +336,7 @@ export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { camer
     );
 }
 
-export function StreamViewer({ cameraId }: { cameraId: string }) {
+export function StreamViewer({ cameraId, onClose }: { cameraId: string; onClose?: () => void }) {
     const imgRef = useRef<HTMLImageElement>(null);
     const [aiData, setAiData] = useState<any[]>([]);
     const [facesList, setFacesList] = useState<any[]>([]);
@@ -357,7 +361,11 @@ export function StreamViewer({ cameraId }: { cameraId: string }) {
                             ws.onclose = null;
                             ws.close();
                             setTimeout(() => {
-                                window.location.href = "/";
+                                if (onClose) {
+                                    onClose();
+                                } else {
+                                    window.location.href = "/";
+                                }
                             }, 4000);
                             return;
                         }
@@ -379,7 +387,7 @@ export function StreamViewer({ cameraId }: { cameraId: string }) {
         };
         connect();
         return () => ws?.close();
-    }, [cameraId]);
+    }, [cameraId, onClose]);
 
     const totalInFrame = facesList.length;
     const unmarkedInFrame = facesList.filter(f => f.status !== "confirmed").length;

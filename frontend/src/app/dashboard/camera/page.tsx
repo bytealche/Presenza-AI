@@ -4,12 +4,23 @@ import React, { useEffect, useState } from "react";
 import { getCameras, addCamera, deleteCamera, Camera } from "@/services/cameraService";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import QRCode from "react-qr-code";
 import { 
     Monitor, Smartphone, Wifi, Trash2, Plus, Video, VideoOff, 
-    RefreshCw, ChevronDown, PlusCircle, AlertCircle 
+    RefreshCw, ChevronDown, PlusCircle, AlertCircle, Loader2
 } from "lucide-react";
-import { DeviceCameraStreamer, StreamViewer } from "@/components/CameraStream";
+import dynamic from "next/dynamic";
+
+const DeviceCameraStreamer = dynamic(
+    () => import("@/components/CameraStream").then((mod) => mod.DeviceCameraStreamer),
+    { ssr: false, loading: () => <div className="text-center py-10 text-xs text-muted flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-accent" /> Loading camera streamer...</div> }
+);
+
+const StreamViewer = dynamic(
+    () => import("@/components/CameraStream").then((mod) => mod.StreamViewer),
+    { ssr: false, loading: () => <div className="text-center py-10 text-xs text-muted flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-accent" /> Loading live stream viewer...</div> }
+);
+
+const QRCode = dynamic(() => import("react-qr-code"), { ssr: false });
 
 export default function CameraPage() {
     const { user } = useAuth();
