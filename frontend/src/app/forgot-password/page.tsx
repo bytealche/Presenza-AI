@@ -11,6 +11,7 @@ export default function ForgotPasswordPage() {
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [email, setEmail] = useState("");
     const [otp, setOtp] = useState("");
+    const [otpError, setOtpError] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -53,17 +54,19 @@ export default function ForgotPasswordPage() {
     const handleVerifyOTP = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!otp) {
-            setError("Please enter the OTP.");
+            setOtpError("Please enter the OTP.");
             return;
         }
         setLoading(true);
+        setOtpError("");
         setError("");
         try {
             await verifyOTP(email, otp);
             setSuccess("OTP verified successfully! Now set your new password.");
             setStep(3);
         } catch (err: any) {
-            setError(err.response?.data?.detail || "Invalid or expired OTP.");
+            const msg = err.response?.data?.detail === "Not Found" ? "Invalid OTP" : (err.response?.data?.detail || "Invalid OTP");
+            setOtpError(msg);
         } finally {
             setLoading(false);
             setTimeout(() => setSuccess(""), 3000);
@@ -162,8 +165,16 @@ export default function ForgotPasswordPage() {
                             <input type="text" required
                                 className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                 placeholder="Enter 6-digit OTP" value={otp}
-                                onChange={(e) => setOtp(e.target.value)} />
+                                onChange={(e) => {
+                                    setOtp(e.target.value);
+                                    setOtpError("");
+                                }} />
                         </div>
+                        {otpError && (
+                            <p className="-mt-3 text-xs text-red-400 font-medium pl-1 animate-pulse">
+                                ⚠️ {otpError}
+                            </p>
+                        )}
 
                         {/* Resend OTP row */}
                         <div className="flex items-center justify-between text-sm">

@@ -16,6 +16,7 @@ export default function RegisterOrganizationPage() {
     });
     const [otpSent, setOtpSent] = useState(false);
     const [otpVerified, setOtpVerified] = useState(false);
+    const [otpError, setOtpError] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -45,10 +46,11 @@ export default function RegisterOrganizationPage() {
 
     const handleVerifyOTP = async () => {
         if (!formData.otp) {
-            setError("Please enter the OTP.");
+            setOtpError("Please enter the OTP.");
             return;
         }
         setLoading(true);
+        setOtpError("");
         setError("");
         setSuccess("");
         try {
@@ -56,7 +58,8 @@ export default function RegisterOrganizationPage() {
             setOtpVerified(true);
             setSuccess("Email verified successfully! Now set your administrator password.");
         } catch (err: any) {
-            setError(err.response?.data?.detail || "Invalid or expired OTP.");
+            const msg = err.response?.data?.detail === "Not Found" ? "Invalid OTP" : (err.response?.data?.detail || "Invalid OTP");
+            setOtpError(msg);
         } finally {
             setLoading(false);
             setTimeout(() => setSuccess(""), 3000);
@@ -178,9 +181,17 @@ export default function RegisterOrganizationPage() {
                                         className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
                                         placeholder="Enter 6-digit OTP"
                                         value={formData.otp}
-                                        onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
+                                        onChange={(e) => {
+                                            setFormData({ ...formData, otp: e.target.value });
+                                            setOtpError("");
+                                        }}
                                     />
                                 </div>
+                                {otpError && (
+                                    <p className="-mt-2 text-xs text-red-400 font-medium pl-1 animate-pulse">
+                                        ⚠️ {otpError}
+                                    </p>
+                                )}
                                 <div className="flex gap-2">
                                     <button
                                         type="button"

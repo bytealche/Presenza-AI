@@ -20,6 +20,7 @@ export default function RegisterFacultyPage() {
     });
     const [otpSent, setOtpSent] = useState(false);
     const [otpVerified, setOtpVerified] = useState(false);
+    const [otpError, setOtpError] = useState("");
     const [loading, setLoading] = useState(false);
     const [resendCooldown, setResendCooldown] = useState(0);
     const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -56,14 +57,15 @@ export default function RegisterFacultyPage() {
     };
 
     const handleVerifyOTP = async () => {
-        if (!formData.otp) { setError("Please enter the OTP."); return; }
-        setLoading(true); setError(""); setSuccess("");
+        if (!formData.otp) { setOtpError("Please enter the OTP."); return; }
+        setLoading(true); setOtpError(""); setError(""); setSuccess("");
         try {
             await verifyOTP(formData.email, formData.otp);
             setOtpVerified(true);
             setSuccess("Email verified successfully! Now set your password.");
         } catch (err: any) {
-            setError(err.response?.data?.detail || "Invalid or expired OTP.");
+            const msg = err.response?.data?.detail === "Not Found" ? "Invalid OTP" : (err.response?.data?.detail || "Invalid OTP");
+            setOtpError(msg);
         } finally {
             setLoading(false);
             setTimeout(() => setSuccess(""), 3000);
@@ -175,8 +177,16 @@ export default function RegisterFacultyPage() {
                                 <div className="relative">
                                     <ShieldCheck className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
                                     <input name="otp" type="text" required className={inputClass} placeholder="Enter 6-digit OTP"
-                                        value={formData.otp} onChange={(e) => setFormData({ ...formData, otp: e.target.value })} />
+                                        value={formData.otp} onChange={(e) => {
+                                            setFormData({ ...formData, otp: e.target.value });
+                                            setOtpError("");
+                                        }} />
                                 </div>
+                                {otpError && (
+                                    <p className="-mt-2 text-xs text-red-400 font-medium pl-1 animate-pulse">
+                                        ⚠️ {otpError}
+                                    </p>
+                                )}
                                 <div className="flex justify-between items-center text-xs">
                                     <span className="text-muted">Didn&apos;t receive OTP?</span>
                                     <button type="button"
