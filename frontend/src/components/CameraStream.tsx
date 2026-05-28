@@ -81,6 +81,10 @@ export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { camer
                 // Send frames at 15fps
                 intervalRef.current = setInterval(() => {
                     if (ws.readyState !== WebSocket.OPEN) return;
+                    
+                    // Congestion control: skip frame if WebSocket is still buffering unsent bytes
+                    if (ws.bufferedAmount > 65536) return;
+
                     const canvas = canvasRef.current;
                     const video = videoRef.current;
                     if (!canvas || !video || video.videoWidth === 0) return;
