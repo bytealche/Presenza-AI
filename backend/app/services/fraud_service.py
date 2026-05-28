@@ -50,13 +50,20 @@ async def get_fraud_alert_count(session_id: int, db: AsyncSession) -> int:
     return count or 0
 
 
-async def get_total_fraud_alerts(db: AsyncSession) -> int:
-    """Return count of all fraud/security alerts across the platform."""
-    count = await db.scalar(
-        select(func.count(SystemLog.log_id)).where(
-            SystemLog.action.in_(FRAUD_ACTIONS)
+async def get_total_fraud_alerts(db: AsyncSession, org_id: int = None) -> int:
+    """Return count of all fraud/security alerts scoped by organization if provided."""
+    from app.models.user import User
+
+    stmt = select(func.count(SystemLog.log_id))
+    if org_id is not None:
+        stmt = stmt.join(User, SystemLog.user_id == User.user_id).where(
+            SystemLog.action.in_(FRAUD_ACTIONS),
+            User.org_id == org_id
         )
-    )
+    else:
+        stmt = stmt.where(SystemLog.action.in_(FRAUD_ACTIONS))
+
+    count = await db.scalar(stmt)
     return count or 0
 
 

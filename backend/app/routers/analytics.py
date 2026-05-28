@@ -19,20 +19,36 @@ router = APIRouter(prefix="/analytics", tags=["Analytics"])
 
 
 @router.get("/admin/stats", dependencies=[Depends(require_roles([1]))])
-async def get_admin_stats(db: AsyncSession = Depends(get_db)):
-    total_users = await db.scalar(select(func.count(User.user_id))) or 0
+async def get_admin_stats(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    total_users = await db.scalar(
+        select(func.count(User.user_id)).where(User.org_id == current_user.org_id)
+    ) or 0
     now = datetime.utcnow()
     active_sessions = (
         await db.scalar(
-            select(func.count(SessionModel.session_id)).where(SessionModel.end_time > now)
+            select(func.count(SessionModel.session_id)).where(
+                SessionModel.org_id == current_user.org_id,
+                SessionModel.end_time > now
+            )
         )
         or 0
     )
 
-    total_records = await db.scalar(select(func.count(AttendanceRecord.attendance_id))) or 0
+    total_records = await db.scalar(
+        select(func.count(AttendanceRecord.attendance_id))
+        .join(SessionModel, AttendanceRecord.session_id == SessionModel.session_id)
+        .where(SessionModel.org_id == current_user.org_id)
+    ) or 0
+    
     total_present = (
         await db.scalar(
-            select(func.count(AttendanceRecord.attendance_id)).where(
+            select(func.count(AttendanceRecord.attendance_id))
+            .join(SessionModel, AttendanceRecord.session_id == SessionModel.session_id)
+            .where(
+                SessionModel.org_id == current_user.org_id,
                 AttendanceRecord.final_status == "Present"
             )
         )
@@ -40,7 +56,7 @@ async def get_admin_stats(db: AsyncSession = Depends(get_db)):
     )
     attendance_rate = (total_present / total_records * 100) if total_records > 0 else 0.0
 
-    fraud_alerts = await get_total_fraud_alerts(db)
+    fraud_alerts = await get_total_fraud_alerts(db, org_id=current_user.org_id)
 
     return {
         "total_users": total_users,

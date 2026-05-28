@@ -15,11 +15,13 @@ def normalize_vector(vector):
         return vector
     return vector / norm
 
-async def find_match(db: AsyncSession, embedding, threshold=0.5):
+async def find_match(db: AsyncSession, embedding, threshold=0.5, org_id: int = None):
     """
     Find the closest user embedding using pgvector (Cosine Similarity).
     Returns (user_id, confidence)
     """
+    from app.models.user import User
+
     # Normalize query vector
     embedding = embedding.reshape(1, -1)
     embedding = normalize_vector(embedding)
@@ -27,9 +29,13 @@ async def find_match(db: AsyncSession, embedding, threshold=0.5):
 
     stmt = (
         select(FaceProfile, FaceProfile.embedding.cosine_distance(embedding_list).label("distance"))
+        .join(User, FaceProfile.user_id == User.user_id)
         .order_by(FaceProfile.embedding.cosine_distance(embedding_list))
         .limit(1)
     )
+
+    if org_id is not None:
+        stmt = stmt.where(User.org_id == org_id)
     
     result = await db.execute(stmt)
     row = result.first()

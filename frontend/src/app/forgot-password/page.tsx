@@ -1,15 +1,18 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { sendOTP, verifyOTP, resetPassword } from "@/services/authService";
+import { sendOTP, verifyOTP, resetPassword, getOrganizationsByEmail } from "@/services/authService";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, ShieldCheck, ArrowRight, ArrowLeft } from "lucide-react";
+import { Mail, Lock, ShieldCheck, ArrowRight, ArrowLeft, Building } from "lucide-react";
 import Link from "next/link";
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [email, setEmail] = useState("");
+    const [organizations, setOrganizations] = useState<Array<{ org_id: number; org_name: string }>>([]);
+    const [selectedOrgId, setSelectedOrgId] = useState<number | "">("");
+    const [checkingOrgs, setCheckingOrgs] = useState(false);
     const [otp, setOtp] = useState("");
     const [otpError, setOtpError] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -30,10 +33,47 @@ export default function ForgotPasswordPage() {
         }, 1000);
     };
 
+    const checkOrganizations = async (emailVal: string) => {
+        if (!emailVal || !emailVal.includes("@") || !emailVal.includes(".")) {
+            setOrganizations([]);
+            setSelectedOrgId("");
+            return;
+        }
+        setCheckingOrgs(true);
+        try {
+            const orgList = await getOrganizationsByEmail(emailVal);
+            setOrganizations(orgList);
+            if (orgList.length === 1) {
+                setSelectedOrgId(orgList[0].org_id);
+            } else {
+                setSelectedOrgId("");
+            }
+        } catch (err) {
+            console.error("Failed to fetch organizations for email:", err);
+        } finally {
+            setCheckingOrgs(false);
+        }
+    };
+
+    const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setEmail(val);
+        if (val.includes("@") && val.includes(".")) {
+            checkOrganizations(val);
+        } else {
+            setOrganizations([]);
+            setSelectedOrgId("");
+        }
+    };
+
     const handleSendOTP = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email) {
             setError("Please enter your email.");
+            return;
+        }
+        if (organizations.length > 1 && !selectedOrgId) {
+            setError("Please select your organization.");
             return;
         }
         setLoading(true);
@@ -87,7 +127,12 @@ export default function ForgotPasswordPage() {
         setLoading(true);
         setError("");
         try {
-            await resetPassword({ email, otp, new_password: newPassword });
+            await resetPassword({
+                email,
+                otp,
+                new_password: newPassword,
+                org_id: selectedOrgId ? Number(selectedOrgId) : undefined
+            });
             setSuccess("Password reset successfully! Redirecting to login...");
             setTimeout(() => router.push("/login"), 2000);
         } catch (err: any) {
@@ -132,28 +177,55 @@ export default function ForgotPasswordPage() {
 
                 {step === 1 && (
                     <form className="mt-8 space-y-6" onSubmit={handleSendOTP}>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
-                            <input
-                                type="email"
-                                required
-                                className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
-                                placeholder="Email Address"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                            />
+                        <div className="space-y-4">
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
+                                <input
+                                    type="email"
+                                    required
+                                    className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+                                    placeholder="Email Address"
+                                    value={email}
+                                    onChange={handleEmailChange}
+                                />
+                            </div>
+
+                            {/* Premium Organization Selector */}
+                            {organizations.length > 1 && (
+                                <div className="relative animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <Building className="absolute left-3 top-3.5 h-5 w-5 text-muted" />
+                                    <select
+                                        id="organization"
+                                        name="organization"
+                                        required
+                                        value={selectedOrgId}
+                                        onChange={(e) => setSelectedOrgId(e.target.value ? Number(e.target.value) : "")}
+                                        className="w-full bg-[var(--glass-highlight)] border border-[var(--glass-border)] rounded-lg pl-10 pr-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all appearance-none cursor-pointer"
+                                    >
+                                        <option value="" className="bg-background text-foreground">Select Organization</option>
+                                        {organizations.map((org) => (
+                                            <option key={org.org_id} value={org.org_id} className="bg-background text-foreground">
+                                                {org.org_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-muted">
+                                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <button
                             type="submit"
-                            disabled={loading || !email}
-                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${loading || !email
+                            disabled={loading || checkingOrgs || !email}
+                            className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg text-white font-semibold shadow-lg transition-all ${loading || checkingOrgs || !email
                                 ? "bg-[var(--glass-highlight)] text-muted cursor-not-allowed"
                                 : "bg-gradient-to-r from-accent to-purple-600 hover:from-accent/90 hover:to-purple-600/90 shadow-accent/25"
                                 }`}
                         >
-                            {loading ? "Sending..." : "Get OTP"}
-                            {!loading && <ArrowRight className="w-5 h-5" />}
+                            {loading ? "Sending..." : checkingOrgs ? "Checking Organizations..." : "Get OTP"}
+                            {!loading && !checkingOrgs && <ArrowRight className="w-5 h-5" />}
                         </button>
                     </form>
                 )}

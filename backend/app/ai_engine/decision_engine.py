@@ -18,7 +18,7 @@ import asyncio
 
 _incremental_cache: set[int] = set()
 
-async def process_frame(db: AsyncSession, frame):
+async def process_frame(db: AsyncSession, frame, org_id: int = None):
     decisions = []
 
     # 1. Detect all faces (CPU-bound, runs in thread pool)
@@ -39,7 +39,7 @@ async def process_frame(db: AsyncSession, frame):
 
     # 3. Sequential async DB work (DB sessions are not thread-safe to parallelize)
     for face, (live, live_reasons, embedding) in zip(faces, analysis_results):
-        user_id, confidence = await recognize_face(db, embedding)
+        user_id, confidence = await recognize_face(db, embedding, org_id=org_id)
 
         engagement_score = None
         if user_id:

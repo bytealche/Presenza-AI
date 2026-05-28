@@ -194,9 +194,9 @@ async def register_user(
 ):
     await verify_otp_logic(data.email, data.otp, db)
 
-    result = await db.execute(select(User).where(User.email == data.email))
+    result = await db.execute(select(User).where(User.email == data.email, User.org_id == data.org_id))
     if result.scalars().first():
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="Email already registered in this organization")
 
     user_status = "pending" if (data.role_id == 2 and data.org_id) else "active"
 
@@ -227,11 +227,26 @@ async def login(
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(User).where(User.email == data.email))
-    user = result.scalars().first()
+    users = result.scalars().all()
 
-    if not user:
+    if not users:
         logger.warning(f"Login attempt for non-existent email: {data.email}")
         raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if len(users) > 1:
+        if not data.org_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Multiple organizations found for this email. Please select your organization."
+            )
+        user = next((u for u in users if u.org_id == data.org_id), None)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+    else:
+        user = users[0]
+        # If user explicitly sent an incorrect org_id when they only have 1, we still validate it to be clean
+        if data.org_id and user.org_id != data.org_id:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
 
     if user.status != "active":
         raise HTTPException(status_code=403, detail="Account is pending approval or suspended.")
@@ -300,9 +315,19 @@ async def reset_password(
     # Verify OTP first
     await verify_otp_logic(data.email, data.otp, db)
 
-    # Find the user
-    result = await db.execute(select(User).where(User.email == data.email))
-    user = result.scalars().first()
+    # Find the user(s)
+    if data.org_id:
+        result = await db.execute(select(User).where(User.email == data.email, User.org_id == data.org_id))
+        user = result.scalars().first()
+    else:
+        result = await db.execute(select(User).where(User.email == data.email))
+        users = result.scalars().all()
+        if len(users) > 1:
+            raise HTTPException(
+                status_code=400,
+                detail="Multiple organizations found for this email. Please specify your organization."
+            )
+        user = users[0] if users else None
 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -336,5 +361,16 @@ async def verify_otp(
         raise HTTPException(status_code=400, detail="OTP expired")
 
     return {"message": "OTP verified successfully."}
+
+
+@router.get("/organizations-by-email")
+async def get_organizations_by_email(email: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Organization.org_id, Organization.org_name)
+        .join(User, User.org_id == Organization.org_id)
+        .where(User.email == email)
+    )
+    orgs = result.all()
+    return [{"org_id": org[0], "org_name": org[1]} for org in orgs]
 
 

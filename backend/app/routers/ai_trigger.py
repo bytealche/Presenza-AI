@@ -23,6 +23,17 @@ async def run_ai_for_session(
     session_id: int,
     db: AsyncSession = Depends(get_db)
 ):
+    from app.models.session import Session as SessionModel
+    from sqlalchemy import select
+
+    # Resolve Session & Org ID
+    session_stmt = select(SessionModel).where(SessionModel.session_id == session_id)
+    session_res = await db.execute(session_stmt)
+    session_rec = session_res.scalars().first()
+    if not session_rec:
+        return {"error": "Session not found"}
+    org_id = session_rec.org_id
+
     cap = cv2.VideoCapture(0)
     ret, frame = cap.read()
     cap.release()
@@ -30,7 +41,7 @@ async def run_ai_for_session(
     if not ret:
         return {"error": "Camera not accessible"}
 
-    decisions = await process_frame(db, frame)
+    decisions = await process_frame(db, frame, org_id=org_id)
     results = await apply_ai_decisions(db, session_id, decisions)
 
     return {

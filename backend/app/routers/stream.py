@@ -54,22 +54,17 @@ async def _ai_loop(camera_id: str):
                 continue
 
             async with SessionLocal() as db:
-                # ── 2. AI inference ───────────────────────────────────────
-                t1 = time.perf_counter()
-                decisions = await process_frame(db, frame)
-                t_ai = (time.perf_counter() - t1) * 1000
-
-                # ── 3. Resolve session_id ─────────────────────────────────
-                t2 = time.perf_counter()
-                provisional_new: list = []
-                confirmed_users: list = []
-                attendance_saved = 0
-
-                # Primary: pinned by the WebSocket connect handler
+                # ── Resolve session_id and org_id first ───────────────────
                 session_id: int | None = _session_map.get(camera_id)
+                org_id: int | None = None
 
-                # Fallback: query DB for the currently-active session
-                if session_id is None and decisions:
+                if session_id is not None:
+                    stmt = select(SessionModel).where(SessionModel.session_id == session_id)
+                    res = await db.execute(stmt)
+                    session_record = res.scalars().first()
+                    if session_record:
+                        org_id = session_record.org_id
+                else:
                     now = datetime.now()
                     stmt = select(SessionModel).where(
                         SessionModel.camera_id == int(camera_id),
@@ -80,7 +75,19 @@ async def _ai_loop(camera_id: str):
                     active_session = result.scalars().first()
                     if active_session:
                         session_id = active_session.session_id
+                        org_id = active_session.org_id
                         logger.info(f"[CAM {camera_id}] DB-resolved session → {session_id}")
+
+                # ── 2. AI inference ───────────────────────────────────────
+                t1 = time.perf_counter()
+                decisions = await process_frame(db, frame, org_id=org_id)
+                t_ai = (time.perf_counter() - t1) * 1000
+
+                # ── 3. Post-inference DB updates ──────────────────────────
+                t2 = time.perf_counter()
+                provisional_new: list = []
+                confirmed_users: list = []
+                attendance_saved = 0
 
                 # Check if the class session has ended
                 if session_id is not None:

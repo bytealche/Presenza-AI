@@ -130,23 +130,20 @@ async def register_with_face(
     if embedding is None:
         raise HTTPException(status_code=500, detail="Failed to generate face embedding")
 
-    # 3. Check Duplicates
-    match_user_id, confidence = await find_match(db, embedding, threshold=0.5) # ArcFace threshold
-    # DeepFace (VGG-Face) cosine similarity. 0.4 is usually distinct. 
-    # vector_store uses L2 distance converted to confidence.
-    # We should trust find_match logic.
+    # 3. Check Duplicates (Scoped to organization)
+    match_user_id, confidence = await find_match(db, embedding, threshold=0.5, org_id=org_id) # ArcFace threshold
 
     if match_user_id:
         result = await db.execute(select(User).where(User.user_id == match_user_id))
         existing_user = result.scalars().first()
         if existing_user:
-             raise HTTPException(status_code=400, detail="Face already registered with another account.")
+             raise HTTPException(status_code=400, detail="Face already registered with another account in this organization.")
     
-    # Check if email exists (standard duplicate check)
-    result = await db.execute(select(User).where(User.email == email))
+    # Check if email exists (standard duplicate check scoped to organization)
+    result = await db.execute(select(User).where(User.email == email, User.org_id == org_id))
     email_user = result.scalars().first()
     if email_user:
-         raise HTTPException(status_code=400, detail="Email already registered")
+         raise HTTPException(status_code=400, detail="Email already registered in this organization")
 
     # 4. Create New User
     try:
@@ -295,10 +292,10 @@ async def register_video_profile(
         # Re-normalize just to be safe
         avg_embedding = avg_embedding / np.linalg.norm(avg_embedding)
         
-        # 5. Check Duplicates (against other users)
-        match_user_id, confidence = await find_match(db, avg_embedding, threshold=0.5)
+        # 5. Check Duplicates (against other users in same organization)
+        match_user_id, confidence = await find_match(db, avg_embedding, threshold=0.5, org_id=target_user.org_id)
         if match_user_id and match_user_id != user_id:
-             raise HTTPException(status_code=400, detail=f"Face already registered with another account (User ID: {match_user_id}).")
+             raise HTTPException(status_code=400, detail=f"Face already registered with another account in this organization (User ID: {match_user_id}).")
              
         # 6. Upload Best Image to Supabase
         image_url = None

@@ -22,6 +22,7 @@ class ResetPasswordRequest(BaseModel):
     email: EmailStr
     otp: str
     new_password: str = Field(..., min_length=8, max_length=64)
+    org_id: Optional[int] = None
 
 class VerifyOTPRequest(BaseModel):
     email: EmailStr

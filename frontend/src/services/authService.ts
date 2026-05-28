@@ -4,13 +4,20 @@ export interface LoginResponse {
   access_token: string;
 }
 
-export const login = async (data: { email: string; password: string }): Promise<LoginResponse> => {
+export const login = async (data: { email: string; password: string; org_id?: number }): Promise<LoginResponse> => {
   // Determine if we need face login or standard login
   // For now, let's keep it simple. If data has 'file', it's face login
   // BUT wait, login endpoint expects JSON. login-with-face expects Form.
   // The component calling this should decide.
   // Let's make this function just for standard login.
   const res = await api.post<LoginResponse>("/auth/login", data);
+  return res.data;
+};
+
+export const getOrganizationsByEmail = async (email: string): Promise<Array<{ org_id: number; org_name: string }>> => {
+  const res = await api.get("/auth/organizations-by-email", {
+    params: { email }
+  });
   return res.data;
 };
 

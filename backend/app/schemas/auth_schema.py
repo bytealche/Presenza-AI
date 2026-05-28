@@ -5,6 +5,7 @@ from typing import Optional
 class LoginRequest(BaseModel):
     email: str
     password: str
+    org_id: Optional[int] = None
 
 
 class RefreshRequest(BaseModel):
