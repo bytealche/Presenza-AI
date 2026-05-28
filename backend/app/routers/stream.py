@@ -76,7 +76,9 @@ async def _ai_loop(camera_id: str):
                     if active_session:
                         session_id = active_session.session_id
                         org_id = active_session.org_id
-                        logger.info(f"[CAM {camera_id}] DB-resolved session → {session_id}")
+                        # Pin dynamically resolved session to prevent repeated DB hits & keep tracking end-time
+                        _session_map[camera_id] = session_id
+                        logger.info(f"[CAM {camera_id}] DB-resolved session → {session_id} (pinned to _session_map)")
 
                 # ── 2. AI inference ───────────────────────────────────────
                 t1 = time.perf_counter()
@@ -99,6 +101,8 @@ async def _ai_loop(camera_id: str):
                         payload = json.dumps({"type": "session_ended"})
                         await manager.broadcast_to_receivers(camera_id, payload)
                         await manager.send_to_sender(camera_id, payload)
+                        # Yield to asyncio event loop so outgoing WS frames flush completely before close handshakes
+                        await asyncio.sleep(0.5)
                         await manager.disconnect_all(camera_id)
                         break
 
