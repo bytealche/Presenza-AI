@@ -49,6 +49,7 @@ export default function BroadcastPage() {
     const [isStreaming, setIsStreaming] = useState(false);
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
     const [selectedDeviceId, setSelectedDeviceId] = useState<string>("");
+    const [lectureCompleted, setLectureCompleted] = useState(false);
 
     // Performance diagnostics state
     const [stats, setStats] = useState({
@@ -167,6 +168,31 @@ export default function BroadcastPage() {
             setIsStreaming(true);
             ws.send(JSON.stringify({ type: "log", message: "Mobile WS Connected - Advanced Sender Running" }));
             startSendingFrames(ws);
+        };
+
+        ws.onmessage = (event) => {
+            if (typeof event.data === "string") {
+                if (event.data === "__ping__") {
+                    ws.send("__pong__");
+                    return;
+                }
+                try {
+                    const parsed = JSON.parse(event.data);
+                    if (parsed.type === "session_ended") {
+                        stopCamera();
+                        setIsStreaming(false);
+                        setLectureCompleted(true);
+                        ws.onclose = null;
+                        ws.close();
+                        wsRef.current = null;
+                        setTimeout(() => {
+                            router.push("/");
+                        }, 4000);
+                    }
+                } catch (e) {
+                    console.error("Error parsing WS message:", e);
+                }
+            }
         };
 
         ws.onclose = () => {
@@ -544,6 +570,18 @@ export default function BroadcastPage() {
                 <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-emerald-500/10 rounded-full blur-[120px]" />
                 <div className="absolute bottom-1/4 right-1/4 w-[250px] h-[250px] bg-blue-500/10 rounded-full blur-[100px]" />
             </div>
+
+            {lectureCompleted && (
+                <div className="fixed inset-0 bg-black/95 z-[100] flex flex-col items-center justify-center animate-in fade-in duration-500">
+                    <div className="text-center space-y-4">
+                        <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto text-emerald-400 animate-bounce">
+                            <CheckCircle2 className="w-10 h-10" />
+                        </div>
+                        <h2 className="text-3xl font-black tracking-tight text-white">Lecture Completed</h2>
+                        <p className="text-zinc-400 text-sm">Attendance recorded. Returning to homepage...</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

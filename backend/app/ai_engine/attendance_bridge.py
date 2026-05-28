@@ -20,7 +20,7 @@ def _clear_session_cache(session_id: int):
     _confirmed_cache.pop(session_id, None)
 
 
-async def mark_provisional(db: AsyncSession, session_id: int, decisions: list) -> list[dict]:
+async def mark_provisional(db: AsyncSession, session_id: int, decisions: list, org_id: int = None) -> list[dict]:
     """
     Stage 1 – instant write on first detection.
     In-process cache ensures we hit the DB only ONCE per user per session.
@@ -67,6 +67,7 @@ async def mark_provisional(db: AsyncSession, session_id: int, decisions: list) -
         rec = Attendance(
             session_id=session_id,
             user_id=uid,
+            org_id=org_id,
             final_status="provisional",
             final_score=float(d.get("confidence") or 0.0),
             decision_time=datetime.utcnow(),
@@ -91,7 +92,7 @@ async def mark_provisional(db: AsyncSession, session_id: int, decisions: list) -
     return [{"user_id": r.user_id, "status": "provisional"} for r in new_records]
 
 
-async def apply_ai_decisions(db: AsyncSession, session_id: int, decisions: list) -> list:
+async def apply_ai_decisions(db: AsyncSession, session_id: int, decisions: list, org_id: int = None) -> list:
     """
     Stage 2 – upgrade provisional → present once the presence tracker confirms.
     In-process cache means zero DB work for users already marked present.
@@ -146,6 +147,7 @@ async def apply_ai_decisions(db: AsyncSession, session_id: int, decisions: list)
             rec = Attendance(
                 session_id=session_id,
                 user_id=uid,
+                org_id=org_id,
                 final_status=final_status,
                 final_score=confidence,
                 decision_time=datetime.utcnow(),

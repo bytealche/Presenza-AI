@@ -24,10 +24,24 @@ async def student_attendance(
     current_user: User = Depends(get_current_user)
 ):
     result = await db.execute(
-        select(Attendance)
+        select(Attendance, SessionModel.session_name)
+        .join(SessionModel, Attendance.session_id == SessionModel.session_id)
         .where(Attendance.user_id == current_user.user_id)
     )
-    return result.scalars().all()
+    rows = result.all()
+    return [
+        AttendanceView(
+            session_id=att.session_id,
+            user_id=att.user_id,
+            final_status=att.final_status,
+            final_score=att.final_score,
+            decision_time=att.decision_time,
+            session_name=sname,
+            org_id=att.org_id
+        )
+        for att, sname in rows
+    ]
+
 @router.get(
     "/teacher",
     response_model=list[AttendanceView],
@@ -38,11 +52,24 @@ async def teacher_attendance(
     current_user: User = Depends(get_current_user)
 ):
     result = await db.execute(
-        select(Attendance)
+        select(Attendance, SessionModel.session_name)
         .join(SessionModel, Attendance.session_id == SessionModel.session_id)
         .where(SessionModel.created_by == current_user.user_id)
     )
-    return result.scalars().all()
+    rows = result.all()
+    return [
+        AttendanceView(
+            session_id=att.session_id,
+            user_id=att.user_id,
+            final_status=att.final_status,
+            final_score=att.final_score,
+            decision_time=att.decision_time,
+            session_name=sname,
+            org_id=att.org_id
+        )
+        for att, sname in rows
+    ]
+
 @router.get(
     "/admin",
     response_model=list[AttendanceView],
@@ -53,8 +80,20 @@ async def admin_attendance(
     current_user: User = Depends(get_current_user)
 ):
     result = await db.execute(
-        select(Attendance)
+        select(Attendance, SessionModel.session_name)
         .join(SessionModel, Attendance.session_id == SessionModel.session_id)
         .where(SessionModel.org_id == current_user.org_id)
     )
-    return result.scalars().all()
+    rows = result.all()
+    return [
+        AttendanceView(
+            session_id=att.session_id,
+            user_id=att.user_id,
+            final_status=att.final_status,
+            final_score=att.final_score,
+            decision_time=att.decision_time,
+            session_name=sname,
+            org_id=att.org_id
+        )
+        for att, sname in rows
+    ]

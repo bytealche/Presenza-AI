@@ -106,10 +106,10 @@ async def _ai_loop(camera_id: str):
                 # ── 4. Two-stage attendance ───────────────────────────────
                 if session_id and decisions:
                     # Stage 1: write provisional immediately on first detection
-                    provisional_new = await mark_provisional(db, session_id, decisions)
+                    provisional_new = await mark_provisional(db, session_id, decisions, org_id=org_id)
 
                     # Stage 2: upgrade provisional→present once presence confirmed
-                    confirmed_results = await apply_ai_decisions(db, session_id, decisions)
+                    confirmed_results = await apply_ai_decisions(db, session_id, decisions, org_id=org_id)
                     attendance_saved = len(confirmed_results)
                     confirmed_users = [
                         d["user_id"] for d in decisions

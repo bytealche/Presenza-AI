@@ -42,7 +42,7 @@ async def run_ai_for_session(
         return {"error": "Camera not accessible"}
 
     decisions = await process_frame(db, frame, org_id=org_id)
-    results = await apply_ai_decisions(db, session_id, decisions)
+    results = await apply_ai_decisions(db, session_id, decisions, org_id=org_id)
 
     return {
         "decisions": decisions,

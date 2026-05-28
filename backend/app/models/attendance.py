@@ -8,6 +8,7 @@ class AttendanceRecord(Base):
     attendance_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.user_id"), index=True)
     session_id = Column(Integer, ForeignKey("sessions.session_id"), index=True)
+    org_id = Column(Integer, ForeignKey("organizations.org_id"), index=True, nullable=True)
 
     final_status = Column(String(20))   # present / absent / flagged
     final_score = Column(Float)

@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getSessions, getSessionAttendance, Session, AttendanceRecord } from "@/services/sessionService";
+import { getStudentAttendance } from "@/services/attendanceService";
 import { 
     Loader2, Calendar, Search, RefreshCw, ShieldAlert, CheckCircle, 
     Clock, XCircle, AlertTriangle, ChevronDown, Check, UserCheck, 
@@ -34,9 +35,30 @@ export default function AttendancePage() {
     const [exportStudentFilter, setExportStudentFilter] = useState<string>("all");
     const [isGeneratingCSV, setIsGeneratingCSV] = useState(false);
 
+    const [studentRecords, setStudentRecords] = useState<any[]>([]);
+    const [loadingStudent, setLoadingStudent] = useState(true);
+
     useEffect(() => {
-        if (user) loadSessions();
+        if (user) {
+            if (user.role_id === 3) {
+                loadStudentAttendanceData();
+            } else {
+                loadSessions();
+            }
+        }
     }, [user]);
+
+    const loadStudentAttendanceData = async () => {
+        setLoadingStudent(true);
+        try {
+            const data = await getStudentAttendance();
+            setStudentRecords(data);
+        } catch (err) {
+            console.error("Failed to load student attendance data:", err);
+        } finally {
+            setLoadingStudent(false);
+        }
+    };
 
     // Set default dates for export date inputs
     useEffect(() => {
@@ -317,13 +339,131 @@ export default function AttendancePage() {
 
     // Student role fallback
     if (user?.role_id === 3) {
+        const totalSessions = studentRecords.length;
+        const presentCount = studentRecords.filter(r => r.final_status.toLowerCase() === "present").length;
+        const lateCount = studentRecords.filter(r => r.final_status.toLowerCase() === "late").length;
+        const attendanceRate = totalSessions > 0 ? Math.round(((presentCount + lateCount) / totalSessions) * 100) : 0;
+
         return (
-            <div className="p-8 text-center text-muted max-w-lg mx-auto glass-card border border-[var(--glass-border)] rounded-2xl py-20 mt-12">
-                <Clock className="w-16 h-16 mx-auto mb-4 text-muted opacity-40" />
-                <h2 className="text-xl font-bold text-foreground mb-2">My Attendance Profile</h2>
-                <p className="text-muted text-sm leading-relaxed">
-                    Student self-monitoring attendance histories and lecture-tracking analytics are currently being calibrated.
-                </p>
+            <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0 pb-12 animate-in fade-in duration-300">
+                {/* Header */}
+                <div className="border-b border-[var(--glass-border)] pb-6">
+                    <h2 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-accent via-foreground to-purple-400 drop-shadow-md tracking-tight">
+                        My Biometric Attendance Profile
+                    </h2>
+                    <p className="text-muted text-sm mt-1">
+                        View your verified live lecture attendance records and biometric verification logs.
+                    </p>
+                </div>
+
+                {/* Metrics */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="glass-card p-5 border-l-4 border-l-emerald-500 flex items-center gap-4">
+                        <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400">
+                            <CheckCircle className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-muted font-extrabold uppercase tracking-widest">Classes Attended</p>
+                            <h3 className="text-2xl font-black text-emerald-400 mt-1">{presentCount}</h3>
+                        </div>
+                    </div>
+
+                    <div className="glass-card p-5 border-l-4 border-l-amber-500 flex items-center gap-4">
+                        <div className="p-3 bg-amber-500/10 rounded-xl text-amber-400">
+                            <Clock className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-muted font-extrabold uppercase tracking-widest">Late Entries</p>
+                            <h3 className="text-2xl font-black text-amber-400 mt-1">{lateCount}</h3>
+                        </div>
+                    </div>
+
+                    <div className="glass-card p-5 border-l-4 border-l-blue-400 flex items-center gap-4">
+                        <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400">
+                            <Activity className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="text-[10px] text-muted font-extrabold uppercase tracking-widest">Attendance Rating</p>
+                            <h3 className="text-2xl font-black text-blue-400 mt-1">{attendanceRate}%</h3>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Table of Records */}
+                <div className="glass-card border border-[var(--glass-border)] shadow-xl overflow-hidden rounded-2xl">
+                    {loadingStudent ? (
+                        <div className="p-16 text-center text-muted flex flex-col items-center gap-3 justify-center">
+                            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+                            <span className="text-sm font-semibold tracking-wide">Syncing attendance data...</span>
+                        </div>
+                    ) : studentRecords.length === 0 ? (
+                        <div className="p-16 text-center text-muted flex flex-col items-center gap-3 justify-center">
+                            <Calendar className="w-12 h-12 text-muted opacity-40" />
+                            <h3 className="text-base font-bold text-foreground">No Records Found</h3>
+                            <p className="text-xs text-muted max-w-xs leading-relaxed">
+                                You haven't joined any online class sessions or had your attendance biometrically verified yet.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-[var(--glass-border)] text-muted uppercase text-[10px] font-extrabold tracking-wider bg-slate-950/20">
+                                        <th className="px-6 py-4">Lecture / Class Session</th>
+                                        <th className="px-6 py-4">Organization Scoping</th>
+                                        <th className="px-6 py-4">Verification Status</th>
+                                        <th className="px-6 py-4">Verified Timestamp</th>
+                                        <th className="px-6 py-4 text-right">Biometric Match</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[var(--glass-border)]">
+                                    {studentRecords.map((record, idx) => {
+                                        const status = record.final_status.toLowerCase();
+                                        const isPresent = status === "present";
+                                        const isLate = status === "late";
+                                        const isFraud = status === "fraud";
+
+                                        return (
+                                            <tr key={idx} className="hover:bg-slate-900/25 transition-colors">
+                                                <td className="px-6 py-4.5 font-bold text-foreground">
+                                                    {record.session_name || `Session #${record.session_id}`}
+                                                </td>
+                                                <td className="px-6 py-4.5 text-xs text-muted font-bold font-mono">
+                                                    Tenant #{record.org_id || user.org_id}
+                                                </td>
+                                                <td className="px-6 py-4.5">
+                                                    {isPresent ? (
+                                                        <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-lg w-fit tracking-wide">
+                                                            <CheckCircle className="w-3.5 h-3.5" /> Present
+                                                        </span>
+                                                    ) : isLate ? (
+                                                        <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2.5 py-1 rounded-lg w-fit tracking-wide">
+                                                            <Clock className="w-3.5 h-3.5" /> Late Entry
+                                                        </span>
+                                                    ) : isFraud ? (
+                                                        <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-red-400 bg-red-500/10 border border-red-500/30 px-2.5 py-1 rounded-lg w-fit tracking-wide">
+                                                            <ShieldAlert className="w-3.5 h-3.5" /> Blocked
+                                                        </span>
+                                                    ) : (
+                                                        <span className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-red-400 bg-red-500/10 border border-red-500/30 px-2.5 py-1 rounded-lg w-fit tracking-wide">
+                                                            <XCircle className="w-3.5 h-3.5" /> Absent
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4.5 text-xs text-muted font-bold font-mono">
+                                                    {record.decision_time ? new Date(record.decision_time).toLocaleString() : "—"}
+                                                </td>
+                                                <td className="px-6 py-4.5 text-right font-black font-mono text-xs text-accent">
+                                                    {record.final_score ? `${Math.round(record.final_score * 100)}% Match` : "—"}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
             </div>
         );
     }

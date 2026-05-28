@@ -62,6 +62,7 @@ async def mark_attendance(
     attendance = Attendance(
         session_id=data.session_id,
         user_id=data.user_id,
+        org_id=session.org_id,
         final_status=data.final_status,
         final_score=data.final_score,
         decision_time=datetime.utcnow()

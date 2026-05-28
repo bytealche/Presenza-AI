@@ -7,6 +7,8 @@ class AttendanceView(BaseModel):
     final_status: str
     final_score: float | None
     decision_time: datetime
+    session_name: str | None = None
+    org_id: int | None = None
 
     class Config:
         from_attributes = True

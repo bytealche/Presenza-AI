@@ -17,6 +17,7 @@ export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { camer
     const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
     const [selectedDevice, setSelectedDevice] = useState<string>("");
     const [aiData, setAiData] = useState<any[]>([]);
+    const [lectureCompleted, setLectureCompleted] = useState(false);
     const [timing, setTiming] = useState<{ decode_ms: number; ai_ms: number; db_ms: number; total_ms: number } | null>(null);
     const [confirmedUsers, setConfirmedUsers] = useState<(number | string)[]>([]);
     const [totalSaved, setTotalSaved] = useState(0);
@@ -109,9 +110,12 @@ export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { camer
                     try {
                         const parsed = JSON.parse(event.data);
                         if (parsed.type === "session_ended") {
-                            alert("This class session has ended. Stream terminated.");
                             stopStreaming();
                             setStatus("Class ended");
+                            setLectureCompleted(true);
+                            setTimeout(() => {
+                                window.location.href = "/";
+                            }, 4000);
                             return;
                         }
                         if (parsed.type === "ai_analysis") {
@@ -187,6 +191,16 @@ export function DeviceCameraStreamer({ cameraId, sessionId, autoStart }: { camer
                 <div className="relative flex-1 aspect-video md:aspect-auto md:min-h-[480px] md:max-h-[70vh] bg-black rounded overflow-hidden ring-1 ring-white/10 min-w-0">
                     <video ref={videoRef} className="w-full h-full object-contain" muted playsInline />
                     <canvas ref={canvasRef} className="hidden" />
+
+                    {lectureCompleted && (
+                        <div className="absolute inset-0 bg-black/95 z-[99] flex flex-col items-center justify-center animate-in fade-in duration-300">
+                            <div className="text-center space-y-3 px-4">
+                                <span className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 animate-pulse">✓</span>
+                                <h3 className="text-lg font-black tracking-tight text-white">Lecture Completed</h3>
+                                <p className="text-zinc-400 text-[10px]">Attendance saved. Returning to homepage...</p>
+                            </div>
+                        </div>
+                    )}
 
                     {/* AI bounding box overlays */}
                     {aiData.map((data, idx) => {
@@ -323,6 +337,7 @@ export function StreamViewer({ cameraId }: { cameraId: string }) {
     const [aiData, setAiData] = useState<any[]>([]);
     const [facesList, setFacesList] = useState<any[]>([]);
     const [unknownCount, setUnknownCount] = useState(0);
+    const [lectureCompleted, setLectureCompleted] = useState(false);
 
     useEffect(() => {
         const wsUrl = getWsUrl(`/ws/stream/${cameraId}?client_type=receiver`);
@@ -338,9 +353,12 @@ export function StreamViewer({ cameraId }: { cameraId: string }) {
                     try {
                         const parsed = JSON.parse(event.data);
                         if (parsed.type === "session_ended") {
-                            alert("The class session has ended.");
+                            setLectureCompleted(true);
                             ws.onclose = null;
                             ws.close();
+                            setTimeout(() => {
+                                window.location.href = "/";
+                            }, 4000);
                             return;
                         }
                         if (parsed.type === "ai_analysis") {
@@ -373,6 +391,16 @@ export function StreamViewer({ cameraId }: { cameraId: string }) {
                 <img ref={imgRef} className="w-full h-full object-cover" alt="Live Stream"
                     onError={(e) => e.currentTarget.style.display = "none"}
                     onLoad={(e) => e.currentTarget.style.display = "block"} />
+
+                {lectureCompleted && (
+                    <div className="absolute inset-0 bg-black/95 z-[99] flex flex-col items-center justify-center animate-in fade-in duration-300">
+                        <div className="text-center space-y-3 px-4">
+                            <span className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400 animate-pulse">✓</span>
+                            <h3 className="text-lg font-black tracking-tight text-white">Lecture Completed</h3>
+                            <p className="text-zinc-400 text-[10px]">Attendance saved. Returning to homepage...</p>
+                        </div>
+                    </div>
+                )}
                 {aiData.map((data, idx) => {
                     if (!data.bbox) return null;
                     const [x, y, w, h] = data.bbox;
