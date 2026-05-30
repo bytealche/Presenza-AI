@@ -150,3 +150,150 @@ async def get_student_stats(
             for r in my_records[:5]
         ],
     }
+
+
+@router.get("/engagement", dependencies=[Depends(require_roles([1, 2]))])
+async def get_engagement_analytics(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from app.models.engagement import EngagementMetric
+
+    # 1. Fetch sessions matching the organization and role scope
+    if current_user.role_id == 1:
+        sessions_stmt = select(SessionModel).where(SessionModel.org_id == current_user.org_id)
+    else:
+        sessions_stmt = select(SessionModel).where(
+            SessionModel.created_by == current_user.user_id,
+            SessionModel.org_id == current_user.org_id
+        )
+        
+    sessions_res = await db.execute(sessions_stmt)
+    sessions = sessions_res.scalars().all()
+    session_ids = [s.session_id for s in sessions]
+    
+    if not session_ids:
+        return {
+            "courses": [],
+            "line_chart_data": {},
+            "scatter_chart_data": {},
+            "alert_students": {}
+        }
+        
+    # 2. Group sessions by unique subject/class name
+    courses_map = {}
+    for s in sessions:
+        if s.session_name not in courses_map:
+            courses_map[s.session_name] = []
+        courses_map[s.session_name].append(s)
+        
+    courses_list = [{"id": sub, "name": sub} for sub in courses_map.keys()]
+    
+    line_chart_data = {}
+    scatter_chart_data = {}
+    alert_students = {}
+    
+    # 3. Process each course subject category
+    for subject_name, course_sessions in courses_map.items():
+        course_session_ids = [cs.session_id for cs in course_sessions]
+        
+        # Join User, AttendanceRecord, EngagementMetric to query active logs
+        stmt = (
+            select(
+                User.user_id,
+                User.full_name,
+                AttendanceRecord.session_id,
+                EngagementMetric.attention_score,
+                EngagementMetric.eye_gaze_score,
+                EngagementMetric.engagement_level
+            )
+            .join(AttendanceRecord, User.user_id == AttendanceRecord.user_id)
+            .join(SessionModel, AttendanceRecord.session_id == SessionModel.session_id)
+            .join(EngagementMetric, AttendanceRecord.attendance_id == EngagementMetric.attendance_id)
+            .where(AttendanceRecord.session_id.in_(course_session_ids))
+        )
+        res = await db.execute(stmt)
+        records = res.all()
+        
+        # 3.1. Line Chart Data
+        sorted_sessions = sorted(course_sessions, key=lambda cs: cs.start_time or datetime.min)
+        subject_line_data = []
+        for idx, cs in enumerate(sorted_sessions):
+            session_metrics = [r for r in records if r.session_id == cs.session_id]
+            if session_metrics:
+                avg_att = sum(r.attention_score for r in session_metrics) / len(session_metrics)
+            else:
+                avg_att = 0.0
+            subject_line_data.append({
+                "label": f"Lec {idx+1}",
+                "value": round(avg_att * 25.0, 1), # Max 25 focus minutes
+                "percentage": round(avg_att * 100, 1)
+            })
+        line_chart_data[subject_name] = subject_line_data
+        
+        # 3.2. Scatter Plot & Alert Students Grouping
+        student_groups = {}
+        for r in records:
+            if r.user_id not in student_groups:
+                student_groups[r.user_id] = {
+                    "name": r.full_name,
+                    "att_scores": [],
+                    "gaze_scores": [],
+                    "levels": []
+                }
+            student_groups[r.user_id]["att_scores"].append(r.attention_score)
+            student_groups[r.user_id]["gaze_scores"].append(r.eye_gaze_score)
+            student_groups[r.user_id]["levels"].append(r.engagement_level)
+            
+        subject_scatter_data = []
+        subject_alerts = []
+        
+        total_course_sessions = len(course_sessions)
+        
+        for uid, sdata in student_groups.items():
+            stu_att_rate = min(100.0, (len(sdata["att_scores"]) / total_course_sessions * 100) if total_course_sessions > 0 else 0.0)
+            avg_attention = sum(sdata["att_scores"]) / len(sdata["att_scores"]) if sdata["att_scores"] else 0.0
+            avg_gaze = sum(sdata["gaze_scores"]) / len(sdata["gaze_scores"]) if sdata["gaze_scores"] else 0.0
+            
+            participation = round(avg_gaze * 100, 1)
+            attendance_percent = round(stu_att_rate, 1)
+            mean_att = avg_attention * 100
+            
+            if mean_att >= 80:
+                status = "high"
+            elif mean_att >= 60:
+                status = "medium"
+            else:
+                status = "low"
+                
+            subject_scatter_data.append({
+                "name": sdata["name"],
+                "attendance": attendance_percent,
+                "participation": participation,
+                "status": status
+            })
+            
+            if mean_att < 60:
+                sparkline = [round(v * 100, 1) for v in sdata["att_scores"][-6:]]
+                if len(sparkline) < 6:
+                    sparkline = [sparkline[0] if sparkline else 50] * (6 - len(sparkline)) + sparkline
+                subject_alerts.append({
+                    "id": uid,
+                    "name": sdata["name"],
+                    "avatar": "".join(part[0].upper() for part in sdata["name"].split()[:2]) if sdata["name"] else "ST",
+                    "attendance": attendance_percent,
+                    "attention": round(mean_att, 1),
+                    "status": "critical" if mean_att < 50 else "warning",
+                    "trend": "down" if len(sdata["att_scores"]) > 1 and sdata["att_scores"][-1] < sdata["att_scores"][-2] else "stable",
+                    "sparkline": sparkline
+                })
+                
+        scatter_chart_data[subject_name] = subject_scatter_data
+        alert_students[subject_name] = subject_alerts
+        
+    return {
+        "courses": courses_list,
+        "line_chart_data": line_chart_data,
+        "scatter_chart_data": scatter_chart_data,
+        "alert_students": alert_students
+    }

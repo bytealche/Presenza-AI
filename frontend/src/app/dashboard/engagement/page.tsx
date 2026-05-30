@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
     Activity, Users, ArrowUpRight, TrendingUp, AlertTriangle, 
-    Sparkles, Mail, Calendar, MessageSquare, ChevronDown, RefreshCw 
+    Sparkles, Mail, Calendar, MessageSquare, ChevronDown, RefreshCw, Loader2, AlertCircle 
 } from "lucide-react";
+import { getEngagementAnalytics } from "@/services/dashboardService";
 
 // Types
 interface DataPoint {
@@ -33,7 +34,7 @@ interface AlertStudent {
 
 export default function EngagementPage() {
     // ── Interactive States ──────────────────────────────────────────────────
-    const [selectedCourse, setSelectedCourse] = useState("CS101");
+    const [selectedCourse, setSelectedCourse] = useState("");
     const [selectedTimeframe, setSelectedTimeframe] = useState("Weekly");
     const [hoveredLinePoint, setHoveredLinePoint] = useState<number | null>(null);
     const [hoveredScatterPoint, setHoveredScatterPoint] = useState<number | null>(null);
@@ -41,94 +42,43 @@ export default function EngagementPage() {
     const [toastStudentName, setToastStudentName] = useState("");
     const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
 
-    // ── Interactive Dataset Definitions ──────────────────────────────────────
-    const courses = [
-        { id: "CS101", name: "Introduction to Computer Science" },
-        { id: "AI202", name: "Applied Artificial Intelligence" },
-        { id: "ML303", name: "Advanced Machine Learning" }
-    ];
+    // ── Dynamic Dataset States ──────────────────────────────────────────────
+    const [courses, setCourses] = useState<{ id: string; name: string }[]>([]);
+    const [lineChartData, setLineChartData] = useState<Record<string, DataPoint[]>>({});
+    const [scatterChartData, setScatterChartData] = useState<Record<string, StudentPoint[]>>({});
+    const [alertStudentsData, setAlertStudentsData] = useState<Record<string, AlertStudent[]>>({});
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const timeframes = ["Weekly", "Monthly"];
 
-    // Data depending on course selection
-    const lineChartData: Record<string, DataPoint[]> = {
-        CS101: [
-            { label: "Wk 1", value: 38, percentage: 76 },
-            { label: "Wk 2", value: 43, percentage: 86 },
-            { label: "Wk 3", value: 35, percentage: 70 },
-            { label: "Wk 4", value: 46, percentage: 92 },
-            { label: "Wk 5", value: 49, percentage: 98 },
-            { label: "Wk 6", value: 42, percentage: 84 },
-            { label: "Wk 7", value: 47, percentage: 94 }
-        ],
-        AI202: [
-            { label: "Wk 1", value: 42, percentage: 84 },
-            { label: "Wk 2", value: 39, percentage: 78 },
-            { label: "Wk 3", value: 47, percentage: 94 },
-            { label: "Wk 4", value: 41, percentage: 82 },
-            { label: "Wk 5", value: 48, percentage: 96 },
-            { label: "Wk 6", value: 49, percentage: 98 },
-            { label: "Wk 7", value: 44, percentage: 88 }
-        ],
-        ML303: [
-            { label: "Wk 1", value: 35, percentage: 70 },
-            { label: "Wk 2", value: 37, percentage: 74 },
-            { label: "Wk 3", value: 41, percentage: 82 },
-            { label: "Wk 4", value: 45, percentage: 90 },
-            { label: "Wk 5", value: 43, percentage: 86 },
-            { label: "Wk 6", value: 46, percentage: 92 },
-            { label: "Wk 7", value: 48, percentage: 96 }
-        ]
+    // Fetch live engagement analytics from database
+    const loadEngagementData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await getEngagementAnalytics();
+            setCourses(data.courses || []);
+            setLineChartData(data.line_chart_data || {});
+            setScatterChartData(data.scatter_chart_data || {});
+            setAlertStudentsData(data.alert_students || {});
+            
+            if (data.courses && data.courses.length > 0) {
+                setSelectedCourse(data.courses[0].id);
+            } else {
+                setSelectedCourse("");
+            }
+        } catch (err: any) {
+            console.error("Failed to load engagement analytics:", err);
+            setError("Failed to fetch live engagement analytics. Please verify that the API server is online.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const scatterChartData: Record<string, StudentPoint[]> = {
-        CS101: [
-            { name: "Sarah Connor", attendance: 96, participation: 92, status: "high" },
-            { name: "John Doe", attendance: 92, participation: 88, status: "high" },
-            { name: "Alice Smith", attendance: 88, participation: 85, status: "high" },
-            { name: "David Miller", attendance: 84, participation: 76, status: "medium" },
-            { name: "Elena Rostova", attendance: 80, participation: 72, status: "medium" },
-            { name: "James Cole", attendance: 75, participation: 68, status: "medium" },
-            { name: "Marcus Wright", attendance: 58, participation: 45, status: "low" },
-            { name: "Kyle Reese", attendance: 62, participation: 38, status: "low" },
-            { name: "Grace Phillips", attendance: 45, participation: 52, status: "low" },
-            { name: "Danny Dyson", attendance: 50, participation: 32, status: "low" }
-        ],
-        AI202: [
-            { name: "Arthur Dent", attendance: 98, participation: 96, status: "high" },
-            { name: "Tricia McMillan", attendance: 94, participation: 90, status: "high" },
-            { name: "Ford Prefect", attendance: 78, participation: 82, status: "medium" },
-            { name: "Zaphod Beeblebrox", attendance: 60, participation: 70, status: "medium" },
-            { name: "Marvin Android", attendance: 40, participation: 22, status: "low" }
-        ],
-        ML303: [
-            { name: "Neo Anderson", attendance: 99, participation: 98, status: "high" },
-            { name: "Trinity Moss", attendance: 96, participation: 94, status: "high" },
-            { name: "Morpheus Vance", attendance: 88, participation: 82, status: "high" },
-            { name: "Cypher Reagan", attendance: 65, participation: 48, status: "low" },
-            { name: "Agent Smith", attendance: 95, participation: 15, status: "low" }
-        ]
-    };
-
-    const alertStudentsData: Record<string, AlertStudent[]> = {
-        CS101: [
-            { id: 1, name: "Marcus Wright", avatar: "MW", attendance: 58, attention: 44, status: "critical", trend: "down", sparkline: [55, 52, 48, 49, 45, 44] },
-            { id: 2, name: "Kyle Reese", avatar: "KR", attendance: 62, attention: 48, status: "warning", trend: "down", sparkline: [60, 58, 55, 50, 47, 48] },
-            { id: 3, name: "Grace Phillips", avatar: "GP", attendance: 45, attention: 52, status: "warning", trend: "stable", sparkline: [44, 46, 50, 48, 51, 52] },
-            { id: 4, name: "Danny Dyson", avatar: "DD", attendance: 50, attention: 32, status: "critical", trend: "down", sparkline: [48, 42, 38, 35, 30, 32] }
-        ],
-        AI202: [
-            { id: 5, name: "Marvin Android", avatar: "MA", attendance: 40, attention: 22, status: "critical", trend: "down", sparkline: [35, 30, 25, 20, 22, 22] }
-        ],
-        ML303: [
-            { id: 6, name: "Cypher Reagan", avatar: "CR", attendance: 65, attention: 48, status: "warning", trend: "down", sparkline: [62, 58, 55, 52, 49, 48] },
-            { id: 7, name: "Agent Smith", avatar: "AS", attendance: 95, attention: 15, status: "critical", trend: "down", sparkline: [80, 60, 40, 25, 18, 15] }
-        ]
-    };
-
-    const activeLineData = lineChartData[selectedCourse] || lineChartData.CS101;
-    const activeScatterData = scatterChartData[selectedCourse] || scatterChartData.CS101;
-    const activeAlertStudents = alertStudentsData[selectedCourse] || alertStudentsData.CS101;
+    useEffect(() => {
+        loadEngagementData();
+    }, []);
 
     // ── Trigger simulated reminder ──────────────────────────────────────────
     const triggerReminder = (studentName: string, id: number) => {
@@ -141,7 +91,87 @@ export default function EngagementPage() {
         }, 1200);
     };
 
-    // Helper to map SVG coordinates
+    // Render loading state
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+                <div className="relative flex items-center justify-center">
+                    <Loader2 className="w-12 h-12 text-accent animate-spin" />
+                    <div className="absolute w-12 h-12 rounded-full border border-accent/20 animate-ping"></div>
+                </div>
+                <p className="text-muted text-sm font-medium animate-pulse">Loading real engagement analytics...</p>
+            </div>
+        );
+    }
+
+    // Render error state
+    if (error) {
+        return (
+            <div className="max-w-md mx-auto my-12 p-8 glass-card border border-red-500/20 text-center space-y-6">
+                <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-red-500/5">
+                    <AlertTriangle className="w-8 h-8" />
+                </div>
+                <div className="space-y-2">
+                    <h3 className="text-xl font-bold text-foreground">API Connection Error</h3>
+                    <p className="text-sm text-muted leading-relaxed">{error}</p>
+                </div>
+                <button
+                    onClick={loadEngagementData}
+                    className="w-full bg-accent hover:bg-accent/90 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-accent/25 hover:shadow-accent/40 active:scale-[0.98] transition-all cursor-pointer inline-flex items-center justify-center gap-2"
+                >
+                    <RefreshCw className="w-4 h-4" /> Retry Connection
+                </button>
+            </div>
+        );
+    }
+
+    // Render empty state if no courses exist
+    if (courses.length === 0) {
+        return (
+            <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[var(--glass-border)] pb-6">
+                    <div>
+                        <h2 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-accent via-foreground to-violet drop-shadow-md tracking-tight">
+                            Student Engagement Analytics
+                        </h2>
+                        <p className="text-muted text-sm mt-1">
+                            AI-generated focus tracking, class response indices, and behavioral alerts.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="glass-card max-w-2xl mx-auto my-12 p-10 border border-[var(--glass-border)] text-center space-y-8 relative overflow-hidden group">
+                    <div className="absolute -right-24 -top-24 w-48 h-48 rounded-full bg-accent/5 blur-3xl group-hover:bg-accent/10 transition-all duration-700"></div>
+                    <div className="absolute -left-24 -bottom-24 w-48 h-48 rounded-full bg-violet/5 blur-3xl group-hover:bg-violet/10 transition-all duration-700"></div>
+
+                    <div className="w-20 h-20 bg-accent/10 text-accent rounded-3xl flex items-center justify-center mx-auto shadow-lg relative">
+                        <div className="absolute inset-0 bg-accent/10 rounded-3xl animate-ping opacity-40"></div>
+                        <Activity className="w-10 h-10 animate-pulse" />
+                    </div>
+                    <div className="space-y-3 max-w-md mx-auto">
+                        <h3 className="text-2xl font-black text-foreground tracking-tight">No Engagement Data Found</h3>
+                        <p className="text-sm text-muted leading-relaxed">
+                            We couldn&apos;t find any active lecture sessions or attendance records for your account. Engagement metrics and AI-driven focus tracking will automatically populate once your classes are recorded.
+                        </p>
+                    </div>
+                    <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center max-w-sm mx-auto">
+                        <a
+                            href="/dashboard/teacher"
+                            className="w-full bg-accent hover:bg-accent/90 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-accent/25 hover:shadow-accent/40 active:scale-[0.98] transition-all cursor-pointer inline-flex items-center justify-center gap-2 text-sm"
+                        >
+                            <Calendar className="w-4 h-4" /> Go to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const activeLineData = selectedCourse ? (lineChartData[selectedCourse] || []) : [];
+    const activeScatterData = selectedCourse ? (scatterChartData[selectedCourse] || []) : [];
+    const activeAlertStudents = selectedCourse ? (alertStudentsData[selectedCourse] || []) : [];
+
+    // Helper to map SVG coordinates safely
     const getSvgLinePoints = () => {
         const width = 400;
         const height = 150;
@@ -149,7 +179,8 @@ export default function EngagementPage() {
         const paddingTop = 20;
 
         return activeLineData.map((d, index) => {
-            const x = paddingLeft + (index * (width / (activeLineData.length - 1)));
+            const denom = Math.max(1, activeLineData.length - 1);
+            const x = paddingLeft + (index * (width / denom));
             const y = paddingTop + height - (d.percentage / 100) * height;
             return { x, y, ...d };
         });
@@ -157,7 +188,7 @@ export default function EngagementPage() {
 
     const linePoints = getSvgLinePoints();
 
-    // Generate SVG path description for bezier line
+    // Generate SVG path description for bezier line safely
     const getBezierPath = () => {
         if (linePoints.length === 0) return "";
         let path = `M ${linePoints[0].x} ${linePoints[0].y}`;
@@ -173,20 +204,24 @@ export default function EngagementPage() {
         return path;
     };
 
-    // Generate area path for the gradient fill
+    // Generate area path for the gradient fill safely
     const getAreaPath = () => {
         if (linePoints.length === 0) return "";
         const linePath = getBezierPath();
         const first = linePoints[0];
         const last = linePoints[linePoints.length - 1];
         const floorY = 170; // Bottom of SVG area
-        return `${linePath} L ${last.x} ${floorY} L ${first.x} floorY Z`.replace("floorY", floorY.toString());
+        return `${linePath} L ${last.x} ${floorY} L ${first.x} ${floorY} Z`;
     };
 
-    // Calculate aggregated course metrics dynamically
-    const avgAttention = Math.round(activeLineData.reduce((acc, curr) => acc + curr.percentage, 0) / activeLineData.length);
+    // Calculate aggregated course metrics dynamically with empty guards
+    const avgAttention = activeLineData.length > 0
+        ? Math.round(activeLineData.reduce((acc, curr) => acc + curr.percentage, 0) / activeLineData.length)
+        : 0;
     const lowEngagementCount = activeScatterData.filter(s => s.status === "low").length;
-    const highEngagementRatio = Math.round((activeScatterData.filter(s => s.status === "high").length / activeScatterData.length) * 100);
+    const highEngagementRatio = activeScatterData.length > 0
+        ? Math.round((activeScatterData.filter(s => s.status === "high").length / activeScatterData.length) * 100)
+        : 0;
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
@@ -258,7 +293,7 @@ export default function EngagementPage() {
                         </div>
                         <div className="flex justify-between text-[10px] text-muted font-medium">
                             <span>Sufficient Focus</span>
-                            <span className="text-accent flex items-center gap-0.5"><TrendingUp className="w-3 h-3" /> +2.4% vs last wk</span>
+                            <span className="text-accent flex items-center gap-0.5"><TrendingUp className="w-3 h-3" /> Live aggregate</span>
                         </div>
                     </div>
                 </div>
@@ -333,95 +368,104 @@ export default function EngagementPage() {
                             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                                 <Activity className="w-5 h-5 text-accent" /> Attention Span Trend
                             </h3>
-                            <p className="text-xs text-muted mt-0.5">Average focus minutes per 50min lecture</p>
+                            <p className="text-xs text-muted mt-0.5">Average focus minutes per lecture session</p>
                         </div>
                         <span className="text-[10px] text-accent font-semibold px-2 py-1 bg-accent/15 border border-accent/30 rounded-lg">LIVE METRICS</span>
                     </div>
 
                     <div className="relative h-64 w-full flex items-center justify-center">
-                        <svg className="w-full h-full" viewBox="0 0 460 200" preserveAspectRatio="none">
-                            {/* Gradients */}
-                            <defs>
-                                <linearGradient id="line-grad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.3" />
-                                    <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0.0" />
-                                </linearGradient>
-                            </defs>
-
-                            {/* Grid Lines */}
-                            <line x1="40" y1="20" x2="440" y2="20" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="4" />
-                            <line x1="40" y1="70" x2="440" y2="70" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="4" />
-                            <line x1="40" y1="120" x2="440" y2="120" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="4" />
-                            <line x1="40" y1="170" x2="440" y2="170" stroke="var(--glass-border)" strokeWidth="2" />
-
-                            {/* Left Y Axis Labels */}
-                            <text x="12" y="24" fill="var(--color-muted)" fontSize="9" fontWeight="bold">100%</text>
-                            <text x="16" y="74" fill="var(--color-muted)" fontSize="9" fontWeight="bold">75%</text>
-                            <text x="16" y="124" fill="var(--color-muted)" fontSize="9" fontWeight="bold">50%</text>
-                            <text x="16" y="174" fill="var(--color-muted)" fontSize="9" fontWeight="bold">0%</text>
-
-                            {/* Area Path */}
-                            <path d={getAreaPath()} fill="url(#line-grad)" className="transition-all duration-500" />
-
-                            {/* Smooth Line Path */}
-                            <path
-                                d={getBezierPath()}
-                                fill="none"
-                                stroke="var(--color-accent)"
-                                strokeWidth="3"
-                                strokeLinecap="round"
-                                className="transition-all duration-500"
-                            />
-
-                            {/* X Axis Labels & Data Point Circles */}
-                            {linePoints.map((pt, i) => (
-                                <g key={i}>
-                                    {/* X label */}
-                                    <text x={pt.x} y="192" fill="var(--color-muted)" fontSize="9" fontWeight="bold" textAnchor="middle">
-                                        {pt.label}
-                                    </text>
-
-                                    {/* Vertical line indicator on hover */}
-                                    {hoveredLinePoint === i && (
-                                        <line x1={pt.x} y1="20" x2={pt.x} y2="170" stroke="var(--color-accent)" strokeWidth="1.5" strokeDasharray="3" />
-                                    )}
-
-                                    {/* Active data circle */}
-                                    <circle
-                                        cx={pt.x}
-                                        cy={pt.y}
-                                        r={hoveredLinePoint === i ? 6 : 4.5}
-                                        fill={hoveredLinePoint === i ? "#fff" : "var(--color-accent)"}
-                                        stroke="var(--color-accent)"
-                                        strokeWidth={hoveredLinePoint === i ? 3 : 1.5}
-                                        className="cursor-pointer transition-all duration-200"
-                                        onMouseEnter={() => setHoveredLinePoint(i)}
-                                        onMouseLeave={() => setHoveredLinePoint(null)}
-                                    />
-                                </g>
-                            ))}
-                        </svg>
-
-                        {/* Interactive floating html tooltip */}
-                        {hoveredLinePoint !== null && linePoints[hoveredLinePoint] && (
-                            <div 
-                                className="absolute bg-slate-950/95 backdrop-blur-md border border-[var(--glass-border)] text-white px-3 py-2 rounded-lg text-xs shadow-2xl pointer-events-none z-20 flex flex-col gap-1 transition-all duration-150"
-                                style={{
-                                    left: `${(linePoints[hoveredLinePoint].x / 460) * 100}%`,
-                                    top: `${(linePoints[hoveredLinePoint].y / 200) * 100 - 32}%`,
-                                    transform: "translate(-50%, -100%)"
-                                }}
-                            >
-                                <span className="font-extrabold text-accent text-[10px] tracking-widest uppercase">
-                                    {linePoints[hoveredLinePoint].label} Focus
-                                </span>
-                                <span className="font-bold text-foreground">
-                                    {linePoints[hoveredLinePoint].percentage}% Avg Attention
-                                </span>
-                                <span className="text-muted text-[10px]">
-                                    ({linePoints[hoveredLinePoint].value} Focus Minutes)
-                                </span>
+                        {activeLineData.length === 0 ? (
+                            <div className="text-center text-muted text-xs flex flex-col items-center gap-2 py-10">
+                                <Activity className="w-8 h-8 opacity-40 animate-pulse" />
+                                No lecture sessions recorded for this course.
                             </div>
+                        ) : (
+                            <>
+                                <svg className="w-full h-full" viewBox="0 0 460 200" preserveAspectRatio="none">
+                                    {/* Gradients */}
+                                    <defs>
+                                        <linearGradient id="line-grad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.3" />
+                                            <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0.0" />
+                                        </linearGradient>
+                                    </defs>
+
+                                    {/* Grid Lines */}
+                                    <line x1="40" y1="20" x2="440" y2="20" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="4" />
+                                    <line x1="40" y1="70" x2="440" y2="70" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="4" />
+                                    <line x1="40" y1="120" x2="440" y2="120" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="4" />
+                                    <line x1="40" y1="170" x2="440" y2="170" stroke="var(--glass-border)" strokeWidth="2" />
+
+                                    {/* Left Y Axis Labels */}
+                                    <text x="12" y="24" fill="var(--color-muted)" fontSize="9" fontWeight="bold">100%</text>
+                                    <text x="16" y="74" fill="var(--color-muted)" fontSize="9" fontWeight="bold">75%</text>
+                                    <text x="16" y="124" fill="var(--color-muted)" fontSize="9" fontWeight="bold">50%</text>
+                                    <text x="16" y="174" fill="var(--color-muted)" fontSize="9" fontWeight="bold">0%</text>
+
+                                    {/* Area Path */}
+                                    <path d={getAreaPath()} fill="url(#line-grad)" className="transition-all duration-500" />
+
+                                    {/* Smooth Line Path */}
+                                    <path
+                                        d={getBezierPath()}
+                                        fill="none"
+                                        stroke="var(--color-accent)"
+                                        strokeWidth="3"
+                                        strokeLinecap="round"
+                                        className="transition-all duration-500"
+                                    />
+
+                                    {/* X Axis Labels & Data Point Circles */}
+                                    {linePoints.map((pt, i) => (
+                                        <g key={i}>
+                                            {/* X label */}
+                                            <text x={pt.x} y="192" fill="var(--color-muted)" fontSize="9" fontWeight="bold" textAnchor="middle">
+                                                {pt.label}
+                                            </text>
+
+                                            {/* Vertical line indicator on hover */}
+                                            {hoveredLinePoint === i && (
+                                                <line x1={pt.x} y1="20" x2={pt.x} y2="170" stroke="var(--color-accent)" strokeWidth="1.5" strokeDasharray="3" />
+                                            )}
+
+                                            {/* Active data circle */}
+                                            <circle
+                                                cx={pt.x}
+                                                cy={pt.y}
+                                                r={hoveredLinePoint === i ? 6 : 4.5}
+                                                fill={hoveredLinePoint === i ? "#fff" : "var(--color-accent)"}
+                                                stroke="var(--color-accent)"
+                                                strokeWidth={hoveredLinePoint === i ? 3 : 1.5}
+                                                className="cursor-pointer transition-all duration-200"
+                                                onMouseEnter={() => setHoveredLinePoint(i)}
+                                                onMouseLeave={() => setHoveredLinePoint(null)}
+                                            />
+                                        </g>
+                                    ))}
+                                </svg>
+
+                                {/* Interactive floating html tooltip */}
+                                {hoveredLinePoint !== null && linePoints[hoveredLinePoint] && (
+                                    <div 
+                                        className="absolute bg-slate-950/95 backdrop-blur-md border border-[var(--glass-border)] text-white px-3 py-2 rounded-lg text-xs shadow-2xl pointer-events-none z-20 flex flex-col gap-1 transition-all duration-150"
+                                        style={{
+                                            left: `${(linePoints[hoveredLinePoint].x / 460) * 100}%`,
+                                            top: `${(linePoints[hoveredLinePoint].y / 200) * 100 - 32}%`,
+                                            transform: "translate(-50%, -100%)"
+                                        }}
+                                    >
+                                        <span className="font-extrabold text-accent text-[10px] tracking-widest uppercase">
+                                            {linePoints[hoveredLinePoint].label} Focus
+                                        </span>
+                                        <span className="font-bold text-foreground">
+                                            {linePoints[hoveredLinePoint].percentage}% Avg Attention
+                                        </span>
+                                        <span className="text-muted text-[10px]">
+                                            ({linePoints[hoveredLinePoint].value} Focus Minutes)
+                                        </span>
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
@@ -445,100 +489,109 @@ export default function EngagementPage() {
                     </div>
 
                     <div className="relative h-64 w-full flex items-center justify-center">
-                        <svg className="w-full h-full" viewBox="0 0 460 200" preserveAspectRatio="none">
-                            {/* Grid Gridlines */}
-                            <line x1="40" y1="20" x2="440" y2="20" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
-                            <line x1="40" y1="70" x2="440" y2="70" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
-                            <line x1="40" y1="120" x2="440" y2="120" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
-                            <line x1="40" y1="170" x2="440" y2="170" stroke="var(--glass-border)" strokeWidth="2" />
-                            
-                            {/* Vertical grids */}
-                            <line x1="140" y1="20" x2="140" y2="170" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
-                            <line x1="240" y1="20" x2="240" y2="170" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
-                            <line x1="340" y1="20" x2="340" y2="170" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
-                            <line x1="440" y1="20" x2="440" y2="170" stroke="var(--glass-border)" strokeWidth="2" />
+                        {activeScatterData.length === 0 ? (
+                            <div className="text-center text-muted text-xs flex flex-col items-center gap-2 py-10">
+                                <Users className="w-8 h-8 opacity-40 animate-pulse" />
+                                No students enrolled or tracked in this course.
+                            </div>
+                        ) : (
+                            <>
+                                <svg className="w-full h-full" viewBox="0 0 460 200" preserveAspectRatio="none">
+                                    {/* Grid Gridlines */}
+                                    <line x1="40" y1="20" x2="440" y2="20" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
+                                    <line x1="40" y1="70" x2="440" y2="70" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
+                                    <line x1="40" y1="120" x2="440" y2="120" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
+                                    <line x1="40" y1="170" x2="440" y2="170" stroke="var(--glass-border)" strokeWidth="2" />
+                                    
+                                    {/* Vertical grids */}
+                                    <line x1="140" y1="20" x2="140" y2="170" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
+                                    <line x1="240" y1="20" x2="240" y2="170" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
+                                    <line x1="340" y1="20" x2="340" y2="170" stroke="var(--glass-border)" strokeWidth="1" strokeDasharray="3" />
+                                    <line x1="440" y1="20" x2="440" y2="170" stroke="var(--glass-border)" strokeWidth="2" />
 
-                            {/* Axis Labels */}
-                            <text x="12" y="24" fill="var(--color-muted)" fontSize="9" fontWeight="bold">100%</text>
-                            <text x="16" y="94" fill="var(--color-muted)" fontSize="9" fontWeight="bold">50%</text>
-                            <text x="16" y="174" fill="var(--color-muted)" fontSize="9" fontWeight="bold">0%</text>
+                                    {/* Axis Labels */}
+                                    <text x="12" y="24" fill="var(--color-muted)" fontSize="9" fontWeight="bold">100%</text>
+                                    <text x="16" y="94" fill="var(--color-muted)" fontSize="9" fontWeight="bold">50%</text>
+                                    <text x="16" y="174" fill="var(--color-muted)" fontSize="9" fontWeight="bold">0%</text>
 
-                            <text x="40" y="186" fill="var(--color-muted)" fontSize="9" fontWeight="bold" textAnchor="middle">0%</text>
-                            <text x="240" y="186" fill="var(--color-muted)" fontSize="9" fontWeight="bold" textAnchor="middle">50% Att.</text>
-                            <text x="440" y="186" fill="var(--color-muted)" fontSize="9" fontWeight="bold" textAnchor="middle">100%</text>
+                                    <text x="40" y="186" fill="var(--color-muted)" fontSize="9" fontWeight="bold" textAnchor="middle">0%</text>
+                                    <text x="240" y="186" fill="var(--color-muted)" fontSize="9" fontWeight="bold" textAnchor="middle">50% Att.</text>
+                                    <text x="440" y="186" fill="var(--color-muted)" fontSize="9" fontWeight="bold" textAnchor="middle">100%</text>
 
-                            {/* Map scatter points */}
-                            {activeScatterData.map((pt, i) => {
-                                // Maps 0-100% to range x=(40, 440), y=(20, 170) (inverted y)
-                                const x = 40 + (pt.attendance / 100) * 400;
-                                const y = 170 - (pt.participation / 100) * 150;
+                                    {/* Map scatter points */}
+                                    {activeScatterData.map((pt, i) => {
+                                        // Maps 0-100% to range x=(40, 440), y=(20, 170) (inverted y)
+                                        const x = 40 + (pt.attendance / 100) * 400;
+                                        const y = 170 - (pt.participation / 100) * 150;
 
-                                let nodeColor = "var(--color-accent)"; // fallback
-                                if (pt.status === "high") nodeColor = "#10b981"; // Emerald
-                                if (pt.status === "medium") nodeColor = "#f59e0b"; // Yellow/Amber
-                                if (pt.status === "low") nodeColor = "#ef4444"; // Red
+                                        let nodeColor = "var(--color-accent)"; // fallback
+                                        if (pt.status === "high") nodeColor = "#10b981"; // Emerald
+                                        if (pt.status === "medium") nodeColor = "#f59e0b"; // Yellow/Amber
+                                        if (pt.status === "low") nodeColor = "#ef4444"; // Red
 
-                                return (
-                                    <g key={i}>
-                                        {/* Background aura ring for hovered node */}
-                                        {hoveredScatterPoint === i && (
-                                            <circle cx={x} cy={y} r={12} fill={nodeColor} opacity="0.25" className="animate-ping" />
-                                        )}
-                                        {/* Main scatter point */}
-                                        <circle
-                                            cx={x}
-                                            cy={y}
-                                            r={hoveredScatterPoint === i ? 7 : 5.5}
-                                            fill={nodeColor}
-                                            stroke="var(--glass-bg)"
-                                            strokeWidth={hoveredScatterPoint === i ? 2.5 : 1.5}
-                                            className="cursor-pointer hover:scale-125 transition-transform duration-150"
-                                            onMouseEnter={() => setHoveredScatterPoint(i)}
-                                            onMouseLeave={() => setHoveredScatterPoint(null)}
-                                        />
-                                    </g>
-                                );
-                            })}
-                        </svg>
+                                        return (
+                                            <g key={i}>
+                                                {/* Background aura ring for hovered node */}
+                                                {hoveredScatterPoint === i && (
+                                                    <circle cx={x} cy={y} r={12} fill={nodeColor} opacity="0.25" className="animate-ping" />
+                                                )}
+                                                {/* Main scatter point */}
+                                                <circle
+                                                    cx={x}
+                                                    cy={y}
+                                                    r={hoveredScatterPoint === i ? 7 : 5.5}
+                                                    fill={nodeColor}
+                                                    stroke="var(--glass-bg)"
+                                                    strokeWidth={hoveredScatterPoint === i ? 2.5 : 1.5}
+                                                    className="cursor-pointer hover:scale-125 transition-transform duration-150"
+                                                    onMouseEnter={() => setHoveredScatterPoint(i)}
+                                                    onMouseLeave={() => setHoveredScatterPoint(null)}
+                                                />
+                                            </g>
+                                        );
+                                    })}
+                                </svg>
 
-                        {/* Interactive floating scatter tooltip */}
-                        {hoveredScatterPoint !== null && activeScatterData[hoveredScatterPoint] && (
-                            (() => {
-                                const pt = activeScatterData[hoveredScatterPoint];
-                                const x = 40 + (pt.attendance / 100) * 400;
-                                const y = 170 - (pt.participation / 100) * 150;
+                                {/* Interactive floating scatter tooltip */}
+                                {hoveredScatterPoint !== null && activeScatterData[hoveredScatterPoint] && (
+                                    (() => {
+                                        const pt = activeScatterData[hoveredScatterPoint];
+                                        const x = 40 + (pt.attendance / 100) * 400;
+                                        const y = 170 - (pt.participation / 100) * 150;
 
-                                return (
-                                    <div 
-                                        className="absolute bg-slate-950/95 backdrop-blur-md border border-[var(--glass-border)] text-white px-3.5 py-2.5 rounded-xl text-xs shadow-2xl pointer-events-none z-20 flex flex-col gap-1 min-w-[150px] transition-all duration-150"
-                                        style={{
-                                            left: `${(x / 460) * 100}%`,
-                                            top: `${(y / 200) * 100 - 32}%`,
-                                            transform: "translate(-50%, -100%)"
-                                        }}
-                                    >
-                                        <span className="font-extrabold text-foreground text-sm border-b border-[var(--glass-border)] pb-1 mb-1">{pt.name}</span>
-                                        <div className="flex justify-between text-[11px]">
-                                            <span className="text-muted">Attendance:</span>
-                                            <span className="font-bold text-violet-300">{pt.attendance}%</span>
-                                        </div>
-                                        <div className="flex justify-between text-[11px]">
-                                            <span className="text-muted">Participation:</span>
-                                            <span className="font-bold text-accent">{pt.participation}%</span>
-                                        </div>
-                                        <div className="mt-1 flex items-center gap-1.5">
-                                            <span className={`w-1.5 h-1.5 rounded-full ${
-                                                pt.status === "high" ? "bg-emerald-400" : pt.status === "medium" ? "bg-yellow-400" : "bg-red-400"
-                                            }`}></span>
-                                            <span className={`text-[10px] font-extrabold uppercase ${
-                                                pt.status === "high" ? "text-emerald-400" : pt.status === "medium" ? "text-yellow-400" : "text-red-400"
-                                            }`}>
-                                                {pt.status} engagement
-                                            </span>
-                                        </div>
-                                    </div>
-                                );
-                            })()
+                                        return (
+                                            <div 
+                                                className="absolute bg-slate-950/95 backdrop-blur-md border border-[var(--glass-border)] text-white px-3.5 py-2.5 rounded-xl text-xs shadow-2xl pointer-events-none z-20 flex flex-col gap-1 min-w-[150px] transition-all duration-150"
+                                                style={{
+                                                    left: `${(x / 460) * 100}%`,
+                                                    top: `${(y / 200) * 100 - 32}%`,
+                                                    transform: "translate(-50%, -100%)"
+                                                }}
+                                            >
+                                                <span className="font-extrabold text-foreground text-sm border-b border-[var(--glass-border)] pb-1 mb-1">{pt.name}</span>
+                                                <div className="flex justify-between text-[11px]">
+                                                    <span className="text-muted">Attendance:</span>
+                                                    <span className="font-bold text-violet-300">{pt.attendance}%</span>
+                                                </div>
+                                                <div className="flex justify-between text-[11px]">
+                                                    <span className="text-muted">Participation:</span>
+                                                    <span className="font-bold text-accent">{pt.participation}%</span>
+                                                </div>
+                                                <div className="mt-1 flex items-center gap-1.5">
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${
+                                                        pt.status === "high" ? "bg-emerald-400" : pt.status === "medium" ? "bg-yellow-400" : "bg-red-400"
+                                                    }`}></span>
+                                                    <span className={`text-[10px] font-extrabold uppercase ${
+                                                        pt.status === "high" ? "text-emerald-400" : pt.status === "medium" ? "text-yellow-400" : "text-red-400"
+                                                    }`}>
+                                                        {pt.status} engagement
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()
+                                )}
+                            </>
                         )}
                     </div>
                 </div>

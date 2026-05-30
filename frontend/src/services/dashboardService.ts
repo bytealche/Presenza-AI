@@ -38,3 +38,15 @@ export const getStudentStats = async (): Promise<StudentStats> => {
     const res = await api.get<StudentStats>("/analytics/student/stats");
     return res.data;
 };
+
+export interface EngagementData {
+    courses: { id: string; name: string }[];
+    line_chart_data: Record<string, { label: string; value: number; percentage: number }[]>;
+    scatter_chart_data: Record<string, { name: string; attendance: number; participation: number; status: "high" | "medium" | "low" }[]>;
+    alert_students: Record<string, { id: number; name: string; avatar: string; attendance: number; attention: number; status: "critical" | "warning"; trend: "up" | "down" | "stable"; sparkline: number[] }[]>;
+}
+
+export const getEngagementAnalytics = async (): Promise<EngagementData> => {
+    const res = await api.get<EngagementData>("/analytics/engagement");
+    return res.data;
+};
