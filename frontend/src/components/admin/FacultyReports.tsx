@@ -177,10 +177,15 @@ export default function FacultyReports() {
                                         </div>
                                     </td>
                                     <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                                        <span className={`px-2 py-1 text-xs rounded-full font-medium ${record.status === 'Present'
-                                                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                                                : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                            }`}>
+                                        <span className={`px-2 py-1 text-xs rounded-full font-medium border uppercase tracking-wider text-[10px] ${
+                                            record.status?.toLowerCase() === 'present'
+                                                ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                                : record.status?.toLowerCase() === 'late'
+                                                ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                                                : record.status?.toLowerCase() === 'fraud'
+                                                ? 'bg-red-500/20 text-red-500 border-red-500/30 font-bold shadow-[0_0_10px_rgba(239,68,68,0.1)] animate-pulse'
+                                                : 'bg-red-500/20 text-red-400 border-red-500/30'
+                                        }`}>
                                             {record.status}
                                         </span>
                                     </td>

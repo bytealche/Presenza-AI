@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getSessions, getSessionAttendance, Session, AttendanceRecord } from "@/services/sessionService";
 import { getStudentAttendance } from "@/services/attendanceService";
@@ -12,6 +13,7 @@ import {
 
 export default function AttendancePage() {
     const { user } = useAuth();
+    const router = useRouter();
     const [sessions, setSessions] = useState<Session[]>([]);
     const [selectedSession, setSelectedSession] = useState<number | null>(null);
     const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
@@ -22,6 +24,12 @@ export default function AttendancePage() {
     const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [selectedDateInput, setSelectedDateInput] = useState<string>("");
+
+    useEffect(() => {
+        if (user && user.role_id === 1) {
+            router.push("/dashboard/admin");
+        }
+    }, [user, router]);
 
     // ── Local Status Overrides ──────────────────────────────────────────────
     const [overriddenStatuses, setOverriddenStatuses] = useState<Record<string, string>>({});

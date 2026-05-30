@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { getStudentStats, StudentStats } from "@/services/dashboardService";
 import { getSessions, Session } from "@/services/sessionService";
+import { getMyEnrollments } from "@/services/enrollmentService";
 import { Clock, MapPin, Video, LogIn, Calendar, X, Loader2, VideoOff } from "lucide-react";
 import Portal from "@/components/Portal";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,12 +26,17 @@ export default function StudentDashboard() {
 
     async function loadData() {
         try {
-            const [statsData, classesData] = await Promise.all([
+            const [statsData, classesData, enrollmentsData] = await Promise.all([
                 getStudentStats(),
-                getSessions()
+                getSessions(),
+                getMyEnrollments()
             ]);
+
+            const enrolledSessionIds = new Set(enrollmentsData.map(e => e.session_id));
+            const filteredClasses = classesData.filter(cls => enrolledSessionIds.has(cls.session_id));
+
             setStats(statsData);
-            setClasses(classesData);
+            setClasses(filteredClasses);
         } catch (error) {
             console.error("Failed to load student dashboard data", error);
         } finally {

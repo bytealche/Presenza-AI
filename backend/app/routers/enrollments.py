@@ -18,12 +18,20 @@ router = APIRouter(
 @router.post(
     "/",
     response_model=EnrollmentResponse,
-    dependencies=[Depends(require_roles([2]))]  # teacher
+    dependencies=[Depends(require_roles([2, 3]))]  # teacher + student
 )
 async def enroll_student(
     data: EnrollmentCreate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
+    # Security check: if student, they can only enroll themselves
+    if current_user.role_id == 3 and data.user_id != current_user.user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Students can only enroll themselves"
+        )
+
     try:
         enrollment = Enrollment(
             session_id=data.session_id,
