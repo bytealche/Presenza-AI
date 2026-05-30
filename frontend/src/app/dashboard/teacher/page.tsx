@@ -93,8 +93,20 @@ export default function TeacherDashboard() {
             }
         } catch (error: any) {
             console.error("Failed to create class", error);
-            const msg = error.response?.data?.detail || "Failed to create class. Please check fields.";
-            alert(`Error: ${msg}`);
+            let msg = "Failed to create class. Please check fields.";
+            if (error.response?.data?.detail) {
+                if (Array.isArray(error.response.data.detail)) {
+                    msg = error.response.data.detail
+                        .map((err: any) => {
+                            const field = err.loc ? err.loc[err.loc.length - 1] : "field";
+                            return `${field.replace("_", " ")}: ${err.msg}`;
+                        })
+                        .join("\n");
+                } else if (typeof error.response.data.detail === "string") {
+                    msg = error.response.data.detail;
+                }
+            }
+            alert(`Error:\n${msg}`);
         } finally {
             setCreating(false);
         }
@@ -110,8 +122,20 @@ export default function TeacherDashboard() {
             setNewSubject({ subject_name: "", description: "" });
         } catch (error: any) {
             console.error("Failed to request subject", error);
-            const msg = error.response?.data?.detail || "Failed to submit request.";
-            alert(`Error: ${msg}`);
+            let msg = "Failed to submit request.";
+            if (error.response?.data?.detail) {
+                if (Array.isArray(error.response.data.detail)) {
+                    msg = error.response.data.detail
+                        .map((err: any) => {
+                            const field = err.loc ? err.loc[err.loc.length - 1] : "field";
+                            return `${field.replace("_", " ")}: ${err.msg}`;
+                        })
+                        .join("\n");
+                } else if (typeof error.response.data.detail === "string") {
+                    msg = error.response.data.detail;
+                }
+            }
+            alert(`Error:\n${msg}`);
         } finally {
             setRequestingSubject(false);
         }
@@ -137,8 +161,20 @@ export default function TeacherDashboard() {
             setLinkingCameraId("");
         } catch (error: any) {
             console.error("Failed to link camera", error);
-            const msg = error.response?.data?.detail || "Failed to link camera to class.";
-            alert(`Error: ${msg}`);
+            let msg = "Failed to link camera to class.";
+            if (error.response?.data?.detail) {
+                if (Array.isArray(error.response.data.detail)) {
+                    msg = error.response.data.detail
+                        .map((err: any) => {
+                            const field = err.loc ? err.loc[err.loc.length - 1] : "field";
+                            return `${field.replace("_", " ")}: ${err.msg}`;
+                        })
+                        .join("\n");
+                } else if (typeof error.response.data.detail === "string") {
+                    msg = error.response.data.detail;
+                }
+            }
+            alert(`Error:\n${msg}`);
         } finally {
             setLinking(false);
         }
