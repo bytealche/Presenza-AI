@@ -312,7 +312,7 @@ export default function TeacherDashboard() {
                                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                                     <form onSubmit={handleCreateClass} className="space-y-6">
                                         <div>
-                                            <label className="block text-sm font-medium text-muted-bright mb-2">Class Name</label>
+                                            <label className="block text-sm font-medium text-muted-bright mb-2">Subject Name</label>
                                             <input
                                                 type="text"
                                                 required
