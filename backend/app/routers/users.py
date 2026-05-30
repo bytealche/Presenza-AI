@@ -340,12 +340,9 @@ async def register_video_profile(
 async def list_users(
     role_id: int = None,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user) # Assuming imported
+    current_user: User = Depends(get_current_user)
 ):
-    # Only Admin
-    if current_user.role_id != 1:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
+    # Allowed for all roles (Admin, Teacher, Student) but strictly scoped to their organization
     stmt = select(User).where(User.org_id == current_user.org_id)
     if role_id:
         stmt = stmt.where(User.role_id == role_id)
