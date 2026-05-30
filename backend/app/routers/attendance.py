@@ -107,18 +107,7 @@ async def get_session_attendance(
     )
     results = result.all()
 
-    if not results:
-        # Fallback: if no student is enrolled in Enrollment table, return all active students in the organization with their attendance (if any)
-        result = await db.execute(
-            select(User, Attendance)
-            .select_from(User)
-            .outerjoin(
-                Attendance,
-                (User.user_id == Attendance.user_id) & (Attendance.session_id == session_id)
-            )
-            .where(User.role_id == 3, User.org_id == session.org_id, User.status == "active")
-        )
-        results = result.all()
+
     
     return [
         {
