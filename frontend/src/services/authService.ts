@@ -39,8 +39,8 @@ export const registerWithFace = async (formData: FormData): Promise<any> => {
 
 // --- New Endpoints ---
 
-export const sendOTP = async (email: string) => {
-  const res = await api.post("/auth/send-otp", { email });
+export const sendOTP = async (email: string, checkExists: boolean = false) => {
+  const res = await api.post("/auth/send-otp", { email, check_exists: checkExists });
   return res.data;
 }
 

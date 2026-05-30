@@ -79,7 +79,7 @@ export default function ForgotPasswordPage() {
         setLoading(true);
         setError("");
         try {
-            await sendOTP(email);
+            await sendOTP(email, true);
             setSuccess("OTP sent! Please check your email.");
             setStep(2);
             startCooldown();
@@ -255,7 +255,7 @@ export default function ForgotPasswordPage() {
                                 onClick={async () => {
                                     if (resendCooldown > 0) return;
                                     setLoading(true);
-                                    try { await sendOTP(email); setSuccess("OTP resent!"); startCooldown(); }
+                                    try { await sendOTP(email, true); setSuccess("OTP resent!"); startCooldown(); }
                                     catch (e: any) { setError(e.response?.data?.detail || "Failed to resend."); }
                                     finally { setLoading(false); }
                                 }}

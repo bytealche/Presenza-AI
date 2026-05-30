@@ -88,7 +88,8 @@ export default function CameraPage() {
             loadCameras();
         } catch (error: any) {
             console.error(error);
-            alert("Delete failed! This camera might be linked to an active class session.");
+            const msg = error.response?.data?.detail || "Delete failed! This camera might be linked to an active class session.";
+            alert(msg);
         }
     };
 

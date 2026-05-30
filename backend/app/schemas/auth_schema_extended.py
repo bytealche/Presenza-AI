@@ -3,6 +3,7 @@ from typing import Optional
 
 class OTPRequest(BaseModel):
     email: EmailStr
+    check_exists: Optional[bool] = False
 
 class OrganizationRegisterRequest(BaseModel):
     org_name: str

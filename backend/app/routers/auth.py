@@ -74,6 +74,18 @@ async def send_otp(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
+    # Try to find user name for personalization
+    user_result = await db.execute(select(User).where(User.email == data.email))
+    user = user_result.scalars().first()
+
+    if data.check_exists and not user:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    name = user.full_name if user else "there"
+
     code = generate_otp()
     expires_at = datetime.utcnow() + timedelta(minutes=10)
 
@@ -82,12 +94,6 @@ async def send_otp(
 
     vc = VerificationCode(email=data.email, code=code, expires_at=expires_at)
     db.add(vc)
-    
-    # Try to find user name for personalization
-    user_result = await db.execute(select(User).where(User.email == data.email))
-    user = user_result.scalars().first()
-    name = user.full_name if user else "there"
-
     await db.commit()
 
     subject = "Verify your Presenza AI Account"
