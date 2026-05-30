@@ -30,6 +30,20 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Presenza AI — loading face recognition model...")
     load_model()
     logger.info("AI model loaded successfully.")
+    
+    # Safety: ensure 'is_approved' column exists on 'sessions' table
+    from app.database.database import SessionLocal
+    from sqlalchemy import text
+    try:
+        async with SessionLocal() as db:
+            await db.execute(text("ALTER TABLE sessions ADD COLUMN is_approved BOOLEAN DEFAULT 0"))
+            await db.execute(text("UPDATE sessions SET is_approved = 1"))
+            await db.commit()
+            logger.info("Database safety check: column 'is_approved' successfully verified/created and sessions pre-approved.")
+    except Exception as e:
+        # Ignore errors if column already exists
+        pass
+        
     yield
     logger.info("Shutting down Presenza AI.")
 

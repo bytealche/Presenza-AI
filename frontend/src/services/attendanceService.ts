@@ -19,3 +19,12 @@ export const getAdminAttendance = async () => {
   const res = await api.get("/attendance/view/admin");
   return res.data;
 };
+
+export const saveAttendanceOverrides = async (sessionId: number, overrides: { user_id: number; status: string }[]) => {
+  const res = await api.post("/attendance/save-overrides", {
+    session_id: sessionId,
+    overrides
+  });
+  return res.data;
+};
+

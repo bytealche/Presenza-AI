@@ -3,15 +3,17 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getUsers, updateUserStatus } from "@/services/authService";
-import { User, Check, X, Clock, Shield, BarChart2, Video, Camera } from "lucide-react";
+import { getSessions, approveSession, rejectSession } from "@/services/sessionService";
+import { User, Check, X, Clock, Shield, BarChart2, Video, Camera, BookOpen } from "lucide-react";
 import FacultyReports from "@/components/admin/FacultyReports";
 import ActiveFaceEnrollment from "@/components/admin/ActiveFaceEnrollment";
 
 export default function AdminDashboard() {
     const { user } = useAuth();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<"users" | "reports" | "cameras">("users");
+    const [activeTab, setActiveTab] = useState<"users" | "reports" | "cameras" | "teaching_requests">("users");
     const [users, setUsers] = useState<any[]>([]);
+    const [sessions, setSessions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [enrollUser, setEnrollUser] = useState<{ id: number; name: string } | null>(null);
 
@@ -32,11 +34,42 @@ export default function AdminDashboard() {
         }
     };
 
+    const loadSessionsData = async () => {
+        try {
+            const data = await getSessions();
+            setSessions(data);
+        } catch (error) {
+            console.error("Failed to load sessions", error);
+        }
+    };
+
     useEffect(() => {
         if (user?.role_id === 1) {
             fetchUsers();
+            loadSessionsData();
         }
     }, [user]);
+
+    const handleApproveRequest = async (sessionId: number) => {
+        try {
+            await approveSession(sessionId);
+            await loadSessionsData();
+        } catch (error) {
+            console.error("Failed to approve session", error);
+            alert("Failed to approve teaching request");
+        }
+    };
+
+    const handleRejectRequest = async (sessionId: number) => {
+        if (!confirm("Are you sure you want to reject and remove this teaching request?")) return;
+        try {
+            await rejectSession(sessionId);
+            await loadSessionsData();
+        } catch (error) {
+            console.error("Failed to reject session", error);
+            alert("Failed to reject teaching request");
+        }
+    };
 
     const handleStatusUpdate = async (userId: number, status: string) => {
         try {
@@ -90,6 +123,16 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2">
                         <Video className="w-4 h-4" />
                         Cameras
+                    </div>
+                </button>
+                <button
+                    onClick={() => setActiveTab("teaching_requests")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "teaching_requests" ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-muted hover:text-foreground"
+                        }`}
+                >
+                    <div className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" />
+                        Teaching Requests
                     </div>
                 </button>
             </div>
@@ -225,6 +268,102 @@ export default function AdminDashboard() {
             {activeTab === "reports" && <FacultyReports />}
 
             {activeTab === "cameras" && <ActiveCameras />}
+
+            {activeTab === "teaching_requests" && (
+                <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-xl border border-[var(--glass-border)] overflow-hidden">
+                    <div className="p-6 border-b border-[var(--glass-border)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h2 className="text-xl font-semibold text-foreground">Faculty Teaching Requests</h2>
+                            <p className="text-xs text-muted mt-0.5">Approve or reject subject courses requested by faculty members.</p>
+                        </div>
+                        <button 
+                            onClick={loadSessionsData}
+                            className="text-xs font-bold text-accent bg-accent/10 border border-accent/20 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-all uppercase tracking-wide cursor-pointer"
+                        >
+                            Refresh List
+                        </button>
+                    </div>
+
+                    <div className="overflow-x-auto w-full">
+                        <table className="w-full min-w-[800px] sm:min-w-full">
+                            <thead className="bg-[var(--glass-highlight)]">
+                                <tr className="text-muted uppercase text-[10px] font-extrabold tracking-wider bg-slate-950/20">
+                                    <th className="px-6 py-4 text-left">Subject / Course Name</th>
+                                    <th className="px-6 py-4 text-left">Faculty / Creator</th>
+                                    <th className="px-6 py-4 text-left">Schedule & Time</th>
+                                    <th className="px-6 py-4 text-left">Location</th>
+                                    <th className="px-6 py-4 text-left">Status</th>
+                                    <th className="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[var(--glass-border)]">
+                                {sessions.map((session) => {
+                                    const creatorName = userMap[session.created_by || 0] || "Faculty Professor";
+                                    const isPending = !session.is_approved;
+
+                                    return (
+                                        <tr key={session.session_id} className="hover:bg-[var(--glass-highlight)] transition-colors">
+                                            <td className="px-6 py-4.5 font-bold text-foreground">
+                                                {session.session_name}
+                                            </td>
+                                            <td className="px-6 py-4.5 text-xs text-muted font-semibold">
+                                                {creatorName}
+                                            </td>
+                                            <td className="px-6 py-4.5 text-xs text-muted space-y-1">
+                                                <div className="font-semibold">{new Date(session.start_time).toLocaleDateString()}</div>
+                                                <div className="opacity-80">
+                                                    {new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(session.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4.5 text-xs text-muted font-medium">
+                                                {session.location || "Online Auditorium"}
+                                            </td>
+                                            <td className="px-6 py-4.5">
+                                                {isPending ? (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2.5 py-1 rounded-lg tracking-wide">
+                                                        <Clock className="w-3.5 h-3.5" /> Pending Approval
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-lg tracking-wide">
+                                                        <Check className="w-3.5 h-3.5" /> Approved
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4.5 text-right text-xs font-semibold">
+                                                {isPending ? (
+                                                    <div className="flex gap-2 justify-end">
+                                                        <button
+                                                            onClick={() => handleApproveRequest(session.session_id)}
+                                                            className="px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 border border-green-500/35 hover:bg-green-500/30 hover:border-green-500/50 transition-all font-bold uppercase tracking-wider text-[10px] inline-flex items-center gap-1 cursor-pointer select-none"
+                                                        >
+                                                            <Check className="w-3.5 h-3.5" /> Approve
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRejectRequest(session.session_id)}
+                                                            className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/35 hover:bg-red-500/30 hover:border-red-500/50 transition-all font-bold uppercase tracking-wider text-[10px] inline-flex items-center gap-1 cursor-pointer select-none"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" /> Reject
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted text-xs">No actions required</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                                {sessions.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="px-6 py-12 text-center text-muted">
+                                            No teaching requests registered.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

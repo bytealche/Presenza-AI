@@ -4,11 +4,11 @@ import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getSessions, getSessionAttendance, Session, AttendanceRecord } from "@/services/sessionService";
-import { getStudentAttendance } from "@/services/attendanceService";
+import { getStudentAttendance, saveAttendanceOverrides } from "@/services/attendanceService";
 import { 
     Loader2, Calendar, Search, RefreshCw, ShieldAlert, CheckCircle, 
     Clock, XCircle, AlertTriangle, ChevronDown, Check, UserCheck, 
-    UserMinus, Activity, Sparkles, FileText
+    UserMinus, Activity, Sparkles, FileText, Save
 } from "lucide-react";
 
 export default function AttendancePage() {
@@ -34,6 +34,16 @@ export default function AttendancePage() {
     // ── Local Status Overrides ──────────────────────────────────────────────
     const [overriddenStatuses, setOverriddenStatuses] = useState<Record<string, string>>({});
     const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+    const [isSavingOverrides, setIsSavingOverrides] = useState(false);
+    const [saveStatus, setSaveStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+    useEffect(() => {
+        if (saveStatus) {
+            const t = setTimeout(() => setSaveStatus(null), 4000);
+            return () => clearTimeout(t);
+        }
+    }, [saveStatus]);
+
 
     // ── CSV Export Studio States ─────────────────────────────────────────────
     const [showExportPanel, setShowExportPanel] = useState(false);
@@ -162,6 +172,51 @@ export default function AttendancePage() {
             [recordId]: newStatus
         }));
     };
+
+    const handleSaveOverrides = async () => {
+        if (!selectedSession || Object.keys(overriddenStatuses).length === 0) return;
+        setIsSavingOverrides(true);
+        setSaveStatus(null);
+        try {
+            const overridesList: { user_id: number; status: string }[] = [];
+            
+            Object.entries(overriddenStatuses).forEach(([recordId, newStatus]) => {
+                const matchingRecord = attendance.find(
+                    r => `${r.email}_${r.timestamp}` === recordId
+                );
+                if (matchingRecord) {
+                    overridesList.push({
+                        user_id: matchingRecord.user_id,
+                        status: newStatus
+                    });
+                }
+            });
+
+            if (overridesList.length > 0) {
+                await saveAttendanceOverrides(selectedSession, overridesList);
+                setSaveStatus({ 
+                    type: "success", 
+                    message: `Successfully saved ${overridesList.length} override(s) to the database.` 
+                });
+                setOverriddenStatuses({});
+                await refreshAttendance(selectedSession);
+            } else {
+                setSaveStatus({ 
+                    type: "error", 
+                    message: "Failed to map overrides to active students." 
+                });
+            }
+        } catch (error: any) {
+            console.error("Failed to save overrides", error);
+            setSaveStatus({
+                type: "error",
+                message: error.response?.data?.detail || "An error occurred while saving overrides. Please try again."
+            });
+        } finally {
+            setIsSavingOverrides(false);
+        }
+    };
+
 
     // Dynamic custom Date Picker filter handler (user requested)
     const handleCustomDateSelect = (dateValue: string) => {
@@ -488,6 +543,30 @@ export default function AttendancePage() {
     return (
         <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0 pb-12">
             
+            {/* ── SAVE STATUS NOTIFICATION ── */}
+            {saveStatus && (
+                <div className={`p-4 rounded-xl border flex items-center justify-between shadow-lg transition-all duration-300 animate-in slide-in-from-top-4 ${
+                    saveStatus.type === "success" 
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-emerald-500/5" 
+                        : "bg-red-500/10 border-red-500/30 text-red-400 shadow-red-500/5"
+                }`}>
+                    <div className="flex items-center gap-2.5">
+                        {saveStatus.type === "success" ? (
+                            <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+                        ) : (
+                            <ShieldAlert className="w-5 h-5 text-red-400 shrink-0" />
+                        )}
+                        <span className="text-xs font-semibold">{saveStatus.message}</span>
+                    </div>
+                    <button 
+                        onClick={() => setSaveStatus(null)} 
+                        className="text-muted hover:text-foreground text-xs font-bold uppercase tracking-wider px-2 py-1 cursor-pointer select-none"
+                    >
+                        Dismiss
+                    </button>
+                </div>
+            )}
+            
             {/* ── HEADER ──────────────────────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[var(--glass-border)] pb-6">
                 <div>
@@ -513,6 +592,29 @@ export default function AttendancePage() {
                         >
                             <RefreshCw className="w-3.5 h-3.5" /> Force Sync
                         </button>
+                        
+                        {Object.keys(overriddenStatuses).length > 0 && (
+                            <>
+                                <div className="h-4 w-px bg-[var(--glass-border)] hidden sm:block" />
+                                <button
+                                    onClick={handleSaveOverrides}
+                                    disabled={isSavingOverrides}
+                                    className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 px-3 py-1.5 rounded-xl hover:border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.15)] animate-pulse hover:animate-none disabled:opacity-50 transition-all uppercase tracking-wide cursor-pointer select-none"
+                                >
+                                    {isSavingOverrides ? (
+                                        <>
+                                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                            Saving...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Save className="w-3.5 h-3.5" />
+                                            Save Overrides ({Object.keys(overriddenStatuses).length})
+                                        </>
+                                    )}
+                                </button>
+                            </>
+                        )}
                         
                         <div className="h-4 w-px bg-[var(--glass-border)] hidden sm:block" />
 

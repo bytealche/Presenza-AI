@@ -32,7 +32,8 @@ async def create_session(
         start_time=data.start_time,
         end_time=data.end_time,
         location=data.location,
-        class_type=data.class_type
+        class_type=data.class_type,
+        is_approved=(current_user.role_id == 1)  # Automatically approved if created by Admin
     )
 
     db.add(new_session)
@@ -64,8 +65,48 @@ async def list_sessions(
     # For now, let's return all sessions for the org so they can see schedule
     # Or strict: db.query(SessionModel).join(Enrollment).filter(Enrollment.user_id == current_user.user_id).all()
     if current_user.role_id == 3:
-        # Simple: All sessions in org (Public Schedule)
-         result = await db.execute(select(SessionModel).where(SessionModel.org_id == current_user.org_id))
-         return result.scalars().all()
+        # Students: Only see APPROVED sessions in their organization
+        result = await db.execute(
+            select(SessionModel).where(
+                SessionModel.org_id == current_user.org_id,
+                SessionModel.is_approved == True
+            )
+        )
+        return result.scalars().all()
     
     return []
+
+@router.post(
+    "/{session_id}/approve",
+    dependencies=[Depends(require_roles([1]))]  # Admin only
+)
+async def approve_session(
+    session_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(SessionModel).where(SessionModel.session_id == session_id))
+    session = result.scalars().first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    session.is_approved = True
+    await db.commit()
+    return {"message": "Session approved successfully"}
+
+@router.post(
+    "/{session_id}/reject",
+    dependencies=[Depends(require_roles([1]))]  # Admin only
+)
+async def reject_session(
+    session_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(SessionModel).where(SessionModel.session_id == session_id))
+    session = result.scalars().first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    await db.delete(session)
+    await db.commit()
+    return {"message": "Session rejected and removed successfully"}
+

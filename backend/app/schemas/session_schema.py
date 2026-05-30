@@ -20,6 +20,7 @@ class SessionResponse(BaseModel):
     camera_id: Optional[int] = None
     created_by: Optional[int] = None
     class_type: Optional[str] = "online"
+    is_approved: Optional[bool] = False
 
     class Config:
         from_attributes = True

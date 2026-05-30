@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database.base import Base
@@ -16,6 +16,7 @@ class Session(Base):
     end_time = Column(DateTime)
     location = Column(String(255))
     class_type = Column(String(50), default="online", nullable=True)
+    is_approved = Column(Boolean, default=False, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow)
 

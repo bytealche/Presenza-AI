@@ -110,8 +110,16 @@ export default function TeacherDashboard() {
                     <div className="border"></div>
                     <div className="icons">
                         <div className="logo text-white font-bold text-sm">
-                            {isLive && <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse mr-2 inline-block"></span>}
-                            {isEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
+                            {cls.is_approved === false ? (
+                                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-yellow-400 bg-yellow-500/10 border border-yellow-500/25 px-1.5 py-0.5 rounded leading-none">
+                                    <Clock className="w-2.5 h-2.5" /> Pending Approval
+                                </span>
+                            ) : (
+                                <>
+                                    {isLive && <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse mr-2 inline-block"></span>}
+                                    {isEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
+                                </>
+                            )}
                         </div>
                         <div className="social-media">
                             <Sparkles className="w-5 h-5 text-white/70" />
@@ -159,7 +167,14 @@ export default function TeacherDashboard() {
                     </div>
 
                     <div className="mt-auto pt-4 px-2 pb-2">
-                        {isEnded ? (
+                        {cls.is_approved === false ? (
+                            <button
+                                disabled
+                                className="w-full bg-[var(--glass-bg)] text-muted border border-[var(--glass-border)] text-sm font-medium py-2 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed select-none"
+                            >
+                                <Clock className="w-4 h-4 text-yellow-400" /> Awaiting Approval
+                            </button>
+                        ) : isEnded ? (
                             <button
                                 onClick={() => window.location.href = `/dashboard/attendance?sessionId=${cls.session_id}`}
                                 className="w-full bg-secondary text-foreground hover:text-accent border border-[var(--glass-border)] hover:border-accent/30 text-sm font-medium py-2 rounded-lg transition-all flex items-center justify-center gap-2"

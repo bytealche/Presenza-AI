@@ -10,6 +10,7 @@ export interface Session {
   org_id?: number;
   created_by?: number;
   class_type?: string;
+  is_approved?: boolean;
 }
 
 export interface SessionCreate {
@@ -50,3 +51,14 @@ export const runAI = async (sessionId: string) => {
   const res = await api.post(`/ai/run/${sessionId}`);
   return res.data;
 };
+
+export const approveSession = async (sessionId: number) => {
+  const res = await api.post(`/sessions/${sessionId}/approve`);
+  return res.data;
+};
+
+export const rejectSession = async (sessionId: number) => {
+  const res = await api.post(`/sessions/${sessionId}/reject`);
+  return res.data;
+};
+

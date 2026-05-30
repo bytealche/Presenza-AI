@@ -106,3 +106,27 @@ async def test_student_cannot_access_admin_stats(client: AsyncClient):
         headers=_auth_header(user_id=5, role_id=3),  # role 3 = student
     )
     assert response.status_code in (401, 403)
+
+
+# ── Save Overrides ────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_save_overrides_requires_auth(client: AsyncClient):
+    """Saving overrides without a token should return 401 or 403."""
+    response = await client.post(
+        "/attendance/save-overrides",
+        json={"session_id": 1, "overrides": []}
+    )
+    assert response.status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_student_cannot_save_overrides(client: AsyncClient):
+    """A student token should be rejected from save overrides endpoint."""
+    response = await client.post(
+        "/attendance/save-overrides",
+        headers=_auth_header(user_id=5, role_id=3),  # role 3 = student
+        json={"session_id": 1, "overrides": []}
+    )
+    assert response.status_code in (401, 403)
+
