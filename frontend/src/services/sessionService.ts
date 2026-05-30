@@ -85,5 +85,13 @@ export const requestSubject = async (
   return res.data;
 };
 
+export const updateSession = async (
+  sessionId: number,
+  data: Partial<SessionCreate>
+): Promise<Session> => {
+  const res = await api.patch<Session>(`/sessions/${sessionId}`, data);
+  return res.data;
+};
+
 
 

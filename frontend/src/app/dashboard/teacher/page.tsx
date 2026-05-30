@@ -1,9 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { getTeacherStats, TeacherStats } from "@/services/dashboardService";
-import { getSessions, createSession, requestSubject, Session } from "@/services/sessionService";
+import { getSessions, createSession, requestSubject, Session, updateSession } from "@/services/sessionService";
 import { getCameras, Camera } from "@/services/cameraService";
-import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2, Sparkles } from "lucide-react";
+import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import Portal from "@/components/Portal";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
@@ -31,6 +32,10 @@ export default function TeacherDashboard() {
     const [requestingSubject, setRequestingSubject] = useState(false);
     const [streamingCameraId, setStreamingCameraId] = useState<string | null>(null);
     const [streamingSessionId, setStreamingSessionId] = useState<number | null>(null);
+    const [linkingSessionId, setLinkingSessionId] = useState<number | null>(null);
+    const [isLinkingModalOpen, setIsLinkingModalOpen] = useState(false);
+    const [linkingCameraId, setLinkingCameraId] = useState<string>("");
+    const [linking, setLinking] = useState(false);
     const [mounted, setMounted] = useState(false);
     const [hostUrl, setHostUrl] = useState("");
 
@@ -109,6 +114,33 @@ export default function TeacherDashboard() {
             alert(`Error: ${msg}`);
         } finally {
             setRequestingSubject(false);
+        }
+    };
+
+    const openLinkCameraModal = (sessionId: number) => {
+        setLinkingSessionId(sessionId);
+        setIsLinkingModalOpen(true);
+        setLinkingCameraId("");
+    };
+
+    const handleLinkCamera = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!linkingSessionId || !linkingCameraId) return;
+        setLinking(true);
+        try {
+            await updateSession(linkingSessionId, {
+                camera_id: Number(linkingCameraId)
+            });
+            await loadData(); // Refresh list
+            setIsLinkingModalOpen(false);
+            setLinkingSessionId(null);
+            setLinkingCameraId("");
+        } catch (error: any) {
+            console.error("Failed to link camera", error);
+            const msg = error.response?.data?.detail || "Failed to link camera to class.";
+            alert(`Error: ${msg}`);
+        } finally {
+            setLinking(false);
         }
     };
 
@@ -214,10 +246,10 @@ export default function TeacherDashboard() {
                             </button>
                         ) : (
                             <button
-                                disabled
-                                className="w-full bg-[var(--glass-bg)] text-muted border border-[var(--glass-border)] text-sm font-medium py-2 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed"
+                                onClick={() => openLinkCameraModal(cls.session_id)}
+                                className="w-full bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/20 hover:border-violet-500/40 text-sm font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
-                                <VideoOff className="w-4 h-4" /> No Camera
+                                <Plus className="w-4 h-4" /> Integrate Camera
                             </button>
                         )}
                     </div>
@@ -427,6 +459,22 @@ export default function TeacherDashboard() {
                                                     </option>
                                                 ))}
                                             </select>
+                                            {cameras.length === 0 && (
+                                                <div className="mt-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 p-4 rounded-xl flex flex-col gap-2 text-xs">
+                                                    <span className="font-bold flex items-center gap-1.5 text-yellow-400">
+                                                        <AlertCircle className="w-4 h-4" /> No cameras integrated!
+                                                    </span>
+                                                    <p className="text-muted leading-relaxed">
+                                                        Smart attendance tracking requires a camera source. You can still schedule this session, but you won't be able to run live face-tracking.
+                                                    </p>
+                                                    <Link 
+                                                        href="/dashboard/camera"
+                                                        className="text-accent hover:underline font-bold mt-1 inline-flex items-center gap-1 w-fit"
+                                                    >
+                                                        Go to Camera Feed Management →
+                                                    </Link>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="pt-4 mt-auto">
@@ -665,6 +713,129 @@ export default function TeacherDashboard() {
                                            }
                                        })()}
                                     </div>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+            </Portal>
+
+            {/* Link Camera Sidebar Drawer */}
+            <Portal>
+                <AnimatePresence>
+                    {isLinkingModalOpen && (
+                        <>
+                            {/* Backdrop */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => {
+                                    setIsLinkingModalOpen(false);
+                                    setLinkingSessionId(null);
+                                }}
+                                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+                            />
+
+                            {/* Center Modal */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-2xl z-[101] flex flex-col backdrop-blur-2xl rounded-2xl max-h-[90vh]"
+                            >
+                                <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-highlight)]">
+                                    <h3 className="text-2xl font-bold text-foreground tracking-tight">Integrate Camera</h3>
+                                    <button
+                                        onClick={() => {
+                                            setIsLinkingModalOpen(false);
+                                            setLinkingSessionId(null);
+                                        }}
+                                        className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 rounded-full"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                                    <form onSubmit={handleLinkCamera} className="space-y-6">
+                                        {cameras.length === 0 ? (
+                                            <div className="text-center py-6 space-y-4">
+                                                <VideoOff className="w-12 h-12 text-muted mx-auto opacity-50" />
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-foreground">No Cameras Available</h4>
+                                                    <p className="text-xs text-muted mt-1 leading-relaxed">
+                                                        You haven't added any camera feeds to your organization yet.
+                                                    </p>
+                                                </div>
+                                                <Link
+                                                    href="/dashboard/camera"
+                                                    className="inline-block bg-accent hover:bg-accent-dark text-secondary font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-[0_0_15px_rgba(189,244,255,0.25)] text-center cursor-pointer"
+                                                >
+                                                    Manage Camera Feeds
+                                                </Link>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-muted-bright mb-3">Select Active Camera Feed</label>
+                                                    <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-1">
+                                                        {cameras.map(cam => (
+                                                            <label
+                                                                key={cam.camera_id}
+                                                                className={`flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer ${
+                                                                    linkingCameraId === cam.camera_id.toString()
+                                                                        ? "border-accent bg-accent/10 text-accent shadow-[0_0_15px_-5px_var(--color-accent)]"
+                                                                        : "border-[var(--glass-border)] bg-[var(--glass-highlight)] text-muted-bright hover:border-accent/40 hover:text-foreground"
+                                                                }`}
+                                                            >
+                                                                <input
+                                                                    type="radio"
+                                                                    name="linking_camera"
+                                                                    value={cam.camera_id}
+                                                                    className="mt-1 accent-accent"
+                                                                    checked={linkingCameraId === cam.camera_id.toString()}
+                                                                    onChange={() => setLinkingCameraId(cam.camera_id.toString())}
+                                                                />
+                                                                <div className="flex flex-col min-w-0">
+                                                                    <span className="text-sm font-bold truncate text-foreground">{cam.location}</span>
+                                                                    <span className="text-xs opacity-75 mt-0.5 capitalize truncate">{cam.camera_type} stream {cam.description && `— ${cam.description}`}</span>
+                                                                </div>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="pt-4 border-t border-[var(--glass-border)] flex gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setIsLinkingModalOpen(false);
+                                                            setLinkingSessionId(null);
+                                                        }}
+                                                        className="flex-1 py-3.5 bg-[var(--glass-highlight)] hover:bg-[var(--glass-border)] text-foreground text-sm font-semibold rounded-xl transition-colors cursor-pointer text-center"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        type="submit"
+                                                        disabled={linking || !linkingCameraId}
+                                                        className="flex-1 bg-gradient-to-r from-accent to-accent-dark hover:from-accent-dark hover:to-accent text-secondary shadow-[0_0_15px_rgba(189,244,255,0.3)] font-bold py-3.5 rounded-xl transition-all flex justify-center items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                                    >
+                                                        {linking ? (
+                                                            <>
+                                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                                Linking...
+                                                            </>
+                                                        ) : (
+                                                            "Link Camera"
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </form>
                                 </div>
                             </motion.div>
                         </>

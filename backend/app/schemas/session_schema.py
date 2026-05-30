@@ -10,6 +10,14 @@ class SessionCreate(BaseModel):
     camera_id: Optional[int] = None
     class_type: Optional[str] = "online"
 
+class SessionUpdate(BaseModel):
+    session_name: Optional[str] = None
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    location: Optional[str] = None
+    camera_id: Optional[int] = None
+    class_type: Optional[str] = None
+
 class SessionResponse(BaseModel):
     session_id: int
     org_id: Optional[int] = None

@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.database.dependencies import get_db
 from app.models.session import Session as SessionModel
-from app.schemas.session_schema import SessionCreate, SessionResponse, ClassNotificationRequest, SubjectRequest
+from app.schemas.session_schema import SessionCreate, SessionUpdate, SessionResponse, ClassNotificationRequest, SubjectRequest
 from app.core.role_dependencies import require_roles
 from app.models.user import User
 from app.models.enrollment import Enrollment
@@ -43,6 +43,35 @@ async def create_session(
     await db.commit()
     await db.refresh(new_session)
     return new_session
+
+@router.patch(
+    "/{session_id}",
+    response_model=SessionResponse,
+    dependencies=[Depends(require_roles([1, 2]))]  # admin + teacher
+)
+async def update_session(
+    session_id: int,
+    data: SessionUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(select(SessionModel).where(SessionModel.session_id == session_id))
+    session = result.scalars().first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    # Check authorization: Admin or the Teacher who created the session
+    if current_user.role_id != 1 and session.created_by != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to update this session")
+        
+    # Update only provided fields
+    update_data = data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(session, key, value)
+        
+    await db.commit()
+    await db.refresh(session)
+    return session
 
 @router.get("", response_model=list[SessionResponse])
 async def list_sessions(
