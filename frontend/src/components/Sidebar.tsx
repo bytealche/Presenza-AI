@@ -38,7 +38,7 @@ export default function Sidebar() {
         ...(role === 'admin' ? adminLinks : []),
         ...(role === 'teacher' ? teacherLinks : []),
         ...(role === 'student' ? studentLinks : []),
-        ...((role === 'admin' || role === 'teacher') ? [{ name: "Camera Feed", href: "/dashboard/camera" }] : []),
+        ...(role === 'admin' ? [{ name: "Camera Feed", href: "/dashboard/camera" }] : []),
         ...((role === 'teacher' || role === 'student') ? commonLinks : [])
     ];
 

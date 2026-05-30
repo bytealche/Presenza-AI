@@ -453,26 +453,45 @@ export default function TeacherDashboard() {
                                                 onChange={(e) => setNewClass({ ...newClass, camera_id: e.target.value })}
                                             >
                                                 <option value="" className="bg-slate-900 text-white">No camera tracking</option>
-                                                {cameras.map(cam => (
-                                                    <option key={cam.camera_id} value={cam.camera_id.toString()} className="bg-slate-900 text-white">
-                                                        {cam.location} - {cam.description || cam.camera_type}
-                                                    </option>
-                                                ))}
+                                                
+                                                {cameras.some(cam => cam.camera_type === "device") && (
+                                                    <optgroup label="Device Cameras (Local Webcams)" className="bg-slate-900 text-slate-400 font-bold">
+                                                        {cameras.filter(cam => cam.camera_type === "device").map(cam => (
+                                                            <option key={cam.camera_id} value={cam.camera_id.toString()} className="bg-slate-900 text-white font-normal">
+                                                                {cam.location} - {cam.description || "Local Webcam"}
+                                                            </option>
+                                                        ))}
+                                                    </optgroup>
+                                                )}
+                                                
+                                                {cameras.some(cam => cam.camera_type === "mobile") && (
+                                                    <optgroup label="Phone Cameras (Mobile Broadcasters)" className="bg-slate-900 text-slate-400 font-bold">
+                                                        {cameras.filter(cam => cam.camera_type === "mobile").map(cam => (
+                                                            <option key={cam.camera_id} value={cam.camera_id.toString()} className="bg-slate-900 text-white font-normal">
+                                                                {cam.location} - {cam.description || "Mobile Broadcaster"}
+                                                            </option>
+                                                        ))}
+                                                    </optgroup>
+                                                )}
+
+                                                {cameras.some(cam => cam.camera_type !== "device" && cam.camera_type !== "mobile") && (
+                                                    <optgroup label="IP / Network Streams" className="bg-slate-900 text-slate-400 font-bold">
+                                                        {cameras.filter(cam => cam.camera_type !== "device" && cam.camera_type !== "mobile").map(cam => (
+                                                            <option key={cam.camera_id} value={cam.camera_id.toString()} className="bg-slate-900 text-white font-normal">
+                                                                {cam.location} - {cam.description || "Network Stream"}
+                                                            </option>
+                                                        ))}
+                                                    </optgroup>
+                                                )}
                                             </select>
                                             {cameras.length === 0 && (
                                                 <div className="mt-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 p-4 rounded-xl flex flex-col gap-2 text-xs">
                                                     <span className="font-bold flex items-center gap-1.5 text-yellow-400">
                                                         <AlertCircle className="w-4 h-4" /> No cameras integrated!
                                                     </span>
-                                                    <p className="text-muted leading-relaxed">
-                                                        Smart attendance tracking requires a camera source. You can still schedule this session, but you won't be able to run live face-tracking.
+                                                    <p className="text-muted leading-relaxed text-slate-300">
+                                                        Smart attendance tracking requires a camera source. You can still schedule this session, but you won't be able to run live face-tracking. Please contact your organization administrator to register camera feeds.
                                                     </p>
-                                                    <Link 
-                                                        href="/dashboard/camera"
-                                                        className="text-accent hover:underline font-bold mt-1 inline-flex items-center gap-1 w-fit"
-                                                    >
-                                                        Go to Camera Feed Management →
-                                                    </Link>
                                                 </div>
                                             )}
                                         </div>
@@ -765,16 +784,10 @@ export default function TeacherDashboard() {
                                                 <VideoOff className="w-12 h-12 text-muted mx-auto opacity-50" />
                                                 <div>
                                                     <h4 className="text-sm font-bold text-foreground">No Cameras Available</h4>
-                                                    <p className="text-xs text-muted mt-1 leading-relaxed">
-                                                        You haven't added any camera feeds to your organization yet.
+                                                    <p className="text-xs text-muted mt-1 leading-relaxed text-slate-300">
+                                                        No camera feeds are integrated in your organization. Please ask your administrator to register camera devices to enable tracking.
                                                     </p>
                                                 </div>
-                                                <Link
-                                                    href="/dashboard/camera"
-                                                    className="inline-block bg-accent hover:bg-accent-dark text-secondary font-bold text-xs px-4 py-2 rounded-xl transition-all shadow-[0_0_15px_rgba(189,244,255,0.25)] text-center cursor-pointer"
-                                                >
-                                                    Manage Camera Feeds
-                                                </Link>
                                             </div>
                                         ) : (
                                             <>

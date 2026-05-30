@@ -33,7 +33,13 @@ export default function CameraPage() {
     const [submitting, setSubmitting] = useState(false);
 
     useEffect(() => {
-        if (user?.role_id === 3) router.push("/dashboard/student");
+        if (user) {
+            if (user.role_id === 2) {
+                router.push("/dashboard/teacher");
+            } else if (user.role_id === 3) {
+                router.push("/dashboard/student");
+            }
+        }
     }, [user, router]);
 
     useEffect(() => {
