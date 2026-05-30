@@ -62,3 +62,16 @@ export const rejectSession = async (sessionId: number) => {
   return res.data;
 };
 
+export const notifyClass = async (
+  sessionId: number,
+  subject: string,
+  message: string
+): Promise<{ message: string }> => {
+  const res = await api.post<{ message: string }>(`/sessions/${sessionId}/notify`, {
+    subject,
+    message
+  });
+  return res.data;
+};
+
+

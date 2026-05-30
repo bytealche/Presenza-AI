@@ -24,3 +24,9 @@ class SessionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ClassNotificationRequest(BaseModel):
+    subject: str
+    message: str
+

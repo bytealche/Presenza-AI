@@ -219,7 +219,7 @@ export default function TeacherDashboard() {
                     className="flex items-center justify-center w-full sm:w-auto gap-2 bg-gradient-to-r from-accent to-accent-dark hover:from-accent-dark hover:to-accent text-secondary px-6 py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(189,244,255,0.25)] hover:shadow-[0_0_25px_rgba(189,244,255,0.5)] hover:-translate-y-0.5 font-bold"
                 >
                     <Plus className="w-5 h-5 flex-shrink-0" />
-                    <span>Create Class</span>
+                    <span>Request Subject</span>
                 </button>
             </div>
 
@@ -300,7 +300,7 @@ export default function TeacherDashboard() {
                                 className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-2xl z-[101] flex flex-col backdrop-blur-2xl rounded-2xl max-h-[90vh]"
                             >
                                 <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-highlight)]">
-                                    <h3 className="text-2xl font-bold text-foreground tracking-tight">Schedule Session</h3>
+                                    <h3 className="text-2xl font-bold text-foreground tracking-tight">Request Subject Session</h3>
                                     <button
                                         onClick={() => setIsModalOpen(false)}
                                         className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 rounded-full"
@@ -408,10 +408,10 @@ export default function TeacherDashboard() {
                                                 {creating ? (
                                                     <>
                                                         <Loader2 className="w-5 h-5 animate-spin" />
-                                                        Initializing...
+                                                        Submitting...
                                                     </>
                                                 ) : (
-                                                    "Confirm Schedule"
+                                                    "Submit Request"
                                                 )}
                                             </button>
                                         </div>
