@@ -143,6 +143,46 @@ async def reject_session(
 
 
 @router.post(
+    "/{session_id}/end",
+    dependencies=[Depends(require_roles([1, 2]))]  # admin + teacher
+)
+async def end_session(
+    session_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(select(SessionModel).where(SessionModel.session_id == session_id))
+    session = result.scalars().first()
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    # Check authorization
+    if current_user.role_id != 1 and session.created_by != current_user.user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to end this session")
+        
+    from datetime import datetime
+    import json
+    import asyncio
+    from app.core.websocket_manager import manager
+
+    # Set end_time to now to mark the session as ended early
+    session.end_time = datetime.utcnow()
+    await db.commit()
+    
+    # Broadcast to websocket that the session has ended
+    camera_id_str = str(session.camera_id) if session.camera_id else None
+    if camera_id_str:
+        payload = json.dumps({"type": "session_ended"})
+        await manager.broadcast_to_receivers(camera_id_str, payload)
+        await manager.send_to_sender(camera_id_str, payload)
+        # Yield briefly and disconnect
+        await asyncio.sleep(0.5)
+        await manager.disconnect_all(camera_id_str)
+        
+    return {"message": "Session ended successfully"}
+
+
+@router.post(
     "/{session_id}/notify",
     dependencies=[Depends(require_roles([1, 2]))]  # admin + teacher
 )

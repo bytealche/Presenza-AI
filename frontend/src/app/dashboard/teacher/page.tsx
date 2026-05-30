@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getTeacherStats, TeacherStats } from "@/services/dashboardService";
-import { getSessions, createSession, requestSubject, Session, updateSession } from "@/services/sessionService";
+import { getSessions, createSession, requestSubject, Session, updateSession, endSession } from "@/services/sessionService";
 import { getCameras, Camera, addCamera } from "@/services/cameraService";
 import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import Portal from "@/components/Portal";
@@ -225,6 +225,25 @@ export default function TeacherDashboard() {
             alert("Error integrating camera feed.");
         } finally {
             setLinking(false);
+        }
+    };
+
+    const [ending, setEnding] = useState(false);
+
+    const handleEndSessionEarly = async () => {
+        if (!streamingSessionId) return;
+        if (!confirm("Are you sure you want to end this class session early? This will stop all streams and finalize attendance records.")) return;
+        setEnding(true);
+        try {
+            await endSession(streamingSessionId);
+            setStreamingCameraId(null);
+            setStreamingSessionId(null);
+            await loadData();
+        } catch (error: any) {
+            console.error("Failed to end session early", error);
+            alert("Failed to end session early. Please try again.");
+        } finally {
+            setEnding(false);
         }
     };
 
@@ -729,15 +748,27 @@ export default function TeacherDashboard() {
                                             AI-powered real-time tracking for Camera #{streamingCameraId}.
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            setStreamingCameraId(null);
-                                            setStreamingSessionId(null);
-                                        }}
-                                        className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 sm:p-2.5 rounded-full"
-                                    >
-                                        <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                                    </button>
+                                    <div className="flex items-center gap-3">
+                                        {streamingSessionId && (
+                                            <button
+                                                onClick={handleEndSessionEarly}
+                                                disabled={ending}
+                                                className="bg-red-500/15 hover:bg-red-500/25 text-red-400 border border-red-500/30 font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-red-500/5 cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                                            >
+                                                <VideoOff className="w-4 h-4" />
+                                                {ending ? "Ending..." : "End Class Early"}
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => {
+                                                setStreamingCameraId(null);
+                                                setStreamingSessionId(null);
+                                            }}
+                                            className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 sm:p-2.5 rounded-full"
+                                        >
+                                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div className="flex-1 w-full p-2 sm:p-6 overflow-y-auto custom-scrollbar">
