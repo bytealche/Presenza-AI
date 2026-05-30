@@ -116,7 +116,7 @@ export default function CameraPage() {
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0 pb-12">
+        <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
             
             {/* ── HEADER ──────────────────────────────────────────────────────────── */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[var(--glass-border)] pb-6">

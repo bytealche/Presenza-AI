@@ -193,8 +193,23 @@ export function DeviceCameraStreamer({ cameraId, sessionId, autoStart, onClose }
             <div className={`flex gap-3 flex-col ${isStreaming ? "md:flex-row" : ""}`}>
                 {/* Live preview */}
                 <div className="relative flex-1 aspect-video md:aspect-auto md:min-h-[480px] md:max-h-[70vh] bg-black rounded overflow-hidden ring-1 ring-white/10 min-w-0">
-                    <video ref={videoRef} className="w-full h-full object-contain" muted playsInline />
+                    <video ref={videoRef} className={`w-full h-full object-contain ${!isStreaming ? "hidden" : ""}`} muted playsInline />
                     <canvas ref={canvasRef} className="hidden" />
+
+                    {!isStreaming && (
+                        <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
+                            <div className="relative mb-4 flex items-center justify-center">
+                                <div className="absolute w-16 h-16 rounded-full bg-accent/15 border border-accent/30 animate-ping opacity-60" />
+                                <div className="w-12 h-12 rounded-full bg-slate-900 border border-white/10 flex items-center justify-center text-accent shadow-lg shadow-accent/5">
+                                    <Video className="w-6 h-6 animate-pulse" />
+                                </div>
+                            </div>
+                            <h4 className="text-md font-bold text-foreground">Camera Connection Ready</h4>
+                            <p className="text-xs text-muted max-w-xs mt-1 leading-relaxed">
+                                Click "Start Streaming" below to share your webcam feed and automatically verify your attendance.
+                            </p>
+                        </div>
+                    )}
 
                     {lectureCompleted && (
                         <div className="absolute inset-0 bg-black/95 z-[99] flex flex-col items-center justify-center animate-in fade-in duration-300">

@@ -147,7 +147,7 @@ export default function StudentDashboard() {
     const upcomingClasses = myClasses.filter(isUpcoming).sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime());
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto px-4 md:px-0 pb-12 animate-in fade-in duration-300">
+        <div className="space-y-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 animate-in fade-in duration-300">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -491,7 +491,7 @@ export default function StudentDashboard() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 transition={{ type: "spring", damping: 30, stiffness: 200 }}
-                                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full lg:w-[85%] xl:w-[75%] bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-2xl z-[101] flex flex-col backdrop-blur-2xl rounded-2xl max-h-[95vh]"
+                                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] sm:w-[90%] md:w-[85%] lg:w-[80%] xl:w-[75%] max-w-6xl bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-2xl z-[101] flex flex-col backdrop-blur-2xl rounded-2xl max-h-[92vh] overflow-hidden"
                             >
                                 <div className="p-4 sm:p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-highlight)]">
                                     <div>

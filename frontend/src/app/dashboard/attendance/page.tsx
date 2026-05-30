@@ -408,7 +408,7 @@ export default function AttendancePage() {
         const attendanceRate = totalSessions > 0 ? Math.round(((presentCount + lateCount) / totalSessions) * 100) : 0;
 
         return (
-            <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0 pb-12 animate-in fade-in duration-300">
+            <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 animate-in fade-in duration-300">
                 {/* Header */}
                 <div className="border-b border-[var(--glass-border)] pb-6">
                     <h2 className="text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-accent via-foreground to-purple-400 drop-shadow-md tracking-tight">
@@ -541,7 +541,7 @@ export default function AttendancePage() {
     }
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0 pb-12">
+        <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
             
             {/* ── SAVE STATUS NOTIFICATION ── */}
             {saveStatus && (
