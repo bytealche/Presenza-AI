@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import cv2
-import face_recognition
+from deepface import DeepFace
 from supabase import create_client, Client
 
 def normalize_vector(vector):
@@ -65,15 +65,23 @@ def run_finetuning():
                 print(f"  - Failed to decode {file_name}")
                 continue
                 
-            rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            
-            # Extract embedding
-            encodings = face_recognition.face_encodings(rgb_img)
-            if encodings:
-                embeddings.append(encodings[0])
-                print(f"  - Extracted face from {file_name}")
-            else:
-                print(f"  - No face found in {file_name}")
+            # Extract embedding using DeepFace Facenet512 (matches backend)
+            try:
+                embedding_objs = DeepFace.represent(
+                    img_path=img,
+                    model_name="Facenet512",
+                    enforce_detection=False,
+                    detector_backend="skip",
+                    align=False
+                )
+                if embedding_objs:
+                    embedding = np.array(embedding_objs[0]["embedding"], dtype="float32")
+                    embeddings.append(embedding)
+                    print(f"  - Extracted face from {file_name}")
+                else:
+                    print(f"  - No face found in {file_name}")
+            except Exception as e:
+                print(f"  - Error extracting face from {file_name}: {e}")
                 
         if embeddings:
             # Compute average embedding for robustness
