@@ -49,6 +49,7 @@ export default function EngagementPage() {
     const [alertStudentsData, setAlertStudentsData] = useState<Record<string, AlertStudent[]>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [errStatus, setErrStatus] = useState<number | null>(null);
 
     const timeframes = ["Weekly", "Monthly"];
 
@@ -57,6 +58,7 @@ export default function EngagementPage() {
         try {
             setLoading(true);
             setError(null);
+            setErrStatus(null);
             const data = await getEngagementAnalytics();
             setCourses(data.courses || []);
             setLineChartData(data.line_chart_data || {});
@@ -70,7 +72,15 @@ export default function EngagementPage() {
             }
         } catch (err: any) {
             console.error("Failed to load engagement analytics:", err);
-            setError("Failed to fetch live engagement analytics. Please verify that the API server is online.");
+            const status = err.response?.status;
+            setErrStatus(status || null);
+            if (status === 401) {
+                setError("Your login session has expired or is invalid. Please log in again to access engagement analytics.");
+            } else if (status === 403) {
+                setError("You do not have permission to view this page. Engagement analytics are only accessible to Faculty and Admins.");
+            } else {
+                setError("Failed to connect to the backend server. Please verify that the API server is online and running.");
+            }
         } finally {
             setLoading(false);
         }
@@ -109,18 +119,42 @@ export default function EngagementPage() {
         return (
             <div className="max-w-md mx-auto my-12 p-8 glass-card border border-red-500/20 text-center space-y-6">
                 <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-red-500/5">
-                    <AlertTriangle className="w-8 h-8" />
+                    {errStatus === 401 ? (
+                        <Users className="w-8 h-8 text-red-400" />
+                    ) : errStatus === 403 ? (
+                        <AlertCircle className="w-8 h-8 text-red-400" />
+                    ) : (
+                        <AlertTriangle className="w-8 h-8 text-red-400" />
+                    )}
                 </div>
                 <div className="space-y-2">
-                    <h3 className="text-xl font-bold text-foreground">API Connection Error</h3>
+                    <h3 className="text-xl font-bold text-foreground">
+                        {errStatus === 401 ? "Session Expired" : errStatus === 403 ? "Access Denied" : "API Connection Error"}
+                    </h3>
                     <p className="text-sm text-muted leading-relaxed">{error}</p>
                 </div>
-                <button
-                    onClick={loadEngagementData}
-                    className="w-full bg-accent hover:bg-accent/90 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-accent/25 hover:shadow-accent/40 active:scale-[0.98] transition-all cursor-pointer inline-flex items-center justify-center gap-2"
-                >
-                    <RefreshCw className="w-4 h-4" /> Retry Connection
-                </button>
+                {errStatus === 401 ? (
+                    <a
+                        href="/login"
+                        className="w-full bg-accent hover:bg-accent/90 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-accent/25 hover:shadow-accent/40 active:scale-[0.98] transition-all cursor-pointer inline-flex items-center justify-center gap-2 text-sm"
+                    >
+                        Go to Login Page
+                    </a>
+                ) : errStatus === 403 ? (
+                    <a
+                        href="/dashboard"
+                        className="w-full bg-accent hover:bg-accent/90 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-accent/25 hover:shadow-accent/40 active:scale-[0.98] transition-all cursor-pointer inline-flex items-center justify-center gap-2 text-sm"
+                    >
+                        Return to Dashboard
+                    </a>
+                ) : (
+                    <button
+                        onClick={loadEngagementData}
+                        className="w-full bg-accent hover:bg-accent/90 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-accent/25 hover:shadow-accent/40 active:scale-[0.98] transition-all cursor-pointer inline-flex items-center justify-center gap-2"
+                    >
+                        <RefreshCw className="w-4 h-4" /> Retry Connection
+                    </button>
+                )}
             </div>
         );
     }
