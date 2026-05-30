@@ -448,13 +448,13 @@ export default function TeacherDashboard() {
                                         <div>
                                             <label className="block text-sm font-medium text-muted-bright mb-2">Camera Integration</label>
                                             <select
-                                                className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all appearance-none"
+                                                className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 outline-none transition-all cursor-pointer"
                                                 value={newClass.camera_id}
                                                 onChange={(e) => setNewClass({ ...newClass, camera_id: e.target.value })}
                                             >
-                                                <option value="" className="bg-secondary text-foreground">No camera tracking</option>
+                                                <option value="" className="bg-slate-900 text-white">No camera tracking</option>
                                                 {cameras.map(cam => (
-                                                    <option key={cam.camera_id} value={cam.camera_id} className="bg-secondary text-foreground">
+                                                    <option key={cam.camera_id} value={cam.camera_id} className="bg-slate-900 text-white">
                                                         {cam.location} - {cam.description || cam.camera_type}
                                                     </option>
                                                 ))}

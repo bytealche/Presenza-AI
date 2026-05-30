@@ -3,18 +3,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getUsers, updateUserStatus } from "@/services/authService";
-import { getSessions, approveSession, rejectSession } from "@/services/sessionService";
-import { User, Check, X, Clock, Shield, BarChart2, Video, Camera, BookOpen } from "lucide-react";
+import { getSessions, approveSession, rejectSession, getSubjectRequests, approveSubjectRequest, rejectSubjectRequest, SubjectRequestRecord } from "@/services/sessionService";
+import { User, Check, X, Clock, Shield, BarChart2, Video, Camera, BookOpen, Inbox } from "lucide-react";
 import FacultyReports from "@/components/admin/FacultyReports";
 import ActiveFaceEnrollment from "@/components/admin/ActiveFaceEnrollment";
 
 export default function AdminDashboard() {
     const { user } = useAuth();
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<"users" | "reports" | "cameras" | "teaching_requests">("users");
+    const [activeTab, setActiveTab] = useState<"users" | "reports" | "cameras" | "teaching_requests" | "subject_requests">("users");
     const [users, setUsers] = useState<any[]>([]);
     const [sessions, setSessions] = useState<any[]>([]);
+    const [subjectRequests, setSubjectRequests] = useState<SubjectRequestRecord[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingSubjectRequests, setLoadingSubjectRequests] = useState(false);
     const [enrollUser, setEnrollUser] = useState<{ id: number; name: string } | null>(null);
 
     useEffect(() => {
@@ -43,10 +45,23 @@ export default function AdminDashboard() {
         }
     };
 
+    const fetchSubjectRequests = async () => {
+        setLoadingSubjectRequests(true);
+        try {
+            const data = await getSubjectRequests();
+            setSubjectRequests(data);
+        } catch (error) {
+            console.error("Failed to fetch subject requests", error);
+        } finally {
+            setLoadingSubjectRequests(false);
+        }
+    };
+
     useEffect(() => {
         if (user?.role_id === 1) {
             fetchUsers();
             loadSessionsData();
+            fetchSubjectRequests();
         }
     }, [user]);
 
@@ -68,6 +83,27 @@ export default function AdminDashboard() {
         } catch (error) {
             console.error("Failed to reject session", error);
             alert("Failed to reject teaching request");
+        }
+    };
+
+    const handleApproveSubjectRequest = async (requestId: number) => {
+        try {
+            await approveSubjectRequest(requestId);
+            await fetchSubjectRequests();
+        } catch (error) {
+            console.error("Failed to approve subject request", error);
+            alert("Failed to approve subject request");
+        }
+    };
+
+    const handleRejectSubjectRequest = async (requestId: number) => {
+        if (!confirm("Are you sure you want to reject this subject catalog request?")) return;
+        try {
+            await rejectSubjectRequest(requestId);
+            await fetchSubjectRequests();
+        } catch (error) {
+            console.error("Failed to reject subject request", error);
+            alert("Failed to reject subject request");
         }
     };
 
@@ -138,6 +174,16 @@ export default function AdminDashboard() {
                     <div className="flex items-center gap-2">
                         <BookOpen className="w-4 h-4" />
                         Teaching Requests
+                    </div>
+                </button>
+                <button
+                    onClick={() => setActiveTab("subject_requests")}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === "subject_requests" ? "bg-accent text-white shadow-lg shadow-accent/20" : "text-muted hover:text-foreground"
+                        }`}
+                >
+                    <div className="flex items-center gap-2">
+                        <Inbox className="w-4 h-4" />
+                        Subject Requests
                     </div>
                 </button>
             </div>
@@ -366,6 +412,106 @@ export default function AdminDashboard() {
                                 )}
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === "subject_requests" && (
+                <div className="bg-[var(--glass-bg)] backdrop-blur-xl rounded-xl border border-[var(--glass-border)] overflow-hidden">
+                    <div className="p-6 border-b border-[var(--glass-border)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h2 className="text-xl font-semibold text-foreground">Faculty Subject Requests</h2>
+                            <p className="text-xs text-muted mt-0.5">Approve or reject subject catalog entries requested by teachers.</p>
+                        </div>
+                        <button 
+                            onClick={fetchSubjectRequests}
+                            className="text-xs font-bold text-accent bg-accent/10 border border-accent/20 px-3 py-1.5 rounded-lg hover:bg-accent/20 transition-all uppercase tracking-wide cursor-pointer"
+                        >
+                            Refresh List
+                        </button>
+                    </div>
+
+                    <div className="overflow-x-auto w-full">
+                        {loadingSubjectRequests ? (
+                            <div className="p-8 text-center text-muted">Loading subject requests...</div>
+                        ) : (
+                            <table className="w-full min-w-[800px] sm:min-w-full">
+                                <thead className="bg-[var(--glass-highlight)]">
+                                    <tr className="text-muted uppercase text-[10px] font-extrabold tracking-wider bg-slate-950/20">
+                                        <th className="px-6 py-4 text-left">Subject Name</th>
+                                        <th className="px-6 py-4 text-left">Faculty / Creator</th>
+                                        <th className="px-6 py-4 text-left">Description</th>
+                                        <th className="px-6 py-4 text-left">Requested Date</th>
+                                        <th className="px-6 py-4 text-left">Status</th>
+                                        <th className="px-6 py-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[var(--glass-border)]">
+                                    {subjectRequests.map((req) => {
+                                        const isPending = req.status === "pending";
+
+                                        return (
+                                            <tr key={req.request_id} className="hover:bg-[var(--glass-highlight)] transition-colors">
+                                                <td className="px-6 py-4.5 font-bold text-foreground">
+                                                    {req.subject_name}
+                                                </td>
+                                                <td className="px-6 py-4.5 text-xs text-muted font-semibold">
+                                                    {req.teacher_name}
+                                                </td>
+                                                <td className="px-6 py-4.5 text-xs text-muted max-w-[200px] truncate font-medium" title={req.description}>
+                                                    {req.description || "No description provided."}
+                                                </td>
+                                                <td className="px-6 py-4.5 text-xs text-muted font-semibold">
+                                                    {req.created_at ? new Date(req.created_at).toLocaleDateString() : "N/A"}
+                                                </td>
+                                                <td className="px-6 py-4.5">
+                                                    {req.status === "pending" ? (
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase text-yellow-400 bg-yellow-500/10 border border-yellow-500/30 px-2.5 py-1 rounded-lg tracking-wide">
+                                                            <Clock className="w-3.5 h-3.5" /> Pending
+                                                        </span>
+                                                    ) : req.status === "approved" ? (
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-lg tracking-wide">
+                                                            <Check className="w-3.5 h-3.5" /> Approved
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase text-red-400 bg-red-500/10 border border-red-500/30 px-2.5 py-1 rounded-lg tracking-wide">
+                                                            <X className="w-3.5 h-3.5" /> Rejected
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-6 py-4.5 text-right text-xs font-semibold">
+                                                    {isPending ? (
+                                                        <div className="flex gap-2 justify-end">
+                                                            <button
+                                                                onClick={() => handleApproveSubjectRequest(req.request_id)}
+                                                                className="px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 border border-green-500/35 hover:bg-green-500/30 hover:border-green-500/50 transition-all font-bold uppercase tracking-wider text-[10px] inline-flex items-center gap-1 cursor-pointer select-none"
+                                                            >
+                                                                <Check className="w-3.5 h-3.5" /> Approve
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleRejectSubjectRequest(req.request_id)}
+                                                                className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 border border-red-500/35 hover:bg-red-500/30 hover:border-red-500/50 transition-all font-bold uppercase tracking-wider text-[10px] inline-flex items-center gap-1 cursor-pointer select-none"
+                                                            >
+                                                                <X className="w-3.5 h-3.5" /> Reject
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-muted text-xs">No actions required</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    {subjectRequests.length === 0 && (
+                                        <tr>
+                                            <td colSpan={6} className="px-6 py-12 text-center text-muted">
+                                                No subject requests registered.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        )}
                     </div>
                 </div>
             )}

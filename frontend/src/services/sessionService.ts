@@ -93,5 +93,31 @@ export const updateSession = async (
   return res.data;
 };
 
+export interface SubjectRequestRecord {
+  request_id: number;
+  org_id: number;
+  teacher_id: number;
+  subject_name: string;
+  description?: string;
+  status: string;
+  created_at: string;
+  teacher_name: string;
+}
+
+export const getSubjectRequests = async (): Promise<SubjectRequestRecord[]> => {
+  const res = await api.get<SubjectRequestRecord[]>("/sessions/subject-requests");
+  return res.data;
+};
+
+export const approveSubjectRequest = async (requestId: number): Promise<{ message: string }> => {
+  const res = await api.post<{ message: string }>(`/sessions/subject-requests/${requestId}/approve`);
+  return res.data;
+};
+
+export const rejectSubjectRequest = async (requestId: number): Promise<{ message: string }> => {
+  const res = await api.post<{ message: string }>(`/sessions/subject-requests/${requestId}/reject`);
+  return res.data;
+};
+
 
 

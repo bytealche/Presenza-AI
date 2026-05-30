@@ -31,18 +31,49 @@ async def lifespan(app: FastAPI):
     load_model()
     logger.info("AI model loaded successfully.")
     
-    # Safety: ensure 'is_approved' column exists on 'sessions' table
+    # Safety: database schema checks
     from app.database.database import SessionLocal
     from sqlalchemy import text
     try:
         async with SessionLocal() as db:
-            await db.execute(text("ALTER TABLE sessions ADD COLUMN is_approved BOOLEAN DEFAULT 0"))
-            await db.execute(text("UPDATE sessions SET is_approved = 1"))
+            # 1. Sessions safety column
+            try:
+                await db.execute(text("ALTER TABLE sessions ADD COLUMN is_approved BOOLEAN DEFAULT 0"))
+                await db.execute(text("UPDATE sessions SET is_approved = 1"))
+                await db.commit()
+            except Exception:
+                pass
+            
+            # 2. Subject requests table
+            bind_url = str(db.bind.url) if db.bind else ""
+            if "sqlite" in bind_url:
+                await db.execute(text("""
+                    CREATE TABLE IF NOT EXISTS subject_requests (
+                        request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        org_id INTEGER,
+                        teacher_id INTEGER,
+                        subject_name VARCHAR(255) NOT NULL,
+                        description TEXT,
+                        status VARCHAR(50) DEFAULT 'pending',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
+            else:
+                await db.execute(text("""
+                    CREATE TABLE IF NOT EXISTS subject_requests (
+                        request_id SERIAL PRIMARY KEY,
+                        org_id INTEGER,
+                        teacher_id INTEGER,
+                        subject_name VARCHAR(255) NOT NULL,
+                        description TEXT,
+                        status VARCHAR(50) DEFAULT 'pending',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """))
             await db.commit()
-            logger.info("Database safety check: column 'is_approved' successfully verified/created and sessions pre-approved.")
+            logger.info("Database safety check: column 'is_approved' and table 'subject_requests' verified/created.")
     except Exception as e:
-        # Ignore errors if column already exists
-        pass
+        logger.error(f"Database safety check failed: {e}")
         
     yield
     logger.info("Shutting down Presenza AI.")

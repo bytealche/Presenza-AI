@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from app.core.auth_dependencies import get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.database.dependencies import get_db
 from app.models.session import Session as SessionModel
@@ -227,6 +227,21 @@ async def request_subject(
     )
     admin = admin_result.scalars().first()
     
+    # Save request to the database
+    await db.execute(
+        text("""
+            INSERT INTO subject_requests (org_id, teacher_id, subject_name, description, status)
+            VALUES (:org_id, :teacher_id, :subject_name, :description, 'pending')
+        """),
+        {
+            "org_id": current_user.org_id,
+            "teacher_id": current_user.user_id,
+            "subject_name": data.subject_name,
+            "description": data.description
+        }
+    )
+    await db.commit()
+    
     # If no admin, send to system default
     admin_email = admin.email if admin else "admin@presenza.ai"
     admin_name = admin.full_name if admin else "System Administrator"
@@ -278,6 +293,93 @@ Team Presenza"""
     )
 
     return {"message": f"Subject catalog request for '{data.subject_name}' submitted successfully to your organization administrator."}
+
+
+@router.get(
+    "/subject-requests",
+    dependencies=[Depends(require_roles([1]))]  # Admin only
+)
+async def list_subject_requests(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        text("""
+            SELECT sr.request_id, sr.org_id, sr.teacher_id, sr.subject_name, sr.description, sr.status, sr.created_at, u.full_name as teacher_name
+            FROM subject_requests sr
+            JOIN users u ON sr.teacher_id = u.user_id
+            WHERE sr.org_id = :org_id
+            ORDER BY sr.created_at DESC
+        """),
+        {"org_id": current_user.org_id}
+    )
+    requests_list = []
+    for row in result.fetchall():
+        requests_list.append({
+            "request_id": row.request_id,
+            "org_id": row.org_id,
+            "teacher_id": row.teacher_id,
+            "subject_name": row.subject_name,
+            "description": row.description,
+            "status": row.status,
+            "created_at": row.created_at.isoformat() if row.created_at else None,
+            "teacher_name": row.teacher_name
+        })
+    return requests_list
+
+
+@router.post(
+    "/subject-requests/{request_id}/approve",
+    dependencies=[Depends(require_roles([1]))]  # Admin only
+)
+async def approve_subject_request(
+    request_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        text("SELECT org_id FROM subject_requests WHERE request_id = :request_id"),
+        {"request_id": request_id}
+    )
+    row = result.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Subject request not found")
+    if row.org_id != current_user.org_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    await db.execute(
+        text("UPDATE subject_requests SET status = 'approved' WHERE request_id = :request_id"),
+        {"request_id": request_id}
+    )
+    await db.commit()
+    return {"message": "Subject request approved successfully"}
+
+
+@router.post(
+    "/subject-requests/{request_id}/reject",
+    dependencies=[Depends(require_roles([1]))]  # Admin only
+)
+async def reject_subject_request(
+    request_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        text("SELECT org_id FROM subject_requests WHERE request_id = :request_id"),
+        {"request_id": request_id}
+    )
+    row = result.fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Subject request not found")
+    if row.org_id != current_user.org_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    await db.execute(
+        text("UPDATE subject_requests SET status = 'rejected' WHERE request_id = :request_id"),
+        {"request_id": request_id}
+    )
+    await db.commit()
+    return {"message": "Subject request rejected successfully"}
 
 
 
