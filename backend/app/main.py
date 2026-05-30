@@ -72,6 +72,35 @@ async def lifespan(app: FastAPI):
                 """))
             await db.commit()
             logger.info("Database safety check: column 'is_approved' and table 'subject_requests' verified/created.")
+            
+            # 3. Synchronize PostgreSQL database sequences to prevent duplicate primary key conflicts
+            if "sqlite" not in bind_url:
+                try:
+                    logger.info("Synchronizing PostgreSQL sequences...")
+                    seq_query = """
+                        SELECT
+                            t.relname AS table_name,
+                            a.attname AS column_name,
+                            s.relname AS sequence_name
+                        FROM pg_class s
+                        JOIN pg_depend d ON d.objid = s.oid AND d.classid = 'pg_class'::regclass AND d.refclassid = 'pg_class'::regclass
+                        JOIN pg_class t ON t.oid = d.refobjid
+                        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = d.refobjsubid
+                        WHERE s.relkind = 'S' AND t.relnamespace = 'public'::regnamespace;
+                    """
+                    seq_res = await db.execute(text(seq_query))
+                    for row in seq_res.fetchall():
+                        table, col, seq = row
+                        max_res = await db.execute(text(f"SELECT COALESCE(MAX({col}), 0) FROM public.{table}"))
+                        max_val = max_res.scalar()
+                        if max_val > 0:
+                            await db.execute(text(f"SELECT setval('public.{seq}', {max_val}, true)"))
+                        else:
+                            await db.execute(text(f"SELECT setval('public.{seq}', 1, false)"))
+                    await db.commit()
+                    logger.info("PostgreSQL sequences synchronized successfully.")
+                except Exception as seq_err:
+                    logger.warning(f"Failed to synchronize database sequences: {seq_err}")
     except Exception as e:
         logger.error(f"Database safety check failed: {e}")
         
