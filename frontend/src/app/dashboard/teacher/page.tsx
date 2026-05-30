@@ -454,7 +454,7 @@ export default function TeacherDashboard() {
                                             >
                                                 <option value="" className="bg-slate-900 text-white">No camera tracking</option>
                                                 {cameras.map(cam => (
-                                                    <option key={cam.camera_id} value={cam.camera_id} className="bg-slate-900 text-white">
+                                                    <option key={cam.camera_id} value={cam.camera_id.toString()} className="bg-slate-900 text-white">
                                                         {cam.location} - {cam.description || cam.camera_type}
                                                     </option>
                                                 ))}
@@ -793,7 +793,7 @@ export default function TeacherDashboard() {
                                                                 <input
                                                                     type="radio"
                                                                     name="linking_camera"
-                                                                    value={cam.camera_id}
+                                                                    value={cam.camera_id.toString()}
                                                                     className="mt-1 accent-accent"
                                                                     checked={linkingCameraId === cam.camera_id.toString()}
                                                                     onChange={() => setLinkingCameraId(cam.camera_id.toString())}
