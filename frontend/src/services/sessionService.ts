@@ -124,5 +124,16 @@ export const rejectSubjectRequest = async (requestId: number): Promise<{ message
   return res.data;
 };
 
+export interface ApprovedSubject {
+  request_id: number;
+  subject_name: string;
+  description?: string;
+}
+
+export const getApprovedSubjects = async (): Promise<ApprovedSubject[]> => {
+  const res = await api.get<ApprovedSubject[]>("/sessions/approved-subjects");
+  return res.data;
+};
+
 
 

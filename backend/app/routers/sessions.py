@@ -35,7 +35,7 @@ async def create_session(
         end_time=data.end_time,
         location=data.location,
         class_type=data.class_type,
-        is_approved=(current_user.role_id == 1)  # Automatically approved if created by Admin
+        is_approved=True  # Automatically approved on creation (no admin approval required)
     )
 
     db.add(new_session)
@@ -249,6 +249,33 @@ async def notify_online_class(
         )
 
     return {"message": f"Notifications queued successfully for {len(students)} student(s)."}
+
+
+@router.get(
+    "/approved-subjects",
+    dependencies=[Depends(require_roles([1, 2]))]  # admin + teacher
+)
+async def list_approved_subjects(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    result = await db.execute(
+        text("""
+            SELECT request_id, subject_name, description
+            FROM subject_requests
+            WHERE org_id = :org_id AND status = 'approved'
+            ORDER BY subject_name ASC
+        """),
+        {"org_id": current_user.org_id}
+    )
+    subjects_list = []
+    for row in result.fetchall():
+        subjects_list.append({
+            "request_id": row.request_id,
+            "subject_name": row.subject_name,
+            "description": row.description
+        })
+    return subjects_list
 
 
 @router.post(

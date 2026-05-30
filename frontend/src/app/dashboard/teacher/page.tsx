@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getTeacherStats, TeacherStats } from "@/services/dashboardService";
-import { getSessions, createSession, requestSubject, Session, updateSession, endSession } from "@/services/sessionService";
+import { getSessions, createSession, requestSubject, Session, updateSession, endSession, getApprovedSubjects, ApprovedSubject } from "@/services/sessionService";
 import { getCameras, Camera, addCamera } from "@/services/cameraService";
 import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import Portal from "@/components/Portal";
@@ -25,6 +25,7 @@ export default function TeacherDashboard() {
     const [stats, setStats] = useState<TeacherStats | null>(null);
     const [classes, setClasses] = useState<Session[]>([]);
     const [cameras, setCameras] = useState<Camera[]>([]);
+    const [approvedSubjects, setApprovedSubjects] = useState<ApprovedSubject[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
@@ -59,14 +60,16 @@ export default function TeacherDashboard() {
 
     async function loadData() {
         try {
-            const [statsData, classesData, camerasData] = await Promise.all([
+            const [statsData, classesData, camerasData, subjectsData] = await Promise.all([
                 getTeacherStats(),
                 getSessions(),
-                getCameras()
+                getCameras(),
+                getApprovedSubjects()
             ]);
             setStats(statsData);
             setClasses(classesData);
             setCameras(camerasData);
+            setApprovedSubjects(subjectsData);
         } catch (error) {
             console.error("Failed to load dashboard data", error);
         } finally {
@@ -266,16 +269,8 @@ export default function TeacherDashboard() {
                     <div className="border"></div>
                     <div className="icons">
                         <div className="logo text-white font-bold text-sm">
-                            {cls.is_approved === false ? (
-                                <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase text-yellow-400 bg-yellow-500/10 border border-yellow-500/25 px-1.5 py-0.5 rounded leading-none">
-                                    <Clock className="w-2.5 h-2.5" /> Pending Approval
-                                </span>
-                            ) : (
-                                <>
-                                    {isLive && <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse mr-2 inline-block"></span>}
-                                    {isEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
-                                </>
-                            )}
+                            {isLive && <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse mr-2 inline-block"></span>}
+                            {isEnded ? 'Ended' : isLive ? 'Live' : 'Scheduled'}
                         </div>
                         <div className="social-media">
                             <Sparkles className="w-5 h-5 text-white/70" />
@@ -323,14 +318,7 @@ export default function TeacherDashboard() {
                     </div>
 
                     <div className="mt-auto pt-4 px-2 pb-2">
-                        {cls.is_approved === false ? (
-                            <button
-                                disabled
-                                className="w-full bg-[var(--glass-bg)] text-muted border border-[var(--glass-border)] text-sm font-medium py-2 rounded-lg flex items-center justify-center gap-2 cursor-not-allowed select-none"
-                            >
-                                <Clock className="w-4 h-4 text-yellow-400" /> Awaiting Approval
-                            </button>
-                        ) : isEnded ? (
+                        {isEnded ? (
                             <button
                                 onClick={() => window.location.href = `/dashboard/attendance?sessionId=${cls.session_id}`}
                                 className="w-full bg-secondary text-foreground hover:text-accent border border-[var(--glass-border)] hover:border-accent/30 text-sm font-medium py-2 rounded-lg transition-all flex items-center justify-center gap-2"
@@ -477,15 +465,31 @@ export default function TeacherDashboard() {
                                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                                     <form onSubmit={handleCreateClass} className="space-y-6">
                                         <div>
-                                            <label className="block text-sm font-medium text-muted-bright mb-2">Class Name</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all placeholder:text-muted"
-                                                placeholder="e.g. CS101 - Intro to AI"
-                                                value={newClass.session_name}
-                                                onChange={(e) => setNewClass({ ...newClass, session_name: e.target.value })}
-                                            />
+                                            <label className="block text-sm font-medium text-muted-bright mb-2">Class Name (Subject)</label>
+                                            {approvedSubjects.length === 0 ? (
+                                                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-200 p-4 rounded-xl flex flex-col gap-2 text-xs">
+                                                    <span className="font-bold flex items-center gap-1.5 text-yellow-400">
+                                                        <AlertCircle className="w-4 h-4" /> No Approved Subjects!
+                                                    </span>
+                                                    <p className="text-muted leading-relaxed text-slate-300">
+                                                        You do not have any approved subjects in your organization catalog yet. Please request a subject first using the <strong>"Request Subject"</strong> button and wait for admin approval.
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    required
+                                                    className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all cursor-pointer"
+                                                    value={newClass.session_name}
+                                                    onChange={(e) => setNewClass({ ...newClass, session_name: e.target.value })}
+                                                >
+                                                    <option value="" className="bg-slate-900 text-white">Select approved subject...</option>
+                                                    {approvedSubjects.map((sub) => (
+                                                        <option key={sub.request_id} value={sub.subject_name} className="bg-slate-900 text-white">
+                                                            {sub.subject_name}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            )}
                                         </div>
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
