@@ -17,6 +17,7 @@ router = APIRouter(prefix="/ws", tags=["Streaming"])
 _ai_tasks: dict[str, asyncio.Task] = {}
 _frame_buffer: dict[str, bytes] = {}   # latest JPEG frame per camera_id
 _session_map: dict[str, int] = {}      # camera_id -> pinned session_id
+_last_engagement_write: dict[str, float] = {}  # camera_id -> last write epoch
 
 
 async def _ai_loop(camera_id: str):
@@ -119,6 +120,47 @@ async def _ai_loop(camera_id: str):
                         d["user_id"] for d in decisions
                         if d.get("confirmed") and d.get("user_id")
                     ]
+
+                    # Stage 3: Record live engagement metrics dynamically
+                    now_epoch = time.time()
+                    last_write = _last_engagement_write.get(camera_id, 0.0)
+                    if now_epoch - last_write >= 5.0:
+                        from app.models.engagement import EngagementMetric
+                        from app.models.attendance import AttendanceRecord as Attendance
+                        
+                        recognized_uids = [d["user_id"] for d in decisions if d.get("user_id")]
+                        if recognized_uids:
+                            att_res = await db.execute(
+                                select(Attendance.attendance_id, Attendance.user_id)
+                                .where(Attendance.session_id == session_id, Attendance.user_id.in_(recognized_uids))
+                            )
+                            att_map = {row.user_id: row.attendance_id for row in att_res.all()}
+                            
+                            for d in decisions:
+                                uid = d.get("user_id")
+                                score = d.get("engagement_score")
+                                if uid and score is not None and uid in att_map:
+                                    att_id = att_map[uid]
+                                    
+                                    # Map to engagement level
+                                    if score >= 0.8:
+                                        level = "high"
+                                    elif score >= 0.6:
+                                        level = "medium"
+                                    else:
+                                        level = "low"
+                                        
+                                    metric_rec = EngagementMetric(
+                                        attendance_id=att_id,
+                                        attention_score=float(score),
+                                        head_pose_score=float(score * 0.95),
+                                        eye_gaze_score=float(score * 1.05),
+                                        engagement_level=level
+                                    )
+                                    db.add(metric_rec)
+                            
+                            await db.commit()
+                            _last_engagement_write[camera_id] = now_epoch
 
                 # ── 5. Resolve names for sidebar ──────────────────────────
                 known_ids = [d["user_id"] for d in decisions if d.get("user_id")]
@@ -263,6 +305,7 @@ async def websocket_endpoint(
             if camera_id in _ai_tasks and not _ai_tasks[camera_id].done():
                 _ai_tasks[camera_id].cancel()
             _frame_buffer.pop(camera_id, None)
+            _last_engagement_write.pop(camera_id, None)
             ended_session = _session_map.pop(camera_id, None)
             if ended_session:
                 from app.ai_engine.attendance_bridge import _clear_session_cache
