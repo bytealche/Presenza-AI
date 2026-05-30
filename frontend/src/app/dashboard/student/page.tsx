@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getStudentStats, StudentStats } from "@/services/dashboardService";
-import { getSessions, Session } from "@/services/sessionService";
-import { getMyEnrollments, enrollInSession, Enrollment } from "@/services/enrollmentService";
+import { getSessions, Session, getApprovedSubjects, ApprovedSubject } from "@/services/sessionService";
+import { getMyEnrollments, getMySubjectEnrollments, enrollInSubject } from "@/services/enrollmentService";
 import { getUsers } from "@/services/authService";
 import { 
     Clock, MapPin, Video, LogIn, Calendar, X, Loader2, VideoOff, 
@@ -18,6 +18,12 @@ const StreamViewer = dynamic(
     { ssr: false, loading: () => <div className="text-center py-10 text-xs text-muted flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-accent" /> Loading live stream viewer...</div> }
 );
 
+const DeviceCameraStreamer = dynamic(
+    () => import("@/components/CameraStream").then((mod) => mod.DeviceCameraStreamer),
+    { ssr: false, loading: () => <div className="text-center py-10 text-xs text-muted flex items-center justify-center gap-2"><Loader2 className="w-4 h-4 animate-spin text-accent" /> Loading camera streaming...</div> }
+);
+
+
 export default function StudentDashboard() {
     const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<"schedule" | "enroll">("schedule");
@@ -25,16 +31,21 @@ export default function StudentDashboard() {
     // Core Data States
     const [stats, setStats] = useState<StudentStats | null>(null);
     const [allSessions, setAllSessions] = useState<Session[]>([]);
-    const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
+    const [enrollments, setEnrollments] = useState<any[]>([]);
+    const [approvedSubjects, setApprovedSubjects] = useState<ApprovedSubject[]>([]);
+    const [subjectEnrollments, setSubjectEnrollments] = useState<string[]>([]);
     const [teachers, setTeachers] = useState<Record<number, string>>({});
     
     // UI/Flow States
     const [loading, setLoading] = useState(true);
-    const [enrollingId, setEnrollingId] = useState<number | null>(null);
+    const [enrollingSubject, setEnrollingSubject] = useState<string | null>(null);
     const [streamingCameraId, setStreamingCameraId] = useState<string | null>(null);
     const [streamingSessionId, setStreamingSessionId] = useState<number | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+
+    const streamingSession = allSessions.find(s => s.session_id === streamingSessionId);
+    const isOnline = streamingSession ? streamingSession.class_type === "online" || streamingSession.class_type === "hybrid" : false;
 
     useEffect(() => {
         if (user) {
@@ -46,11 +57,13 @@ export default function StudentDashboard() {
         setLoading(true);
         setError(null);
         try {
-            const [statsData, sessionsData, enrollmentsData, teachersData] = await Promise.all([
+            const [statsData, sessionsData, enrollmentsData, teachersData, subjectsData, mySubsData] = await Promise.all([
                 getStudentStats(),
                 getSessions(),
                 getMyEnrollments(),
-                getUsers(2) // Role ID 2 = Teacher
+                getUsers(2), // Role ID 2 = Teacher
+                getApprovedSubjects(),
+                getMySubjectEnrollments()
             ]);
 
             const teacherMap: Record<number, string> = {};
@@ -62,6 +75,8 @@ export default function StudentDashboard() {
             setAllSessions(sessionsData);
             setEnrollments(enrollmentsData);
             setTeachers(teacherMap);
+            setApprovedSubjects(subjectsData);
+            setSubjectEnrollments(mySubsData);
         } catch (err) {
             console.error("Failed to load student dashboard data:", err);
             setError("Failed to sync available data. Please refresh.");
@@ -70,34 +85,36 @@ export default function StudentDashboard() {
         }
     }
 
-    const handleEnroll = async (sessionId: number) => {
+    const handleEnrollSubject = async (subjectName: string) => {
         if (!user) return;
-        setEnrollingId(sessionId);
+        setEnrollingSubject(subjectName);
         setError(null);
         setSuccessMessage(null);
         try {
-            const newEnrollment = await enrollInSession(sessionId, user.user_id);
-            setEnrollments(prev => [...prev, newEnrollment]);
+            await enrollInSubject(subjectName);
+            setSubjectEnrollments(prev => [...prev, subjectName]);
+            setSuccessMessage(`Successfully enrolled in subject: ${subjectName}!`);
             
-            const sessionName = allSessions.find(s => s.session_id === sessionId)?.session_name || "subject";
-            setSuccessMessage(`Successfully enrolled in ${sessionName}!`);
-            
-            // Re-fetch stats to reflect the new enrollment in engagement analytics
-            const statsData = await getStudentStats();
+            // Reload user enrollments and stats in background
+            const [enrollmentsData, statsData] = await Promise.all([
+                getMyEnrollments(),
+                getStudentStats()
+            ]);
+            setEnrollments(enrollmentsData);
             setStats(statsData);
             
             // Auto fade success message
             setTimeout(() => setSuccessMessage(null), 4000);
         } catch (err: any) {
-            console.error("Enrollment failed:", err);
-            setError(err?.response?.data?.detail || "Failed to complete enrollment. Please try again.");
+            console.error("Subject enrollment failed:", err);
+            setError(err?.response?.data?.detail || "Failed to complete subject enrollment. Please try again.");
         } finally {
-            setEnrollingId(null);
+            setEnrollingSubject(null);
         }
     };
 
-    const isEnrolled = (sessionId: number) => {
-        return enrollments.some(e => e.session_id === sessionId);
+    const isSubjectEnrolled = (subjectName: string) => {
+        return subjectEnrollments.includes(subjectName);
     };
 
     const isActive = (cls: Session) => {
@@ -241,6 +258,18 @@ export default function StudentDashboard() {
                                                 <div className="w-full text-center py-3 text-xs font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-lg uppercase tracking-wider select-none">
                                                     Offline Session - Physical Attendance
                                                 </div>
+                                            ) : (cls.class_type === "online" || cls.class_type === "hybrid") ? (
+                                                <button
+                                                    onClick={() => {
+                                                        const uniqueId = `online_s${cls.session_id}_u${user?.user_id || 'guest'}`;
+                                                        setStreamingCameraId(uniqueId);
+                                                        setStreamingSessionId(cls.session_id);
+                                                    }}
+                                                    className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-600/20 transition-all flex items-center justify-center gap-2 transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                                                >
+                                                    <LogIn className="w-5 h-5" />
+                                                    Join Class with Device
+                                                </button>
                                             ) : cls.camera_id ? (
                                                 <button
                                                     onClick={() => {
@@ -359,14 +388,12 @@ export default function StudentDashboard() {
             {activeTab === "enroll" && (
                 <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {allSessions.map((cls) => {
-                            const enrolled = isEnrolled(cls.session_id);
-                            const teacherName = teachers[cls.created_by || 0] || "Faculty Professor";
-                            const isUpcomingSession = new Date(cls.start_time) > new Date();
+                        {approvedSubjects.map((sub) => {
+                            const enrolled = isSubjectEnrolled(sub.subject_name);
 
                             return (
                                 <div 
-                                    key={cls.session_id} 
+                                    key={sub.request_id} 
                                     className={`glass-card p-6 border relative overflow-hidden transition-all duration-300 flex flex-col justify-between group ${
                                         enrolled 
                                             ? "border-emerald-500/30 bg-emerald-950/5 shadow-[0_0_20px_-10px_rgba(16,185,129,0.2)]" 
@@ -381,43 +408,23 @@ export default function StudentDashboard() {
 
                                     <div>
                                         <div className="flex items-center justify-between gap-3 mb-4">
-                                            <span className={`px-2.5 py-0.5 rounded-lg border uppercase tracking-wider text-[9px] font-black ${
-                                                cls.class_type === "offline"
-                                                    ? "bg-purple-500/15 border-purple-500/35 text-purple-400"
-                                                    : "bg-emerald-500/15 border-emerald-500/35 text-emerald-400"
-                                            }`}>
-                                                {cls.class_type === "offline" ? "Offline" : "Online / Hybrid"}
+                                            <span className="px-2.5 py-0.5 rounded-lg border uppercase tracking-wider text-[9px] font-black bg-accent/15 border-accent/35 text-accent">
+                                                Active Course
                                             </span>
-                                            {isUpcomingSession && (
-                                                <span className="bg-blue-500/10 border border-blue-500/25 text-blue-400 px-2 py-0.5 rounded-lg text-[9px] font-extrabold uppercase tracking-wider">
-                                                    Upcoming
-                                                </span>
-                                            )}
                                         </div>
 
-                                        <h3 className="text-xl font-bold text-foreground tracking-tight group-hover:text-accent transition-colors line-clamp-1 mb-1">
-                                            {cls.session_name}
+                                        <h3 className="text-xl font-bold text-foreground tracking-tight group-hover:text-accent transition-colors line-clamp-1 mb-2">
+                                            {sub.subject_name}
                                         </h3>
                                         
-                                        <p className="text-xs text-muted font-bold flex items-center gap-1.5 mb-5">
-                                            <BookOpen className="w-3.5 h-3.5 text-accent" />
-                                            Taught by: <span className="text-foreground">{teacherName}</span>
+                                        <p className="text-xs text-muted font-medium mb-6 min-h-[40px] line-clamp-3 leading-relaxed">
+                                            {sub.description || "No subject overview provided."}
                                         </p>
 
-                                        <div className="space-y-2.5 text-xs text-muted border-t border-[var(--glass-border)] pt-4 mb-6 font-medium">
+                                        <div className="space-y-2 text-xs text-muted border-t border-[var(--glass-border)] pt-4 mb-6 font-medium">
                                             <div className="flex items-center gap-2">
-                                                <Calendar className="w-4 h-4 text-accent/80 shrink-0" />
-                                                <span>{new Date(cls.start_time).toLocaleDateString()}</span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <Clock className="w-4 h-4 text-accent/80 shrink-0" />
-                                                <span>
-                                                    {new Date(cls.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(cls.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <MapPin className="w-4 h-4 text-accent/80 shrink-0" />
-                                                <span className="truncate">{cls.location || "Online Auditorium"}</span>
+                                                <BookOpen className="w-4 h-4 text-accent/80 shrink-0" />
+                                                <span>Subject Catalog Reference #{sub.request_id}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -429,14 +436,14 @@ export default function StudentDashboard() {
                                         </div>
                                     ) : (
                                         <button
-                                            onClick={() => handleEnroll(cls.session_id)}
-                                            disabled={enrollingId !== null}
+                                            onClick={() => handleEnrollSubject(sub.subject_name)}
+                                            disabled={enrollingSubject !== null}
                                             className="w-full bg-gradient-to-r from-accent to-purple-600 hover:from-accent/95 hover:to-purple-600/95 text-white font-extrabold py-3 text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-accent/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            {enrollingId === cls.session_id ? (
+                                            {enrollingSubject === sub.subject_name ? (
                                                 <>
                                                     <Loader2 className="w-4 h-4 animate-spin" />
-                                                    Enrolling Student...
+                                                    Enrolling Subject...
                                                 </>
                                             ) : (
                                                 <>
@@ -450,12 +457,12 @@ export default function StudentDashboard() {
                             );
                         })}
 
-                        {allSessions.length === 0 && (
+                        {approvedSubjects.length === 0 && (
                             <div className="col-span-full py-20 text-center text-muted bg-[var(--glass-bg)] border border-[var(--glass-border)] border-dashed rounded-2xl max-w-xl mx-auto w-full">
                                 <Calendar className="w-14 h-14 text-muted mx-auto mb-4 opacity-40 animate-pulse" />
-                                <h3 className="text-lg font-bold text-foreground mb-1">No Academic Subjects Registered</h3>
+                                <h3 className="text-lg font-bold text-foreground mb-1">No Academic Curriculum Approved</h3>
                                 <p className="text-muted text-sm max-w-sm mx-auto px-6">
-                                    There are currently no active lecture sessions or curriculum schedules configured by organization admins.
+                                    There are currently no approved academic subjects configured by organization admins.
                                 </p>
                             </div>
                         )}
@@ -509,19 +516,33 @@ export default function StudentDashboard() {
 
                                 <div className="flex-1 w-full p-2 sm:p-6 overflow-y-auto custom-scrollbar">
                                     <div className="w-full min-h-full glass-card border-none rounded-none sm:rounded-xl overflow-hidden shadow-inner">
-                                        <div className="w-full min-h-[400px] flex flex-col items-center justify-center bg-black/40 rounded-xl relative p-4 border border-[var(--glass-border)]">
-                                            <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative shadow-inner ring-1 ring-white/10">
-                                                <StreamViewer 
-                                                    cameraId={streamingCameraId} 
+                                        <div className={`w-full min-h-[400px] flex flex-col bg-black/40 rounded-xl relative p-4 border border-[var(--glass-border)] ${!isOnline ? "items-center justify-center" : ""}`}>
+                                            {isOnline ? (
+                                                <DeviceCameraStreamer 
+                                                    cameraId={streamingCameraId}
+                                                    sessionId={streamingSessionId ?? undefined}
+                                                    autoStart={true}
                                                     onClose={() => {
                                                         setStreamingCameraId(null);
                                                         setStreamingSessionId(null);
                                                     }}
                                                 />
-                                            </div>
-                                            <p className="text-xs text-muted-bright mt-4 text-center">
-                                                Viewing live class stream for Camera #{streamingCameraId}.
-                                            </p>
+                                            ) : (
+                                                <>
+                                                    <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative shadow-inner ring-1 ring-white/10">
+                                                        <StreamViewer 
+                                                            cameraId={streamingCameraId} 
+                                                            onClose={() => {
+                                                                setStreamingCameraId(null);
+                                                                setStreamingSessionId(null);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <p className="text-xs text-muted-bright mt-4 text-center">
+                                                        Viewing live class stream for Camera #{streamingCameraId}.
+                                                    </p>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

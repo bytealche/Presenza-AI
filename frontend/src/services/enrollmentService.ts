@@ -18,3 +18,15 @@ export const enrollInSession = async (sessionId: number, userId: number): Promis
   });
   return res.data;
 };
+
+export const enrollInSubject = async (subjectName: string): Promise<any> => {
+  const res = await api.post("/enrollments/subject", {
+    subject_name: subjectName
+  });
+  return res.data;
+};
+
+export const getMySubjectEnrollments = async (): Promise<string[]> => {
+  const res = await api.get<string[]>("/enrollments/subject/my");
+  return res.data;
+};

@@ -40,6 +40,24 @@ async def create_session(
 
     db.add(new_session)
     await db.flush()
+
+    # Auto-enroll students who are enrolled in this subject in the organization
+    from app.models.enrollment import Enrollment as EnrollmentModel
+    from datetime import datetime
+    
+    enrolled_students = await db.execute(
+        text("SELECT user_id FROM subject_enrollments WHERE subject_name = :subject_name"),
+        {"subject_name": new_session.session_name}
+    )
+    student_ids = [r[0] for r in enrolled_students.fetchall()]
+    for student_id in student_ids:
+        # Create enrollment for this new session
+        db.add(EnrollmentModel(
+            session_id=new_session.session_id,
+            user_id=student_id,
+            enrolled_at=datetime.utcnow()
+        ))
+
     await db.commit()
     await db.refresh(new_session)
     return new_session
@@ -253,7 +271,7 @@ async def notify_online_class(
 
 @router.get(
     "/approved-subjects",
-    dependencies=[Depends(require_roles([1, 2]))]  # admin + teacher
+    dependencies=[Depends(require_roles([1, 2, 3]))]  # admin + teacher + student
 )
 async def list_approved_subjects(
     db: AsyncSession = Depends(get_db),

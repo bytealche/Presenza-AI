@@ -70,8 +70,30 @@ async def lifespan(app: FastAPI):
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 """))
+            # 2.5 Subject enrollments table
+            if "sqlite" in bind_url:
+                await db.execute(text("""
+                    CREATE TABLE IF NOT EXISTS subject_enrollments (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER,
+                        subject_name VARCHAR(255) NOT NULL,
+                        enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(user_id, subject_name)
+                    )
+                """))
+            else:
+                await db.execute(text("""
+                    CREATE TABLE IF NOT EXISTS subject_enrollments (
+                        id SERIAL PRIMARY KEY,
+                        user_id INTEGER,
+                        subject_name VARCHAR(255) NOT NULL,
+                        enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(user_id, subject_name)
+                    )
+                """))
+
             await db.commit()
-            logger.info("Database safety check: column 'is_approved' and table 'subject_requests' verified/created.")
+            logger.info("Database safety check: column 'is_approved' and tables 'subject_requests' & 'subject_enrollments' verified/created.")
             
             # 3. Synchronize PostgreSQL database sequences to prevent duplicate primary key conflicts
             if "sqlite" not in bind_url:
