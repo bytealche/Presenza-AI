@@ -36,63 +36,74 @@ async def lifespan(app: FastAPI):
     from sqlalchemy import text
     try:
         async with SessionLocal() as db:
+            bind_url = str(db.bind.url) if db.bind else ""
+            
             # 1. Sessions safety column
             try:
-                await db.execute(text("ALTER TABLE sessions ADD COLUMN is_approved BOOLEAN DEFAULT 0"))
-                await db.execute(text("UPDATE sessions SET is_approved = 1"))
+                await db.execute(text("ALTER TABLE sessions ADD COLUMN is_approved BOOLEAN DEFAULT TRUE"))
+                await db.execute(text("UPDATE sessions SET is_approved = TRUE"))
                 await db.commit()
             except Exception:
-                pass
+                await db.rollback()
             
             # 2. Subject requests table
-            bind_url = str(db.bind.url) if db.bind else ""
-            if "sqlite" in bind_url:
-                await db.execute(text("""
-                    CREATE TABLE IF NOT EXISTS subject_requests (
-                        request_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        org_id INTEGER,
-                        teacher_id INTEGER,
-                        subject_name VARCHAR(255) NOT NULL,
-                        description TEXT,
-                        status VARCHAR(50) DEFAULT 'pending',
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                """))
-            else:
-                await db.execute(text("""
-                    CREATE TABLE IF NOT EXISTS subject_requests (
-                        request_id SERIAL PRIMARY KEY,
-                        org_id INTEGER,
-                        teacher_id INTEGER,
-                        subject_name VARCHAR(255) NOT NULL,
-                        description TEXT,
-                        status VARCHAR(50) DEFAULT 'pending',
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                """))
+            try:
+                if "sqlite" in bind_url:
+                    await db.execute(text("""
+                        CREATE TABLE IF NOT EXISTS subject_requests (
+                            request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            org_id INTEGER,
+                            teacher_id INTEGER,
+                            subject_name VARCHAR(255) NOT NULL,
+                            description TEXT,
+                            status VARCHAR(50) DEFAULT 'pending',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    """))
+                else:
+                    await db.execute(text("""
+                        CREATE TABLE IF NOT EXISTS subject_requests (
+                            request_id SERIAL PRIMARY KEY,
+                            org_id INTEGER,
+                            teacher_id INTEGER,
+                            subject_name VARCHAR(255) NOT NULL,
+                            description TEXT,
+                            status VARCHAR(50) DEFAULT 'pending',
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    """))
+                await db.commit()
+            except Exception as table_err:
+                await db.rollback()
+                logger.error(f"Failed to verify/create subject_requests: {table_err}")
+            
             # 2.5 Subject enrollments table
-            if "sqlite" in bind_url:
-                await db.execute(text("""
-                    CREATE TABLE IF NOT EXISTS subject_enrollments (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        user_id INTEGER,
-                        subject_name VARCHAR(255) NOT NULL,
-                        enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(user_id, subject_name)
-                    )
-                """))
-            else:
-                await db.execute(text("""
-                    CREATE TABLE IF NOT EXISTS subject_enrollments (
-                        id SERIAL PRIMARY KEY,
-                        user_id INTEGER,
-                        subject_name VARCHAR(255) NOT NULL,
-                        enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(user_id, subject_name)
-                    )
-                """))
+            try:
+                if "sqlite" in bind_url:
+                    await db.execute(text("""
+                        CREATE TABLE IF NOT EXISTS subject_enrollments (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER,
+                            subject_name VARCHAR(255) NOT NULL,
+                            enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE(user_id, subject_name)
+                        )
+                    """))
+                else:
+                    await db.execute(text("""
+                        CREATE TABLE IF NOT EXISTS subject_enrollments (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER,
+                            subject_name VARCHAR(255) NOT NULL,
+                            enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE(user_id, subject_name)
+                        )
+                    """))
+                await db.commit()
+            except Exception as table_err:
+                await db.rollback()
+                logger.error(f"Failed to verify/create subject_enrollments: {table_err}")
 
-            await db.commit()
             logger.info("Database safety check: column 'is_approved' and tables 'subject_requests' & 'subject_enrollments' verified/created.")
             
             # 3. Synchronize PostgreSQL database sequences to prevent duplicate primary key conflicts
@@ -122,6 +133,7 @@ async def lifespan(app: FastAPI):
                     await db.commit()
                     logger.info("PostgreSQL sequences synchronized successfully.")
                 except Exception as seq_err:
+                    await db.rollback()
                     logger.warning(f"Failed to synchronize database sequences: {seq_err}")
     except Exception as e:
         logger.error(f"Database safety check failed: {e}")
