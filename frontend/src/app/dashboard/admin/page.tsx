@@ -81,6 +81,11 @@ export default function AdminDashboard() {
         }
     };
 
+    const userMap: Record<number, string> = {};
+    users.forEach((u: any) => {
+        userMap[u.user_id] = u.full_name;
+    });
+
     return (
         <div className="p-4 sm:p-8 space-y-6 sm:space-y-8">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
