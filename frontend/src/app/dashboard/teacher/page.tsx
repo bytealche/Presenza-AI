@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getTeacherStats, TeacherStats } from "@/services/dashboardService";
 import { getSessions, createSession, requestSubject, Session, updateSession } from "@/services/sessionService";
-import { getCameras, Camera } from "@/services/cameraService";
+import { getCameras, Camera, addCamera } from "@/services/cameraService";
 import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2, Sparkles, AlertCircle } from "lucide-react";
 import Portal from "@/components/Portal";
 import { motion, AnimatePresence } from "framer-motion";
@@ -78,9 +78,25 @@ export default function TeacherDashboard() {
         e.preventDefault();
         setCreating(true);
         try {
+            let finalCameraId: number | undefined = undefined;
+
+            if (newClass.camera_id === "virtual_device" || newClass.camera_id === "virtual_mobile") {
+                const isMobile = newClass.camera_id === "virtual_mobile";
+                // Register a new camera device on-the-fly
+                const autoCam = await addCamera({
+                    camera_type: isMobile ? "mobile" : "device",
+                    location: `${isMobile ? "Phone" : "Webcam"} Camera (${newClass.session_name || "Class"})`,
+                    description: "Automatically integrated on class creation",
+                    connection_url: isMobile ? "Mobile cast" : "Device stream"
+                });
+                finalCameraId = autoCam.camera_id;
+            } else if (newClass.camera_id) {
+                finalCameraId = Number(newClass.camera_id);
+            }
+
             const createdSession = await createSession({
                 ...newClass,
-                camera_id: newClass.camera_id ? Number(newClass.camera_id) : undefined
+                camera_id: finalCameraId
             });
             await loadData(); // Refresh list
             setIsModalOpen(false);
@@ -175,6 +191,38 @@ export default function TeacherDashboard() {
                 }
             }
             alert(`Error:\n${msg}`);
+        } finally {
+            setLinking(false);
+        }
+    };
+
+    const handleAutoCreateAndLink = async (type: "device" | "mobile") => {
+        if (!linkingSessionId) return;
+        setLinking(true);
+        try {
+            const targetSession = classes.find(c => c.session_id === linkingSessionId);
+            const sessionName = targetSession ? targetSession.session_name : "Class";
+            
+            // Auto create camera
+            const autoCam = await addCamera({
+                camera_type: type,
+                location: `${type === "mobile" ? "Phone" : "Webcam"} Camera (${sessionName})`,
+                description: "Linked on-the-fly",
+                connection_url: type === "mobile" ? "Mobile cast" : "Device stream"
+            });
+            
+            // Link to session
+            await updateSession(linkingSessionId, {
+                camera_id: autoCam.camera_id
+            });
+            
+            await loadData();
+            setIsLinkingModalOpen(false);
+            setLinkingSessionId(null);
+            setLinkingCameraId("");
+        } catch (error: any) {
+            console.error("Failed to auto create and link camera", error);
+            alert("Error integrating camera feed.");
         } finally {
             setLinking(false);
         }
@@ -490,8 +538,18 @@ export default function TeacherDashboard() {
                                             >
                                                 <option value="" className="bg-slate-900 text-white">No camera tracking</option>
                                                 
+                                                {/* On-the-fly Virtual Camera Options */}
+                                                <optgroup label="Create & Integrate New Feed" className="bg-slate-900 text-accent font-bold">
+                                                    <option value="virtual_device" className="bg-slate-900 text-white font-normal">
+                                                        💻 Device Camera (Local Web Cam)
+                                                    </option>
+                                                    <option value="virtual_mobile" className="bg-slate-900 text-white font-normal">
+                                                        📱 Phone Camera (Mobile Broadcaster)
+                                                    </option>
+                                                </optgroup>
+
                                                 {cameras.some(cam => cam.camera_type === "device") && (
-                                                    <optgroup label="Device Cameras (Local Webcams)" className="bg-slate-900 text-slate-400 font-bold">
+                                                    <optgroup label="Existing Device Cameras (Webcams)" className="bg-slate-900 text-slate-400 font-bold">
                                                         {cameras.filter(cam => cam.camera_type === "device").map(cam => (
                                                             <option key={cam.camera_id} value={cam.camera_id.toString()} className="bg-slate-900 text-white font-normal">
                                                                 {cam.location} - {cam.description || "Local Webcam"}
@@ -501,7 +559,7 @@ export default function TeacherDashboard() {
                                                 )}
                                                 
                                                 {cameras.some(cam => cam.camera_type === "mobile") && (
-                                                    <optgroup label="Phone Cameras (Mobile Broadcasters)" className="bg-slate-900 text-slate-400 font-bold">
+                                                    <optgroup label="Existing Phone Cameras (Broadcasters)" className="bg-slate-900 text-slate-400 font-bold">
                                                         {cameras.filter(cam => cam.camera_type === "mobile").map(cam => (
                                                             <option key={cam.camera_id} value={cam.camera_id.toString()} className="bg-slate-900 text-white font-normal">
                                                                 {cam.location} - {cam.description || "Mobile Broadcaster"}
@@ -521,12 +579,12 @@ export default function TeacherDashboard() {
                                                 )}
                                             </select>
                                             {cameras.length === 0 && (
-                                                <div className="mt-3 bg-yellow-500/10 border border-yellow-500/20 text-yellow-200 p-4 rounded-xl flex flex-col gap-2 text-xs">
-                                                    <span className="font-bold flex items-center gap-1.5 text-yellow-400">
-                                                        <AlertCircle className="w-4 h-4" /> No cameras integrated!
+                                                <div className="mt-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-200 p-4 rounded-xl flex flex-col gap-2 text-xs">
+                                                    <span className="font-bold flex items-center gap-1.5 text-accent">
+                                                        <AlertCircle className="w-4 h-4" /> Setup Live Tracking Instantly!
                                                     </span>
                                                     <p className="text-muted leading-relaxed text-slate-300">
-                                                        Smart attendance tracking requires a camera source. You can still schedule this session, but you won't be able to run live face-tracking. Please contact your organization administrator to register camera feeds.
+                                                        No pre-registered camera feeds found. You can select either <strong>Device Camera</strong> or <strong>Phone Camera</strong> under the "Create & Integrate New Feed" group to register a tracking stream on-the-fly!
                                                     </p>
                                                 </div>
                                             )}
@@ -819,10 +877,26 @@ export default function TeacherDashboard() {
                                             <div className="text-center py-6 space-y-4">
                                                 <VideoOff className="w-12 h-12 text-muted mx-auto opacity-50" />
                                                 <div>
-                                                    <h4 className="text-sm font-bold text-foreground">No Cameras Available</h4>
+                                                    <h4 className="text-sm font-bold text-foreground">No Cameras Registered Yet</h4>
                                                     <p className="text-xs text-muted mt-1 leading-relaxed text-slate-300">
-                                                        No camera feeds are integrated in your organization. Please ask your administrator to register camera devices to enable tracking.
+                                                        No camera feeds exist in your organization. You can dynamically create and link a new camera slot instantly below:
                                                     </p>
+                                                </div>
+                                                <div className="flex flex-col gap-2.5 pt-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAutoCreateAndLink("device")}
+                                                        className="w-full bg-accent hover:bg-accent-dark text-secondary font-bold text-xs py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(189,244,255,0.25)] text-center cursor-pointer flex items-center justify-center gap-2"
+                                                    >
+                                                        💻 Integrate & Link New Webcam
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAutoCreateAndLink("mobile")}
+                                                        className="w-full bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 font-bold text-xs py-3.5 rounded-xl transition-all border border-purple-500/30 text-center cursor-pointer flex items-center justify-center gap-2"
+                                                    >
+                                                        📱 Integrate & Link New Phone Broadcaster
+                                                    </button>
                                                 </div>
                                             </div>
                                         ) : (
