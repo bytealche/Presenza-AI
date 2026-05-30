@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { getTeacherStats, TeacherStats } from "@/services/dashboardService";
-import { getSessions, createSession, Session } from "@/services/sessionService";
+import { getSessions, createSession, requestSubject, Session } from "@/services/sessionService";
 import { getCameras, Camera } from "@/services/cameraService";
 import { Plus, Calendar, MapPin, Video, VideoOff, Clock, X, Loader2, Sparkles } from "lucide-react";
 import Portal from "@/components/Portal";
@@ -26,11 +26,15 @@ export default function TeacherDashboard() {
     const [cameras, setCameras] = useState<Camera[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
     const [creating, setCreating] = useState(false);
+    const [requestingSubject, setRequestingSubject] = useState(false);
     const [streamingCameraId, setStreamingCameraId] = useState<string | null>(null);
     const [streamingSessionId, setStreamingSessionId] = useState<number | null>(null);
     const [mounted, setMounted] = useState(false);
     const [hostUrl, setHostUrl] = useState("");
+
+    const [newSubject, setNewSubject] = useState({ subject_name: "", description: "" });
 
     // Form State
     const [newClass, setNewClass] = useState({
@@ -88,6 +92,23 @@ export default function TeacherDashboard() {
             alert(`Error: ${msg}`);
         } finally {
             setCreating(false);
+        }
+    };
+
+    const handleRequestSubject = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setRequestingSubject(true);
+        try {
+            await requestSubject(newSubject.subject_name, newSubject.description);
+            alert("Subject catalog request submitted successfully to your organization administrator!");
+            setIsSubjectModalOpen(false);
+            setNewSubject({ subject_name: "", description: "" });
+        } catch (error: any) {
+            console.error("Failed to request subject", error);
+            const msg = error.response?.data?.detail || "Failed to submit request.";
+            alert(`Error: ${msg}`);
+        } finally {
+            setRequestingSubject(false);
         }
     };
 
@@ -214,13 +235,22 @@ export default function TeacherDashboard() {
                     </h2>
                     <p className="text-muted-bright mt-2 text-sm md:text-base">Manage your scheduled sessions, cameras, and attendance tracking.</p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center justify-center w-full sm:w-auto gap-2 bg-gradient-to-r from-accent to-accent-dark hover:from-accent-dark hover:to-accent text-secondary px-6 py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(189,244,255,0.25)] hover:shadow-[0_0_25px_rgba(189,244,255,0.5)] hover:-translate-y-0.5 font-bold"
-                >
-                    <Plus className="w-5 h-5 flex-shrink-0" />
-                    <span>Request Subject</span>
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <button
+                        onClick={() => setIsSubjectModalOpen(true)}
+                        className="flex items-center justify-center w-full sm:w-auto gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-5 py-3.5 rounded-xl transition-all shadow-lg hover:-translate-y-0.5 font-bold cursor-pointer"
+                    >
+                        <Plus className="w-5 h-5 flex-shrink-0" />
+                        <span>Request Subject</span>
+                    </button>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center justify-center w-full sm:w-auto gap-2 bg-gradient-to-r from-accent to-accent-dark hover:from-accent-dark hover:to-accent text-secondary px-5 py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(189,244,255,0.25)] hover:shadow-[0_0_25px_rgba(189,244,255,0.5)] hover:-translate-y-0.5 font-bold cursor-pointer"
+                    >
+                        <Plus className="w-5 h-5 flex-shrink-0" />
+                        <span>Create Class</span>
+                    </button>
+                </div>
             </div>
 
             {/* Stats Row */}
@@ -300,7 +330,7 @@ export default function TeacherDashboard() {
                                 className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-2xl z-[101] flex flex-col backdrop-blur-2xl rounded-2xl max-h-[90vh]"
                             >
                                 <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-highlight)]">
-                                    <h3 className="text-2xl font-bold text-foreground tracking-tight">Request Subject Session</h3>
+                                    <h3 className="text-2xl font-bold text-foreground tracking-tight">Schedule Session</h3>
                                     <button
                                         onClick={() => setIsModalOpen(false)}
                                         className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 rounded-full"
@@ -312,7 +342,7 @@ export default function TeacherDashboard() {
                                 <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                                     <form onSubmit={handleCreateClass} className="space-y-6">
                                         <div>
-                                            <label className="block text-sm font-medium text-muted-bright mb-2">Subject Name</label>
+                                            <label className="block text-sm font-medium text-muted-bright mb-2">Class Name</label>
                                             <input
                                                 type="text"
                                                 required
@@ -406,6 +436,86 @@ export default function TeacherDashboard() {
                                                 className="w-full bg-gradient-to-r from-accent to-accent-dark hover:from-accent-dark hover:to-accent text-secondary shadow-[0_0_15px_rgba(189,244,255,0.3)] hover:shadow-[0_0_25px_rgba(189,244,255,0.5)] font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 {creating ? (
+                                                    <>
+                                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                                        Initializing...
+                                                    </>
+                                                ) : (
+                                                    "Confirm Schedule"
+                                                )}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
+            </Portal>
+
+            {/* Request Subject Sidebar Drawer */}
+            <Portal>
+                <AnimatePresence>
+                    {isSubjectModalOpen && (
+                        <>
+                            {/* Backdrop */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setIsSubjectModalOpen(false)}
+                                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]"
+                            />
+
+                            {/* Center Modal */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-2xl z-[101] flex flex-col backdrop-blur-2xl rounded-2xl max-h-[90vh]"
+                            >
+                                <div className="p-6 border-b border-[var(--glass-border)] flex justify-between items-center bg-[var(--glass-highlight)]">
+                                    <h3 className="text-2xl font-bold text-foreground tracking-tight">Request Subject</h3>
+                                    <button
+                                        onClick={() => setIsSubjectModalOpen(false)}
+                                        className="text-muted-bright hover:text-foreground transition-colors bg-[var(--glass-highlight)] p-2 rounded-full"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                </div>
+
+                                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                                    <form onSubmit={handleRequestSubject} className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-muted-bright mb-2">Subject Name</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                className="w-full px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all placeholder:text-muted"
+                                                placeholder="e.g. CS102 - Data Structures"
+                                                value={newSubject.subject_name}
+                                                onChange={(e) => setNewSubject({ ...newSubject, subject_name: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-muted-bright mb-2">Description</label>
+                                            <textarea
+                                                className="w-full h-32 px-4 py-3 bg-[var(--glass-highlight)] text-foreground rounded-xl border border-[var(--glass-border)] focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all placeholder:text-muted resize-none"
+                                                placeholder="Provide brief subject overview and requirements..."
+                                                value={newSubject.description}
+                                                onChange={(e) => setNewSubject({ ...newSubject, description: e.target.value })}
+                                            />
+                                        </div>
+
+                                        <div className="pt-4 mt-auto">
+                                            <button
+                                                type="submit"
+                                                disabled={requestingSubject || !newSubject.subject_name}
+                                                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white shadow-lg font-bold py-4 rounded-xl transition-all flex justify-center items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {requestingSubject ? (
                                                     <>
                                                         <Loader2 className="w-5 h-5 animate-spin" />
                                                         Submitting...

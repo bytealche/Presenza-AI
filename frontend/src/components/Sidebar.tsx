@@ -25,7 +25,7 @@ export default function Sidebar() {
     ];
 
     const teacherLinks = [
-        { name: "My Subjects", href: "/dashboard/teacher" },
+        { name: "My Classes", href: "/dashboard/teacher" },
         { name: "Engagement", href: "/dashboard/engagement" },
     ];
 

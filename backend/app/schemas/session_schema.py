@@ -30,3 +30,8 @@ class ClassNotificationRequest(BaseModel):
     subject: str
     message: str
 
+
+class SubjectRequest(BaseModel):
+    subject_name: str
+    description: Optional[str] = None
+

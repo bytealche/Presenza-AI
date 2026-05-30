@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.database.dependencies import get_db
 from app.models.session import Session as SessionModel
-from app.schemas.session_schema import SessionCreate, SessionResponse, ClassNotificationRequest
+from app.schemas.session_schema import SessionCreate, SessionResponse, ClassNotificationRequest, SubjectRequest
 from app.core.role_dependencies import require_roles
 from app.models.user import User
 from app.models.enrollment import Enrollment
@@ -180,5 +180,75 @@ async def notify_online_class(
         )
 
     return {"message": f"Notifications queued successfully for {len(students)} student(s)."}
+
+
+@router.post(
+    "/request-subject",
+    dependencies=[Depends(require_roles([1, 2]))]  # admin + teacher
+)
+async def request_subject(
+    data: SubjectRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Fetch organization admin (role_id = 1)
+    admin_result = await db.execute(
+        select(User).where(User.org_id == current_user.org_id, User.role_id == 1)
+    )
+    admin = admin_result.scalars().first()
+    
+    # If no admin, send to system default
+    admin_email = admin.email if admin else "admin@presenza.ai"
+    admin_name = admin.full_name if admin else "System Administrator"
+
+    email_subject = f"[Subject Request] New Catalog Subject Request: {data.subject_name}"
+    
+    plain_body = f"""Hi {admin_name},
+
+Instructor {current_user.full_name} has requested the creation of a new Subject in your organization catalog.
+
+Subject Name: {data.subject_name}
+Description: {data.description or "No description provided."}
+
+Please log in to your Presenza AI Admin Dashboard to review and configure this subject catalog entry.
+
+Best regards,
+Team Presenza"""
+
+    html_body = f"""
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: auto; padding: 30px; border: 1px solid #e2e8f0; border-radius: 12px; color: #1e293b; line-height: 1.6;">
+        <div style="text-align: center; margin-bottom: 25px;">
+            <h1 style="color: #4f46e5; margin: 0; font-size: 28px;">Presenza AI</h1>
+            <p style="color: #64748b; margin-top: 5px;">Subject Catalog Request</p>
+        </div>
+        
+        <p style="font-size: 16px;">Hi <strong>{admin_name}</strong>,</p>
+        
+        <p style="font-size: 16px;">An instructor has requested a new Subject in your organization's course catalog:</p>
+        
+        <div style="background-color: #f8fafc; border-left: 4px solid #4f46e5; padding: 20px; border-radius: 8px; margin: 25px 0;">
+            <h3 style="margin-top: 0; color: #1e293b; font-size: 18px;">{data.subject_name}</h3>
+            <p style="white-space: pre-wrap; color: #475569; font-size: 14px; margin-bottom: 0;"><strong>Description:</strong><br>{data.description or "No description provided."}</p>
+        </div>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 14px; color: #64748b;">
+            <p>Requested by: <strong>{current_user.full_name}</strong> ({current_user.email})</p>
+            <p>Please review and approve this entry in your Administrator settings.</p>
+            <p style="margin-top: 20px;">Best regards,<br><strong style="color: #1e293b;">Team Presenza</strong></p>
+        </div>
+    </div>
+    """
+
+    background_tasks.add_task(
+        send_email_sync,
+        admin_email,
+        email_subject,
+        plain_body,
+        html_body
+    )
+
+    return {"message": f"Subject catalog request for '{data.subject_name}' submitted successfully to your organization administrator."}
+
 
 

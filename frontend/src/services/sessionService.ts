@@ -74,4 +74,16 @@ export const notifyClass = async (
   return res.data;
 };
 
+export const requestSubject = async (
+  subjectName: string,
+  description?: string
+): Promise<{ message: string }> => {
+  const res = await api.post<{ message: string }>("/sessions/request-subject", {
+    subject_name: subjectName,
+    description
+  });
+  return res.data;
+};
+
+
 
