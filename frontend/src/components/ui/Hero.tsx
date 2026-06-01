@@ -88,7 +88,7 @@ export function Hero() {
 
                     <div className="w-full sm:w-auto">
                         <MagneticButton>
-                            <a href="https://youtu.be/iChaC_Trtto?si=n0_KnD63EyRjGSM1" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 text-foreground rounded-full font-semibold border border-[var(--glass-border)] bg-[var(--glass-bg)] hover:bg-[var(--glass-highlight)] transition-all backdrop-blur-sm whitespace-nowrap">
+                            <a href="#" className="flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 text-foreground rounded-full font-semibold border border-[var(--glass-border)] bg-[var(--glass-bg)] hover:bg-[var(--glass-highlight)] transition-all backdrop-blur-sm whitespace-nowrap">
                                 <Play className="w-5 h-5 fill-current" /> Watch Demo
                             </a>
                         </MagneticButton>
