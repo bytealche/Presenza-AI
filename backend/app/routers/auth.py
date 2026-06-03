@@ -23,6 +23,8 @@ from app.ai_engine.liveness_detection import LivenessDetector
 from app.ai_engine.face_embedding import generate_embedding
 from app.ai_engine.vector_store import find_match
 from app.core.email import send_email_sync
+from app.core.auth_dependencies import get_current_user
+from app.services.system_log_service import create_system_log
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +183,13 @@ async def register_organization(
             status="active",
         )
         db.add(new_user)
+        await create_system_log(
+            db,
+            action="register_organization",
+            user_id=new_user.user_id,
+            ip_address=request.client.host if request.client else None,
+            commit=False
+        )
         await db.commit()
         logger.info(f"Organisation '{data.org_name}' registered successfully")
         return {"message": "Organisation registered successfully"}
@@ -216,6 +225,13 @@ async def register_user(
         status=user_status,
     )
     db.add(new_user)
+    await create_system_log(
+        db,
+        action="register_user",
+        user_id=new_user.user_id,
+        ip_address=request.client.host if request.client else None,
+        commit=False
+    )
     await db.commit()
     logger.info(f"User '{data.email}' registered (status={user_status})")
 
@@ -235,8 +251,11 @@ async def login(
     result = await db.execute(select(User).where(User.email == data.email))
     users = result.scalars().all()
 
+    ip_addr = request.client.host if request.client else None
+
     if not users:
         logger.warning(f"Login attempt for non-existent email: {data.email}")
+        await create_system_log(db, action="login_failed", user_id=None, ip_address=ip_addr, commit=True)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     if len(users) > 1:
@@ -247,18 +266,22 @@ async def login(
             )
         user = next((u for u in users if u.org_id == data.org_id), None)
         if not user:
+            await create_system_log(db, action="login_failed", user_id=None, ip_address=ip_addr, commit=True)
             raise HTTPException(status_code=401, detail="Invalid credentials")
     else:
         user = users[0]
         # If user explicitly sent an incorrect org_id when they only have 1, we still validate it to be clean
         if data.org_id and user.org_id != data.org_id:
+            await create_system_log(db, action="login_failed", user_id=user.user_id, ip_address=ip_addr, commit=True)
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
     if user.status != "active":
+        await create_system_log(db, action="login_failed", user_id=user.user_id, ip_address=ip_addr, commit=True)
         raise HTTPException(status_code=403, detail="Account is pending approval or suspended.")
 
     if not await verify_password_async(data.password, user.password_hash):
         logger.warning(f"Failed login attempt for {data.email}")
+        await create_system_log(db, action="login_failed", user_id=user.user_id, ip_address=ip_addr, commit=True)
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     payload = _build_token_payload(user)
@@ -266,6 +289,7 @@ async def login(
     refresh_token = create_refresh_token(data={"user_id": user.user_id, "email": user.email})
 
     logger.info(f"User '{data.email}' logged in successfully")
+    await create_system_log(db, action="user_login", user_id=user.user_id, ip_address=ip_addr, commit=True)
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -304,11 +328,22 @@ async def refresh_access_token(body: RefreshRequest, db: AsyncSession = Depends(
 
 
 @router.post("/logout")
-async def logout():
+async def logout(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
     Stateless JWT logout — client must discard both tokens.
     For token blacklisting, integrate Redis here in the future.
     """
+    await create_system_log(
+        db,
+        action="user_logout",
+        user_id=current_user.user_id,
+        ip_address=request.client.host if request.client else None,
+        commit=True
+    )
     return {"message": "Logged out successfully. Please discard your tokens."}
 
 @router.post("/reset-password")
@@ -341,6 +376,13 @@ async def reset_password(
     # Hash new password and update
     user.password_hash = await hash_password_async(data.new_password)
     db.add(user)
+    await create_system_log(
+        db,
+        action="password_reset",
+        user_id=user.user_id,
+        ip_address=request.client.host if request.client else None,
+        commit=False
+    )
     await db.commit()
     
     logger.info(f"Password reset successfully for user: {data.email}")

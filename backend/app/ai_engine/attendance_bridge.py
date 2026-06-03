@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.models.attendance import AttendanceRecord as Attendance
 from app.models.ai_decision import AIDecisionLog
+from app.services.system_log_service import create_system_log
 import logging
 
 logger = logging.getLogger(__name__)
@@ -140,6 +141,10 @@ async def apply_ai_decisions(db: AsyncSession, session_id: int, decisions: list,
                 existing.decision_time = datetime.utcnow()
                 db.add(existing)
                 logger.info(f"Upgraded user {uid} → {final_status} (session {session_id})")
+                if is_fraud:
+                    reason = d.get("reason")
+                    action_type = reason if reason in ("liveness_failed", "spoofing_attempt") else "fraud_detected"
+                    await create_system_log(db, action=action_type, user_id=uid, commit=False)
             conf_set.add(uid)
             results.append(existing)
         else:
@@ -153,6 +158,10 @@ async def apply_ai_decisions(db: AsyncSession, session_id: int, decisions: list,
                 decision_time=datetime.utcnow(),
             )
             brand_new.append((rec, d))
+            if is_fraud:
+                reason = d.get("reason")
+                action_type = reason if reason in ("liveness_failed", "spoofing_attempt") else "fraud_detected"
+                await create_system_log(db, action=action_type, user_id=uid, commit=False)
 
     ai_logs: list[AIDecisionLog] = []
 

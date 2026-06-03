@@ -18,6 +18,7 @@ _ai_tasks: dict[str, asyncio.Task] = {}
 _frame_buffer: dict[str, bytes] = {}   # latest JPEG frame per camera_id
 _session_map: dict[str, int] = {}      # camera_id -> pinned session_id
 _last_engagement_write: dict[str, float] = {}  # camera_id -> last write epoch
+_last_unknown_log_time: dict[str, float] = {}   # camera_id -> last unknown log epoch
 
 
 async def _ai_loop(camera_id: str):
@@ -183,6 +184,20 @@ async def _ai_loop(camera_id: str):
 
                 # ── 6. Build sidebar faces list ───────────────────────────
                 unknown_count = sum(1 for d in decisions if not d.get("user_id"))
+                if unknown_count > 0:
+                    now_epoch = time.time()
+                    last_log = _last_unknown_log_time.get(camera_id, 0.0)
+                    if now_epoch - last_log >= 60.0:
+                        from app.services.system_log_service import create_system_log
+                        await create_system_log(
+                            db,
+                            action="unknown_face",
+                            user_id=None,
+                            ip_address=None,
+                            commit=True
+                        )
+                        _last_unknown_log_time[camera_id] = now_epoch
+
                 faces_list = []
                 for d in decisions:
                     uid = d.get("user_id")
@@ -306,6 +321,7 @@ async def websocket_endpoint(
                 _ai_tasks[camera_id].cancel()
             _frame_buffer.pop(camera_id, None)
             _last_engagement_write.pop(camera_id, None)
+            _last_unknown_log_time.pop(camera_id, None)
             ended_session = _session_map.pop(camera_id, None)
             if ended_session:
                 from app.ai_engine.attendance_bridge import _clear_session_cache

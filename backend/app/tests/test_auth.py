@@ -48,6 +48,7 @@ async def test_login_invalid_credentials(client: AsyncClient):
     """Login with non-existent email should return 401."""
     with patch("app.routers.auth.get_db") as mock_db:
         mock_session = AsyncMock()
+        mock_session.add = MagicMock()
         mock_result = MagicMock()
         mock_result.scalars.return_value.first.return_value = None
         mock_session.execute = AsyncMock(return_value=mock_result)
@@ -74,6 +75,7 @@ async def test_login_inactive_account(client: AsyncClient):
     mock_result.scalars.return_value.first.return_value = mock_user
 
     mock_session = AsyncMock()
+    mock_session.add = MagicMock()
     mock_session.execute = AsyncMock(return_value=mock_result)
 
     async def override_with_pending_user():
