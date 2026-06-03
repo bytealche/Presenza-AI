@@ -31,7 +31,6 @@ export default function Sidebar() {
 
     const studentLinks = [
         { name: "My Attendance", href: "/dashboard/student" },
-        { name: "Enroll in Class", href: "/dashboard/enroll" },
     ];
 
     const links = [
