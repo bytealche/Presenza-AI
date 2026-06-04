@@ -5,7 +5,7 @@ import numpy as np
 import json
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from app.core.websocket_manager import manager
 
 logging.basicConfig(level=logging.INFO)
@@ -67,7 +67,7 @@ async def _ai_loop(camera_id: str):
                     if session_record:
                         org_id = session_record.org_id
                 else:
-                    now = datetime.now()
+                    now = datetime.utcnow()
                     stmt = select(SessionModel).where(
                         SessionModel.camera_id == int(camera_id),
                         SessionModel.start_time <= now,
@@ -98,7 +98,7 @@ async def _ai_loop(camera_id: str):
                     stmt = select(SessionModel).where(SessionModel.session_id == session_id)
                     res = await db.execute(stmt)
                     session_record = res.scalars().first()
-                    if session_record and datetime.now() > session_record.end_time:
+                    if session_record and datetime.utcnow() > session_record.end_time:
                         logger.info(f"[CAM {camera_id}] Session {session_id} has reached its end_time ({session_record.end_time}). Ending stream.")
                         payload = json.dumps({"type": "session_ended"})
                         await manager.broadcast_to_receivers(camera_id, payload)
@@ -231,7 +231,10 @@ async def _ai_loop(camera_id: str):
                 for d in decisions:
                     d_safe = d.copy()
                     if isinstance(d_safe.get("timestamp"), datetime):
-                        d_safe["timestamp"] = d_safe["timestamp"].isoformat()
+                        dt = d_safe["timestamp"]
+                        if dt.tzinfo is None:
+                            dt = dt.replace(tzinfo=timezone.utc)
+                        d_safe["timestamp"] = dt.isoformat()
                     if isinstance(d_safe.get("bbox"), tuple):
                         d_safe["bbox"] = list(d_safe["bbox"])
                     safe_decisions.append(d_safe)

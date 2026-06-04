@@ -75,7 +75,7 @@ async def delete_camera(
         )
 
     # 2. Check scheduled live session status in the database
-    now = datetime.now()
+    now = datetime.utcnow()
     active_session_query = await db.execute(
         select(SessionModel).where(
             SessionModel.camera_id == camera_id,

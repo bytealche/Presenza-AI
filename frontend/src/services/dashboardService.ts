@@ -21,6 +21,7 @@ export interface StudentStats {
         date: string;
         status: string;
         time: string;
+        timestamp?: string;
     }[];
 }
 

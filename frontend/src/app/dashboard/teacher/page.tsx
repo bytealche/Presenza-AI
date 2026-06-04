@@ -99,6 +99,8 @@ export default function TeacherDashboard() {
 
             const createdSession = await createSession({
                 ...newClass,
+                start_time: newClass.start_time ? new Date(newClass.start_time).toISOString() : "",
+                end_time: newClass.end_time ? new Date(newClass.end_time).toISOString() : "",
                 camera_id: finalCameraId
             });
             await loadData(); // Refresh list

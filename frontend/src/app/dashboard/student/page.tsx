@@ -364,20 +364,28 @@ export default function StudentDashboard() {
                                 {stats.recent_history.length === 0 ? (
                                     <div className="px-6 py-8 text-center text-muted">No check-in history found.</div>
                                 ) : (
-                                    stats.recent_history.map((record) => (
-                                        <div key={record.id} className="px-6 py-4 flex items-center justify-between hover:bg-[var(--glass-highlight)] transition-colors">
-                                            <div className="flex flex-col">
-                                                <span className="text-sm font-medium text-foreground">{record.date}</span>
-                                                <span className="text-xs text-muted">{record.time}</span>
+                                    stats.recent_history.map((record) => {
+                                        const localDate = record.timestamp 
+                                            ? new Date(record.timestamp).toLocaleDateString()
+                                            : record.date;
+                                        const localTime = record.timestamp 
+                                            ? new Date(record.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                                            : record.time;
+                                        return (
+                                            <div key={record.id} className="px-6 py-4 flex items-center justify-between hover:bg-[var(--glass-highlight)] transition-colors">
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-medium text-foreground">{localDate}</span>
+                                                    <span className="text-xs text-muted">{localTime}</span>
+                                                </div>
+                                                <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${record.status === 'Present'
+                                                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                                    : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                                    }`}>
+                                                    {record.status}
+                                                </span>
                                             </div>
-                                            <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${record.status === 'Present'
-                                                ? 'bg-green-500/10 text-green-400 border-green-500/20'
-                                                : 'bg-red-500/10 text-red-400 border-red-500/20'
-                                                }`}>
-                                                {record.status}
-                                            </span>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </div>
                         </div>

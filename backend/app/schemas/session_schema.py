@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from datetime import datetime
+from pydantic import BaseModel, field_serializer
+from datetime import datetime, timezone
 from typing import Optional
 
 class SessionCreate(BaseModel):
@@ -32,6 +32,12 @@ class SessionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_serializer('start_time', 'end_time')
+    def serialize_dt(self, dt: datetime) -> str:
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
 
 
 class ClassNotificationRequest(BaseModel):

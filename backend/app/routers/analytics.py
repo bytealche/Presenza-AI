@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, select
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 from app.database.dependencies import get_db
@@ -146,6 +146,7 @@ async def get_student_stats(
                 "date": r.decision_time.date().isoformat() if r.decision_time else None,
                 "status": r.final_status,
                 "time": r.decision_time.time().isoformat() if r.decision_time else None,
+                "timestamp": r.decision_time.replace(tzinfo=timezone.utc).isoformat() if r.decision_time else None,
             }
             for r in my_records[:5]
         ],

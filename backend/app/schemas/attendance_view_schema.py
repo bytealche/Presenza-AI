@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from datetime import datetime
+from pydantic import BaseModel, field_serializer
+from datetime import datetime, timezone
 
 class AttendanceView(BaseModel):
     session_id: int
@@ -12,3 +12,9 @@ class AttendanceView(BaseModel):
 
     class Config:
         from_attributes = True
+
+    @field_serializer('decision_time')
+    def serialize_dt(self, dt: datetime) -> str:
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
