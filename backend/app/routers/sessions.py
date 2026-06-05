@@ -65,8 +65,13 @@ async def create_session(
     from datetime import datetime
     
     enrolled_students = await db.execute(
-        text("SELECT user_id FROM subject_enrollments WHERE subject_name = :subject_name"),
-        {"subject_name": new_session.session_name}
+        text("""
+            SELECT se.user_id 
+            FROM subject_enrollments se
+            JOIN users u ON se.user_id = u.user_id
+            WHERE se.subject_name = :subject_name AND u.org_id = :org_id
+        """),
+        {"subject_name": new_session.session_name, "org_id": new_session.org_id}
     )
     student_ids = [r[0] for r in enrolled_students.fetchall()]
     for student_id in student_ids:
