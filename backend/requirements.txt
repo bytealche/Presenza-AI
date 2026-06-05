@@ -14,7 +14,6 @@ numpy>=1.26.4
 # AI / CV
 opencv-python-headless>=4.10.0
 deepface>=0.0.93
-mediapipe>=0.10.0
 tf-keras>=2.15.0
 tensorflow>=2.15.0 # deepface dependency, usually handled automatically but good to be explicit if needed
 pandas>=2.2.0
