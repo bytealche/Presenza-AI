@@ -19,10 +19,15 @@ async def main():
     
     async with SessionLocal() as db:
         try:
-            res = await db.execute(text("SELECT session_id, session_name, class_type, location, start_time, end_time, is_approved FROM public.sessions ORDER BY session_id DESC LIMIT 10"))
-            print("Latest 10 sessions in DB:")
+            print("--- Latest 20 System Logs ---")
+            res = await db.execute(text("""
+                SELECT log_id, action, user_id, ip_address, timestamp
+                FROM system_logs
+                ORDER BY timestamp DESC
+                LIMIT 20
+            """))
             for row in res.fetchall():
-                print(f"ID: {row.session_id} | Name: {row.session_name} | Type: {row.class_type} | Location: {row.location} | Start: {row.start_time} | End: {row.end_time} | Approved: {row.is_approved}")
+                print(f"Log ID: {row[0]} | Action: {row[1]} | User: {row[2]} | IP: {row[3]} | Timestamp: {row[4]}")
         except Exception as e:
             print("Error:", e)
             
