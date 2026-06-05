@@ -26,6 +26,25 @@ async def create_session(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    # Check if there is an approved subject request for this session name in the organization
+    subject_req_result = await db.execute(
+        text("SELECT teacher_id, status FROM subject_requests WHERE org_id = :org_id AND subject_name = :subject_name"),
+        {"org_id": current_user.org_id, "subject_name": data.session_name}
+    )
+    rows = subject_req_result.fetchall()
+    approved_reqs = [r for r in rows if r.status == 'approved']
+    if not approved_reqs:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Subject '{data.session_name}' is not approved or does not exist in the catalog."
+        )
+    is_requester = any(r.teacher_id == current_user.user_id for r in approved_reqs)
+    if not is_requester:
+        raise HTTPException(
+            status_code=403,
+            detail="Only the user who requested the subject can create classes under it."
+        )
+
     new_session = SessionModel(
         org_id=current_user.org_id,
         session_name=data.session_name,
@@ -84,6 +103,26 @@ async def update_session(
         
     # Update only provided fields
     update_data = data.model_dump(exclude_unset=True)
+    if "session_name" in update_data and update_data["session_name"] != session.session_name:
+        new_name = update_data["session_name"]
+        subject_req_result = await db.execute(
+            text("SELECT teacher_id, status FROM subject_requests WHERE org_id = :org_id AND subject_name = :subject_name"),
+            {"org_id": current_user.org_id, "subject_name": new_name}
+        )
+        rows = subject_req_result.fetchall()
+        approved_reqs = [r for r in rows if r.status == 'approved']
+        if not approved_reqs:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Subject '{new_name}' is not approved or does not exist in the catalog."
+            )
+        is_requester = any(r.teacher_id == current_user.user_id for r in approved_reqs)
+        if not is_requester:
+            raise HTTPException(
+                status_code=403,
+                detail="Only the user who requested the subject can create or update classes under it."
+            )
+
     for key, value in update_data.items():
         setattr(session, key, value)
         

@@ -26,10 +26,10 @@ def detect_faces(frame):
         print(f"Detecting faces in frame of shape {frame_small.shape}")
         
         # DeepFace.extract_faces returns a list of dicts
-        # Use 'opencv' (Haar) backend — fast on CPU, works on Hugging Face Spaces
+        # Use 'mtcnn' backend — very accurate and fast on CPU
         face_objs = DeepFace.extract_faces(
             img_path=frame_small,
-            detector_backend="opencv",   # Fast Haar cascade, CPU-friendly
+            detector_backend="mtcnn",  # Accurate and robust MTCNN backend
             enforce_detection=False,
             align=False,                 # DO NOT ALIGN (prevents black padding ruining liveness check)
             anti_spoofing=False
