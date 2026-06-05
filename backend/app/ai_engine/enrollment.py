@@ -25,7 +25,7 @@ def enroll_user(user_id: int, frame):
     if not face_data.get("is_real", True):
         raise Exception("Face validation failed. Please use a real live camera feed.")
 
-    face_img = face_data["face_image"]
+    face_img = face_data.get("aligned_face", face_data["face_image"])
     embedding = generate_embedding(face_img)
     
     if embedding is None:

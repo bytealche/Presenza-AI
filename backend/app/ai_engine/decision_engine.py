@@ -28,13 +28,13 @@ async def process_frame(db: AsyncSession, frame, org_id: int = None):
         return decisions
 
     # 2. Run liveness + embedding for ALL faces in parallel
-    def _analyze_face(face_image):
-        live, live_reasons = liveness_detector.check(face_image)
-        embedding = generate_embedding(face_image)
+    def _analyze_face(face):
+        live, live_reasons = liveness_detector.check(face["face_image"])
+        embedding = generate_embedding(face.get("aligned_face", face["face_image"]))
         return live, live_reasons, embedding
 
     analysis_results = await asyncio.gather(
-        *[asyncio.to_thread(_analyze_face, face["face_image"]) for face in faces]
+        *[asyncio.to_thread(_analyze_face, face) for face in faces]
     )
 
     # 3. Sequential async DB work (DB sessions are not thread-safe to parallelize)

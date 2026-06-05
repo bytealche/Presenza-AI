@@ -125,7 +125,7 @@ async def register_with_face(
     # If we pass crop, DeepFace aligns it (which is good).
     # If we pass frame, we rely on duplicate detection. 
     # Let's pass the crop from detect_faces.
-    embedding = generate_embedding(face_item["face_image"])
+    embedding = generate_embedding(face_item.get("aligned_face", face_item["face_image"]))
 
     if embedding is None:
         raise HTTPException(status_code=500, detail="Failed to generate face embedding")
@@ -272,7 +272,7 @@ async def register_video_profile(
             if not is_live:
                 continue # Skip spoofed looking frames
                 
-            embedding = generate_embedding(face_item["face_image"])
+            embedding = generate_embedding(face_item.get("aligned_face", face_item["face_image"]))
             if embedding is not None:
                 embeddings.append(embedding.flatten())
                 
