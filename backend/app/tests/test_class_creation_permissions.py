@@ -371,3 +371,67 @@ async def test_update_session_no_rename_bypass(client: AsyncClient):
     finally:
         from app.tests.conftest import _override_get_db
         app.dependency_overrides[get_db] = _override_get_db
+
+
+@pytest.mark.asyncio
+async def test_end_session_deletes_camera(client: AsyncClient):
+    """Ending a session should unlink and delete the associated CameraDevice."""
+    mock_teacher = MagicMock()
+    mock_teacher.user_id = 2
+    mock_teacher.role_id = 2
+    mock_teacher.org_id = 1
+    mock_teacher.email = "teacher2@test.com"
+
+    mock_user_result = MagicMock()
+    mock_user_result.scalars.return_value.first.return_value = mock_teacher
+
+    # Existing session details with camera_id = 42
+    mock_session = SessionModel(
+        session_id=1,
+        session_name="CS101",
+        created_by=2,
+        org_id=1,
+        camera_id=42,
+        start_time=datetime.utcnow(),
+        end_time=datetime.utcnow(),
+        class_type="online",
+        is_approved=True
+    )
+    mock_session_result = MagicMock()
+    mock_session_result.scalars.return_value.first.return_value = mock_session
+
+    # Mock no other sessions referencing camera 42
+    mock_other_session_result = MagicMock()
+    mock_other_session_result.scalars.return_value.first.return_value = None
+
+    # Mock CameraDevice retrieved
+    from app.models.camera import CameraDevice
+    mock_camera = CameraDevice(camera_id=42, org_id=1)
+    mock_camera_result = MagicMock()
+    mock_camera_result.scalars.return_value.first.return_value = mock_camera
+
+    # Set up DB session mock
+    mock_db_session = _make_mock_db(side_effects=[
+        mock_user_result,          # 1. get_current_user
+        mock_session_result,       # 2. session lookup in end_session
+        mock_other_session_result, # 3. check for other sessions referencing camera_id
+        mock_camera_result         # 4. camera lookup in end_session
+    ])
+    mock_db_session.refresh = AsyncMock()
+
+    async def override_db():
+        yield mock_db_session
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        response = await client.post(
+            "/sessions/1/end",
+            headers=_auth_header(user_id=2, role_id=2)
+        )
+        assert response.status_code == 200
+        assert response.json()["message"] == "Session ended successfully"
+        assert mock_session.camera_id is None
+        mock_db_session.delete.assert_called_once_with(mock_camera)
+    finally:
+        from app.tests.conftest import _override_get_db
+        app.dependency_overrides[get_db] = _override_get_db

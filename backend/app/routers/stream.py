@@ -100,6 +100,32 @@ async def _ai_loop(camera_id: str):
                     session_record = res.scalars().first()
                     if session_record and datetime.utcnow() > session_record.end_time:
                         logger.info(f"[CAM {camera_id}] Session {session_id} has reached its end_time ({session_record.end_time}). Ending stream.")
+                        
+                        try:
+                            cam_id_int = int(camera_id)
+                        except ValueError:
+                            cam_id_int = None
+
+                        if cam_id_int is not None:
+                            # 1. Unlink session from camera
+                            session_record.camera_id = None
+                            await db.flush()
+
+                            # 2. Check if any other session is still referencing this camera
+                            other_sessions_result = await db.execute(
+                                select(SessionModel).where(SessionModel.camera_id == cam_id_int)
+                            )
+                            other_session = other_sessions_result.scalars().first()
+
+                            if not other_session:
+                                # 3. Retrieve and delete the CameraDevice if not referenced by any other session
+                                from app.models.camera import CameraDevice
+                                cam_result = await db.execute(select(CameraDevice).where(CameraDevice.camera_id == cam_id_int))
+                                camera = cam_result.scalars().first()
+                                if camera:
+                                    await db.delete(camera)
+                            await db.commit()
+
                         payload = json.dumps({"type": "session_ended"})
                         await manager.broadcast_to_receivers(camera_id, payload)
                         await manager.send_to_sender(camera_id, payload)

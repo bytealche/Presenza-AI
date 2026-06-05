@@ -226,13 +226,34 @@ async def end_session(
     import json
     import asyncio
     from app.core.websocket_manager import manager
+    from app.models.camera import CameraDevice
 
     # Set end_time to now to mark the session as ended early
     session.end_time = datetime.utcnow()
+    
+    camera_id = session.camera_id
+    if camera_id:
+        # 1. Unlink this session from the camera
+        session.camera_id = None
+        await db.flush()
+        
+        # 2. Check if any other session is still referencing this camera
+        other_sessions_result = await db.execute(
+            select(SessionModel).where(SessionModel.camera_id == camera_id)
+        )
+        other_session = other_sessions_result.scalars().first()
+        
+        if not other_session:
+            # 3. Retrieve and delete the CameraDevice if not referenced by any other session
+            cam_result = await db.execute(select(CameraDevice).where(CameraDevice.camera_id == camera_id))
+            camera = cam_result.scalars().first()
+            if camera:
+                await db.delete(camera)
+                
     await db.commit()
     
     # Broadcast to websocket that the session has ended
-    camera_id_str = str(session.camera_id) if session.camera_id else None
+    camera_id_str = str(camera_id) if camera_id else None
     if camera_id_str:
         payload = json.dumps({"type": "session_ended"})
         await manager.broadcast_to_receivers(camera_id_str, payload)
