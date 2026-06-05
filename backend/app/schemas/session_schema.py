@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, field_serializer, field_validator
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -10,6 +10,13 @@ class SessionCreate(BaseModel):
     camera_id: Optional[int] = None
     class_type: Optional[str] = "online"
 
+    @field_validator('start_time', 'end_time')
+    @classmethod
+    def make_naive(cls, v: datetime) -> datetime:
+        if v.tzinfo is not None:
+            return v.astimezone(timezone.utc).replace(tzinfo=None)
+        return v
+
 class SessionUpdate(BaseModel):
     session_name: Optional[str] = None
     start_time: Optional[datetime] = None
@@ -17,6 +24,13 @@ class SessionUpdate(BaseModel):
     location: Optional[str] = None
     camera_id: Optional[int] = None
     class_type: Optional[str] = None
+
+    @field_validator('start_time', 'end_time')
+    @classmethod
+    def make_naive(cls, v: Optional[datetime]) -> Optional[datetime]:
+        if v is not None and v.tzinfo is not None:
+            return v.astimezone(timezone.utc).replace(tzinfo=None)
+        return v
 
 class SessionResponse(BaseModel):
     session_id: int
